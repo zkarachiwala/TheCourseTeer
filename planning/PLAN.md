@@ -2,6 +2,20 @@
 
 > **Living document.** When any requirement, decision, or scope item is clarified or changed, this file must be updated immediately to reflect the current agreed state. The PLAN_REVIEW.md file records the rationale for decisions made.
 
+## 0. Development Process
+
+All feature work and changes to this codebase must follow the `/feature-dev` 7-phase workflow:
+
+1. **Discovery** — Understand what needs to be built. Confirm scope with the user.
+2. **Codebase Exploration** — Read and understand relevant existing code before writing anything.
+3. **Clarifying Questions** — Surface all ambiguities and edge cases. Wait for answers before designing.
+4. **Architecture Design** — Present multiple approaches with trade-offs. Get explicit user approval.
+5. **Implementation** — Build only after approval. Follow existing conventions strictly.
+6. **Quality Review** — Review for simplicity, correctness, and consistency with the codebase.
+7. **Summary** — Document what was built, decisions made, and suggested next steps.
+
+Invoke with `/feature-dev:feature-dev [description of change]` at the start of any new feature, bugfix, or non-trivial modification. Do not skip phases or proceed past Phase 4 without explicit user approval.
+
 ## 1. Project Overview
 This project creates a comprehensive, persistent data repository and a responsive web application that aggregates undergraduate and postgraduate course information from all Australian-based universities. The core value proposition is an AI-driven data extraction engine that adapts to website changes and provides a unified search experience for students.
 
