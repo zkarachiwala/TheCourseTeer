@@ -148,3 +148,23 @@ ANSWER: As recommended
 | 10 | MVP universities: Melbourne, Sydney, RMIT, Monash, UQ? | DECIDED: Confirmed |
 | 11 | robots.txt: store rules in universities table, skip if blocked? | DECIDED: Yes, first-class compliance |
 | 12 | Scraper config storage: scraper_configs table in Postgres? | DECIDED: Yes |
+| 13 | ORM for Next.js (Drizzle vs Prisma)? | OPEN |
+| 14 | Repo layout: monorepo (`frontend/` + `scraper/`) or separate repos? | OPEN |
+
+---
+
+## 7. Open Questions - Pre-Build
+
+### 7.1 ORM for Next.js
+**Question:** Which ORM to use for Next.js Server Components querying Supabase Postgres?
+- **Drizzle:** Lightweight, SQL-first, TypeScript native, minimal runtime overhead. Closer to raw SQL — good if the team is comfortable with SQL.
+- **Prisma:** More batteries-included, strong codegen/type safety, larger ecosystem, slightly heavier.
+**Recommendation:** Drizzle. It aligns with the "simple, no overengineering" principle and is the current community preference for Next.js App Router projects.
+ANSWER:
+
+### 7.2 Repo layout
+**Question:** Single monorepo or separate repos for frontend and scraper?
+- **Monorepo** (`frontend/`, `scraper/` in one repo): shared git history, simpler CI, easier cross-referencing.
+- **Separate repos:** cleaner language separation but more overhead for a small project.
+**Recommendation:** Monorepo. The frontend and scraper share a database schema definition — keeping them together avoids drift.
+ANSWER:
