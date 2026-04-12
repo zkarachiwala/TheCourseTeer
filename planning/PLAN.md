@@ -18,6 +18,7 @@ The system employs a hybrid approach to data collection, prioritizing efficiency
 - **Re-mapping trigger:** Exception-based (Option A). If a selector throws an exception, immediately trigger an AI re-mapping attempt. The failing selector and its AI-generated replacement are stored in `scraper_configs` for auditability.
 - **Config storage:** Selectors and extraction rules are stored in a `scraper_configs` table in Postgres: `(university_id, field_name, selector, last_verified_at, ai_generated: bool)`.
 - **robots.txt compliance:** The scraper checks `robots.txt` before crawling any university. Parsed rules are stored in the `universities` table. If scraping is disallowed for a path, that university is skipped and the status is logged. This is a first-class legal requirement.
+- **Per-university scraper config:** Each university has a documented scraper mode (`static` or `browser`), URL pattern, and data field locations. See [UNIVERSITIES.md](UNIVERSITIES.md).
 - **Periodic Scheduling:** Cron job on the worker host. Monthly runs to capture handbook updates. No separate scheduler service for MVP.
 
 ## 3. Data Schema & Storage
@@ -104,12 +105,13 @@ Created at schema setup even if empty in MVP.
 ### Phase 1: MVP
 - Database schema setup (all tables including `course_prerequisites` and `scraper_configs`).
 - Scraper for 5 MVP universities: University of Melbourne, University of Sydney, RMIT, Monash University, University of Queensland.
+- Per-university scraping approach, URL patterns, and data availability: see [UNIVERSITIES.md](UNIVERSITIES.md).
 - robots.txt compliance built in from the start.
 - Basic search interface with Dark/Light/System mode.
 - Domestic pricing only.
 
 ### Phase 2: Scaling
-- Expand scraper coverage to all 40+ Australian universities.
+- Expand scraper coverage to all 40+ Australian universities (see [UNIVERSITIES.md](UNIVERSITIES.md) for full list and status).
 - Implement full AI re-mapping logic with `scraper_configs` audit trail.
 - Prerequisite Mapping for Masters courses (populate `course_prerequisites`).
 - Normalise prerequisite subjects if significant variation found across universities.
