@@ -56,7 +56,18 @@ A `universities` table is required. University is not just a field on `courses`.
 | robots_txt_rules | jsonb | Parsed allow/disallow rules |
 | last_scraped_at | timestamptz | |
 
-### 3.3 Courses Table
+### 3.3 Campuses Table
+
+| Field | Type | Notes |
+|---|---|---|
+| id | uuid | PK |
+| university_id | uuid | FK -> universities ON DELETE CASCADE |
+| name | text | e.g. "City Campus", "Clayton" |
+| address | text | Full street address |
+| latitude | numeric | For map display (mapping service integration deferred) |
+| longitude | numeric | For map display (mapping service integration deferred) |
+
+### 3.4 Courses Table
 
 | Field | Type | Notes |
 |---|---|---|
@@ -64,7 +75,7 @@ A `universities` table is required. University is not just a field on `courses`.
 | university_id | uuid | FK -> universities |
 | name | text | |
 | faculty | text | |
-| campus | text | |
+| campus_id | uuid | FK -> campuses ON DELETE SET NULL. NULL means online or no fixed campus. |
 | degree_type | text | UG or PG |
 | duration_years | numeric | Standard duration |
 | source_url | text | Direct link to course page |
@@ -77,7 +88,7 @@ A `universities` table is required. University is not just a field on `courses`.
 | updated_at | timestamptz | |
 | created_at | timestamptz | |
 
-### 3.4 Course Prerequisites Table (UG -> PG pathways)
+### 3.5 Course Prerequisites Table (UG -> PG pathways)
 Created at schema setup even if empty in MVP.
 
 | Field | Type | Notes |
@@ -86,7 +97,7 @@ Created at schema setup even if empty in MVP.
 | requires_course_id | uuid | FK -> courses (the UG course) |
 | notes | text | Nullable. E.g. "minimum credit average required." |
 
-### 3.5 Scraper Configs Table
+### 3.6 Scraper Configs Table
 
 | Field | Type | Notes |
 |---|---|---|
