@@ -2,6 +2,30 @@
 
 An Australian university course aggregator and search engine. Aggregates undergraduate and postgraduate course data from all Australian universities into a unified, searchable interface.
 
+## Local Development
+
+**Prerequisites:** Docker Desktop
+
+```bash
+cp .env.example .env
+scripts\up.bat        # Windows
+bash scripts/up.sh    # bash/Mac
+```
+
+- Postgres 17 on `localhost:5432`
+- Adminer (DB browser) on `http://localhost:8080` — select **PostgreSQL**, server `db`, credentials from your `.env`
+
+| Action | Windows | bash/Mac |
+|---|---|---|
+| Start services | `scripts\up.bat` | `bash scripts/up.sh` |
+| Stop services | `scripts\down.bat` | `bash scripts/down.sh` |
+| Open psql shell | `scripts\psql.bat` | `bash scripts/psql.sh` |
+| Tail logs | `scripts\logs.bat` | `bash scripts/logs.sh` |
+
+**Production:** swap `DATABASE_URL` in `.env` for the Supabase connection string. No other changes needed.
+
+---
+
 ## What it does
 
 - Collects course data (name, faculty, campus, ATAR, fees, prerequisites, duration) from Australian university websites

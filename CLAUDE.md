@@ -12,6 +12,32 @@ The key document is PLAN.md included in full here:
 
 All feature work must follow the `/feature-dev:feature-dev` 7-phase workflow. Do not write implementation code before Phase 4 approval.
 
+### GitHub Project Integration
+
+When a feature-dev request references an issue number (e.g. "feature-dev #4" or "work on issue 4"):
+
+**Project:** `5` | Owner: `zkarachiwala` | Project ID: `PVT_kwHOAedlmM4BUdpc`
+**Status field ID:** `PVTSSF_lAHOAedlmM4BUdpczhBlk6g`
+**Status options:** Backlog `f75ad846` | Ready `61e4505c` | In progress `47fc9ee4` | In review `df73e18b` | Done `98236657`
+
+**Step 1 — Before starting, move to "In Progress":**
+```bash
+ITEM_ID=$(gh project item-list 5 --owner zkarachiwala --format json | python3 -c "import sys,json; items=json.load(sys.stdin)['items']; print(next(i['id'] for i in items if i.get('content',{}).get('number')==N))")
+gh project item-edit --project-id PVT_kwHOAedlmM4BUdpc --id $ITEM_ID --field-id PVTSSF_lAHOAedlmM4BUdpczhBlk6g --single-select-option-id 47fc9ee4
+```
+Replace `N` with the issue number (integer, no quotes).
+
+**Step 2 — Fetch issue context for the feature-dev workflow:**
+```bash
+gh issue view N --repo zkarachiwala/TheCourseTeer
+```
+Use the issue title and body as the feature description when running the 7-phase workflow.
+
+**Step 3 — After implementation, move to "In Review":**
+```bash
+gh project item-edit --project-id PVT_kwHOAedlmM4BUdpc --id $ITEM_ID --field-id PVTSSF_lAHOAedlmM4BUdpczhBlk6g --single-select-option-id df73e18b
+```
+
 ---
 
 ## Agent Routing
