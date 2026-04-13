@@ -22,7 +22,18 @@ bash scripts/up.sh    # bash/Mac
 | Open psql shell | `scripts\psql.bat` | `bash scripts/psql.sh` |
 | Tail logs | `scripts\logs.bat` | `bash scripts/logs.sh` |
 
-**Production:** swap `DATABASE_URL` in `.env` for the Supabase connection string. No other changes needed.
+**Production:** swap `DATABASE_URL` in `.env` for the Supabase connection string (change `sslmode=disable` to `sslmode=require`). No other changes needed.
+
+### Running migrations
+
+Install dbmate once: `winget install dbmate` (Windows) or `brew install dbmate` (Mac).
+
+```bash
+scripts\migrate.bat        # Windows
+bash scripts/migrate.sh    # bash/Mac
+```
+
+Migrations live in `db/migrations/`. dbmate tracks applied migrations automatically and reads `DATABASE_URL` from `.env`.
 
 ---
 
