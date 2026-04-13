@@ -38,7 +38,7 @@ The system employs a hybrid approach to data collection, prioritizing efficiency
 ## 3. Data Schema & Storage
 
 ### 3.1 Infrastructure
-- **Local dev:** Docker Compose with Postgres.
+- **Local dev:** Docker Compose with Postgres 17 + Adminer (web DB browser on port 8080).
 - **Production:** Supabase (managed Postgres, free tier for MVP). Migrate to RDS if scale demands it.
 - **Scraper worker:** Long-running Python process on a VPS or Railway worker. Not serverless (Playwright requires a real browser).
 
