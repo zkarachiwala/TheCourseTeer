@@ -33,7 +33,17 @@ gh issue view N --repo zkarachiwala/TheCourseTeer
 ```
 Use the issue title and body as the feature description when running the 7-phase workflow.
 
-**Step 3 — After implementation, move to "In Review":**
+**Step 3 — Before closing Phase 3, post a Decisions comment on the issue:**
+
+Summarise all clarifying questions raised and answers given during Phase 3 as a GitHub issue comment:
+```bash
+gh issue comment N --repo zkarachiwala/TheCourseTeer --body "## Feature-dev decisions
+
+<list questions and answers here>"
+```
+If any answer changes the broader architecture, also update `planning/PLAN_REVIEW.md` and `planning/PLAN.md`.
+
+**Step 4 — After implementation, move to "In Review":**
 ```bash
 gh project item-edit --project-id PVT_kwHOAedlmM4BUdpc --id $ITEM_ID --field-id PVTSSF_lAHOAedlmM4BUdpczhBlk6g --single-select-option-id df73e18b
 ```

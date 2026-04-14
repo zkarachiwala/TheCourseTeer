@@ -87,6 +87,6 @@ No significant API spend expected during MVP development.
 - [x] Gemini CLI installed
 - [x] Ollama installed
 - [x] OpenCode CLI installed
-- [ ] OpenCode configured to use Ollama backend
-- [ ] Ollama model pulled: `ollama pull mistral`
-- [ ] Supabase project created, connection string saved to `.env`
+- [x] OpenCode configured to use Ollama backend
+- [x] Ollama model pulled: `ollama pull mistral`
+- [x] Supabase project created, connection string saved to `.env`
