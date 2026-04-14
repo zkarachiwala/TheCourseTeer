@@ -56,7 +56,16 @@ Migrations live in `db/migrations/`. dbmate tracks applied migrations automatica
 
 ## Project status
 
-Early development. See `planning/PLAN.md` for the full technical specification.
+Phase 1 (MVP) in progress. See `planning/PLAN.md` for the full technical specification.
+
+| Component | Status |
+|---|---|
+| Database schema | Complete — all tables migrated and seeded |
+| Scraper infrastructure | Complete — base scraper, robots.txt compliance, AI re-mapping framework |
+| RMIT scraper | Complete |
+| Melbourne, Sydney, Monash, UQ scrapers | Not started |
+| FastAPI scraper management API | Not started |
+| Next.js frontend | Not started |
 
 ## License
 
