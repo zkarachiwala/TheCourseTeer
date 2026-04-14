@@ -1,6 +1,7 @@
 import os
 
 from psycopg.rows import dict_row
+from psycopg.types.json import Jsonb
 from psycopg_pool import AsyncConnectionPool
 
 from models import CourseData
@@ -34,7 +35,7 @@ async def store_robots_rules(
     async with pool.connection() as conn:
         await conn.execute(
             "UPDATE universities SET robots_txt_rules = %s WHERE id = %s",
-            (rules, university_id),  # psycopg3 adapts dict -> jsonb natively
+            (Jsonb(rules), university_id),
         )
 
 
@@ -110,7 +111,7 @@ async def upsert_course(pool: AsyncConnectionPool, course: CourseData) -> None:
                 course.csp_available,
                 course.atar_guaranteed,
                 course.atar_lowest_selection_rank,
-                course.prerequisites,  # psycopg3 adapts list -> jsonb natively
+                Jsonb(course.prerequisites) if course.prerequisites is not None else None,
             ),
         )
 

@@ -6,11 +6,12 @@ from dotenv import load_dotenv
 
 from base_scraper import BaseScraper
 from db import get_pool, upsert_course
+from rmit import RmitScraper
 
 # Register per-university scrapers here as they are implemented (issues #4-8).
 # Key is the university slug from the universities table.
 SCRAPERS: dict[str, type[BaseScraper]] = {
-    # "rmit": RmitScraper,
+    "rmit": RmitScraper,
     # "monash": MonashScraper,
     # "uq": UqScraper,
     # "usyd": UsydScraper,
