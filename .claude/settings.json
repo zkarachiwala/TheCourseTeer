@@ -13,7 +13,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python .claude/hooks/routing_check.py",
+            "command": "python C:/Users/david/source/repos/DZKConsulting/TheCourseTeer/.claude/hooks/routing_check.py",
             "timeout": 5,
             "statusMessage": "Checking agent routing..."
           }

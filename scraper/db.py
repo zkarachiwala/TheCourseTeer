@@ -68,6 +68,20 @@ async def get_campus_id(
     return str(row[0]) if row else None
 
 
+async def get_campus_map(
+    pool: AsyncConnectionPool, university_id: str
+) -> dict[str, str]:
+    """Return {campus_name: campus_uuid} for the given university."""
+    async with pool.connection() as conn:
+        async with conn.cursor() as cur:
+            await cur.execute(
+                "SELECT name, id FROM campuses WHERE university_id = %s",
+                (university_id,),
+            )
+            rows = await cur.fetchall()
+    return {row[0]: str(row[1]) for row in rows}
+
+
 async def upsert_course(pool: AsyncConnectionPool, course: CourseData) -> None:
     """Insert or update a course row, keyed on (university_id, source_url)."""
     async with pool.connection() as conn:
