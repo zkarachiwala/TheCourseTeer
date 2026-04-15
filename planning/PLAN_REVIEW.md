@@ -116,12 +116,16 @@ ANSWER: As recommended
 ### 5.2 Where does the scraper run?
 Playwright requires a real browser. This is heavy for a Lambda/serverless function.
 **Recommendation:** A long-running worker process (e.g., a simple Python service on a VPS or Railway worker). Not serverless.
-ANSWER: As recommended
+ANSWER: Revised. The scraper is decoupled from app hosting entirely. Preferred execution is GitHub Actions (free, no infrastructure). Local machine run is the fallback for zero-cost offline use. Azure Container Apps (consumption plan) is available if automation without GitHub Actions is needed. FastAPI scraper management layer is dropped — trigger/logs/status handled by GitHub Actions UI and the DB health columns.
 
 ### 5.3 Scheduling
 "Monthly or quarterly" runs. Who triggers this?
 **Recommendation:** A simple cron job on the worker host, or a Celery beat task if the job queue grows complex. Not a separate scheduler service for MVP.
-ANSWER: As recommended
+ANSWER: Revised. Expected frequency is annually (handbook updates). Trigger is manual `workflow_dispatch` in GitHub Actions, or a cron schedule in the Actions workflow file. No always-on scheduler service needed.
+
+### 5.4 App hosting
+**Question:** Where does the Next.js frontend run?
+**Decision:** Azure Static Web Apps (free tier). Supports Next.js App Router with hybrid SSR. 100 GB bandwidth/month, 0.5 GB storage — sufficient for MVP.
 ---
 
 ## 6. Not Blocking - But Note for Later
@@ -137,7 +141,7 @@ ANSWER: As recommended
 | # | Decision | Status |
 |---|---|---|
 | 1 | Frontend: Next.js (App Router) confirmed? | DECIDED: Next.js App Router v14+ |
-| 2 | API strategy: Next.js Server Components + FastAPI, or other? | DECIDED: Server Components for reads, FastAPI for scraper management |
+| 2 | API strategy: Next.js Server Components + FastAPI, or other? | DECIDED: Server Components for reads. FastAPI dropped — scraper is decoupled, no management API needed for MVP |
 | 3 | LLM for scraper? | DECIDED: Investigate local OSS model (Ollama + Mistral/Llama 3) first. Fallback: Claude Haiku |
 | 4 | Price schema: annual CSP + DFEE nullable? | DECIDED: price_annual_csp_aud, price_annual_dfee_aud (nullable), csp_available |
 | 5 | ATAR schema: two fields (guaranteed + lowest selection rank)? | DECIDED: Both fields, both nullable |
@@ -146,6 +150,8 @@ ANSWER: As recommended
 | 8 | Scraper re-map trigger: exception-based (Option A)? | DECIDED: Option A |
 | 9 | Production Postgres host: Supabase? | DECIDED: Supabase |
 | 10 | MVP universities: Melbourne, Sydney, RMIT, Monash, UQ? | DECIDED: Confirmed |
+| 15 | App hosting: Azure Static Web Apps? | DECIDED: Yes, free tier |
+| 16 | Scraper decoupled from app hosting? | DECIDED: Yes. Preferred execution: GitHub Actions. Alternatives: local machine, Azure Container Apps |
 | 11 | robots.txt: store rules in universities table, skip if blocked? | DECIDED: Yes, first-class compliance |
 | 12 | Scraper config storage: scraper_configs table in Postgres? | DECIDED: Yes |
 | 13 | ORM for Next.js (Drizzle vs Prisma)? | OPEN |
