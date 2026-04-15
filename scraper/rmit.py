@@ -81,6 +81,7 @@ async def _scrape_one(
     mode = meta.get("learning_mode_domestic", "")
     effective_campus_id = None if "online" in mode.lower() else campus_id
 
+    atar_rank, atar_guaranteed = _parse_atar(meta.get("atar"))
     return CourseData(
         university_id=university_id,
         name=name,
@@ -92,8 +93,8 @@ async def _scrape_one(
         csp_available=_parse_csp(meta.get("fees_domestic")),
         price_annual_csp_aud=None,   # RMIT does not publish CSP amounts
         price_annual_dfee_aud=None,  # RMIT does not publish domestic full-fee amounts
-        atar_lowest_selection_rank=_parse_atar(meta.get("atar")),
-        atar_guaranteed=None,   # RMIT does not publish a separate guaranteed entry ATAR
+        atar_lowest_selection_rank=atar_rank,
+        atar_guaranteed=atar_guaranteed,
     )
 
 
@@ -107,12 +108,28 @@ def _parse_meta(html: str) -> dict[str, str]:
     }
 
 
-def _parse_atar(value: str | None) -> int | None:
-    """Parse 'ATAR 75.10*' -> 75."""
+def _parse_atar(value: str | None) -> tuple[int | None, int | None]:
+    """
+    Parse the 'atar' meta tag into (atar_lowest_selection_rank, atar_guaranteed).
+
+    Format: '2026 Guaranteed ATAR 70.00, ATAR 70.15*'
+    ATAR values are always <= 99.95; anything larger (e.g. a year) is not an ATAR.
+    """
     if not value:
-        return None
-    m = re.search(r"\d+(?:\.\d+)?", value)
-    return int(float(m.group())) if m else None
+        return None, None
+    guaranteed = None
+    m = re.search(r"Guaranteed ATAR\s+(\d+(?:\.\d+)?)", value, re.IGNORECASE)
+    if m:
+        guaranteed = int(float(m.group(1)))
+    # Selection rank follows a comma when a guaranteed ATAR is also present.
+    m = re.search(r",\s*ATAR\s+(\d+(?:\.\d+)?)", value, re.IGNORECASE)
+    if m:
+        return int(float(m.group(1))), guaranteed
+    # Only one ATAR value present — treat it as the selection rank.
+    m = re.search(r"\bATAR\s+(\d+(?:\.\d+)?)", value, re.IGNORECASE)
+    if m:
+        return int(float(m.group(1))), guaranteed
+    return None, guaranteed
 
 
 def _parse_duration(value: str | None) -> float | None:
