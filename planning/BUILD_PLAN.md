@@ -9,8 +9,8 @@ How to use available AI tools efficiently to avoid hitting daily limits during d
 | Tool | Model | Daily / Rate Limit | Cost |
 |---|---|---|---|
 | Claude Code (Pro) | Claude Sonnet 4.6 / Opus 4.6 | ~45 msgs / 5 hrs (Opus); higher on Sonnet | Included in Pro |
-| Gemini CLI | Gemini 2.0 Flash | 1,500 req/day, 15 RPM | Free |
-| Gemini CLI | Gemini 1.5 Pro | 50 req/day, 2 RPM | Free |
+| Gemini CLI | Gemini 2.5 Flash | Free tier available | Free |
+| Gemini CLI | Gemini 2.5 Pro | Free tier available (use sparingly) | Free |
 | OpenCode + Ollama | Mistral / Llama 3 / Gemma (local) | Unlimited | Free (local compute) |
 
 ---
@@ -36,7 +36,7 @@ Reserve Claude Code for high-value, high-context work. Offload routine and mecha
 - Drafting config files: `.env.example`, Docker Compose, CI yaml
 - Any well-specified task that does not require deep repo context
 
-Use `gemini-2.0-flash` by default (1,500 req/day free). Drop to `gemini-1.5-pro` only when a larger context window is needed (50 req/day — use sparingly).
+Use `gemini-2.5-flash` by default. Drop to `gemini-2.5-pro` only when a larger context window is needed (use sparingly).
 
 ### OpenCode + Ollama — Use for:
 - Scraper AI re-mapping during local development (zero API cost)

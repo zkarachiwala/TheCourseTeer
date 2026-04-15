@@ -64,7 +64,7 @@ Tasks must be routed to the appropriate AI tool based on the strategy in `planni
 The task is well-specified and mechanical — it does not require understanding the broader codebase. Invoke via Bash:
 
 ```bash
-gemini -m gemini-2.0-flash -p "<task prompt>"
+gemini -m gemini-2.5-flash -p "<task prompt>"
 ```
 
 Delegate to Gemini for:
