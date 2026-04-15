@@ -78,11 +78,11 @@ DROP TABLE scrape_queue;
 DROP TABLE scrape_runs;
 ```
 
-- [ ] **Step 2: Run the migration against the local dev DB**
+- [ ] **Step 2: Run the migration (DATABASE_URL env var points to Supabase)**
 
 From the project root:
 ```bash
-DATABASE_URL="postgresql://postgres:postgres@localhost:5433/courseteer?sslmode=disable" bash scripts/migrate.sh
+bash scripts/migrate.sh
 ```
 
 Expected output: `Applying: 20260416000001_create_scrape_queue.sql`
@@ -90,7 +90,7 @@ Expected output: `Applying: 20260416000001_create_scrape_queue.sql`
 - [ ] **Step 3: Verify tables exist**
 
 ```bash
-DATABASE_URL="postgresql://postgres:postgres@localhost:5433/courseteer?sslmode=disable" bash scripts/psql.sh -c "\dt scrape_*"
+bash scripts/psql.sh -c "\dt scrape_*"
 ```
 
 Expected: two rows — `scrape_queue` and `scrape_runs`.
@@ -135,19 +135,16 @@ Empty file:
 ```python
 """Shared fixtures for scraper integration tests.
 
-Tests run against the local dev Postgres (port 5433). Each test that touches
-the DB wraps operations in a transaction that is rolled back on teardown,
-leaving the DB clean.
+Tests run against the Supabase database (DATABASE_URL env var). The clean_queue
+fixture deletes test rows before and after each test to avoid interference.
 """
 import asyncio
-import selectors
+import os
 
 import pytest
 import pytest_asyncio
 from psycopg.rows import dict_row
 from psycopg_pool import AsyncConnectionPool
-
-TEST_DSN = "postgresql://postgres:postgres@localhost:5433/courseteer?sslmode=disable"
 
 
 @pytest.fixture(scope="session")
@@ -158,9 +155,9 @@ def event_loop_policy():
 
 @pytest_asyncio.fixture(scope="session")
 async def pool():
-    """Session-scoped connection pool pointing at the local dev DB."""
+    """Session-scoped connection pool using DATABASE_URL (Supabase)."""
     p = AsyncConnectionPool(
-        TEST_DSN,
+        os.environ["DATABASE_URL"],
         open=False,
         kwargs={"prepare_threshold": None},
     )
@@ -1271,11 +1268,11 @@ cd scraper && uv run pytest -v
 
 Expected: all tests pass.
 
-- [ ] **Step 2: Run RMIT scraper with --force against local dev DB to verify queue is populated**
+- [ ] **Step 2: Run RMIT scraper with --force to verify queue is populated**
 
+From `scraper/` directory (DATABASE_URL env var must be set to Supabase):
 ```bash
-DATABASE_URL="postgresql://postgres:postgres@localhost:5433/courseteer?sslmode=disable" \
-  uv run python run.py --university rmit --force 2>&1
+uv run python run.py --university rmit --force
 ```
 
 Expected: lines like:
@@ -1289,8 +1286,7 @@ Running scraper: rmit (force reset)
 - [ ] **Step 3: Run RMIT again (no --force) to verify resume skips completed URLs**
 
 ```bash
-DATABASE_URL="postgresql://postgres:postgres@localhost:5433/courseteer?sslmode=disable" \
-  uv run python run.py --university rmit 2>&1
+uv run python run.py --university rmit
 ```
 
 Expected:
@@ -1304,10 +1300,10 @@ Running scraper: rmit
 
 ```bash
 uv run python -c "
-import asyncio, selectors
+import asyncio
 async def main():
     from db import get_pool
-    pool = await get_pool('postgresql://postgres:postgres@localhost:5433/courseteer?sslmode=disable')
+    pool = await get_pool()
     async with pool.connection() as conn:
         async with conn.cursor() as cur:
             await cur.execute('''
@@ -1325,7 +1321,9 @@ async def main():
             for row in await cur.fetchall():
                 print(row)
     await pool.close()
-asyncio.run(main(), loop_factory=lambda: asyncio.SelectorEventLoop(__import__('selectors').SelectSelector()))
+import sys, selectors
+loop_factory = asyncio.SelectorEventLoop if sys.platform == 'win32' else None
+asyncio.run(main(), loop_factory=loop_factory)
 "
 ```
 
