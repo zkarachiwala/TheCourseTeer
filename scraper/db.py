@@ -10,7 +10,7 @@ from models import CourseData
 async def get_pool(dsn: str | None = None) -> AsyncConnectionPool:
     """Open and return an async connection pool. Reads DATABASE_URL from env if dsn omitted."""
     dsn = dsn or os.environ["DATABASE_URL"]
-    pool = AsyncConnectionPool(dsn, open=False)
+    pool = AsyncConnectionPool(dsn, open=False, kwargs={"prepare_threshold": None})
     await pool.open()
     return pool
 
