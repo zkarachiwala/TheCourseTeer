@@ -128,6 +128,8 @@ async def _fetch_one(
         try:
             await page.goto(url, wait_until="domcontentloaded", timeout=60000)
             html = await page.content()
+        except PermissionError:
+            raise
         except Exception as e:
             return url, e
         finally:
