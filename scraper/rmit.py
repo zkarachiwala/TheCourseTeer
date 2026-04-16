@@ -6,9 +6,9 @@ import urllib.robotparser
 from bs4 import BeautifulSoup
 
 from base_scraper import BaseScraper
-from db import get_campus_id
+from db import get_campus_map
 from http_client import make_client
-from models import CourseData
+from models import CampusLink, CourseData
 
 SITEMAP_URL = "https://www.rmit.edu.au/sitemap.xml"
 _UG_PREFIX = "/study-with-us/levels-of-study/undergraduate-study/"
@@ -55,11 +55,13 @@ class RmitScraper(BaseScraper):
         """Override to share one httpx client across all concurrent requests."""
         if not urls:
             return []
-        campus_id = await get_campus_id(self.pool, self.university_id, "rmit-city")
+        campus_map = await get_campus_map(self.pool, self.university_id)
+        city_id = campus_map.get("City Campus")
+        online_id = campus_map.get("Online")
         sem = asyncio.Semaphore(self._CONCURRENCY)
         async with make_client() as client:
             tasks = [
-                self._safe_fetch(rp, url, client, campus_id, sem) for url in urls
+                self._safe_fetch(rp, url, client, city_id, online_id, sem) for url in urls
             ]
             return list(await asyncio.gather(*tasks))
 
@@ -68,7 +70,8 @@ class RmitScraper(BaseScraper):
         rp: urllib.robotparser.RobotFileParser,
         url: str,
         client,
-        campus_id: str | None,
+        city_id: str | None,
+        online_id: str | None,
         sem: asyncio.Semaphore,
     ) -> tuple[str, CourseData | Exception | None]:
         self.check_robots(rp, url)
@@ -78,7 +81,7 @@ class RmitScraper(BaseScraper):
             if resp.status_code != 200:
                 print(f"  rmit: {resp.status_code} {url}")
                 return url, None
-            return url, await self._parse(url, resp.text, campus_id)
+            return url, await self._parse(url, resp.text, city_id, online_id)
         except PermissionError:
             raise
         except Exception as e:
@@ -88,28 +91,38 @@ class RmitScraper(BaseScraper):
         self,
         url: str,
         html: str,
-        campus_id: str | None = None,
+        city_id: str | None = None,
+        online_id: str | None = None,
     ) -> CourseData | None:
         meta = _parse_meta(html)
         name = meta.get("product_name")
         if not name:
             return None
         mode = meta.get("learning_mode_domestic", "")
-        effective_campus_id = None if "online" in mode.lower() else campus_id
         atar_rank, atar_guaranteed = _parse_atar(meta.get("atar"))
+
+        if "online" in mode.lower():
+            campuses = [CampusLink(campus_id=online_id)] if online_id else []
+        else:
+            campuses = [
+                CampusLink(
+                    campus_id=city_id,
+                    atar_guaranteed=atar_guaranteed,
+                    atar_lowest_selection_rank=atar_rank,
+                )
+            ] if city_id else []
+
         return CourseData(
             university_id=self.university_id,
             name=name,
             source_url=url,
             faculty=meta.get("college") or None,
-            campus_id=effective_campus_id,
+            campuses=campuses,
             degree_type="UG",
             duration_years=_parse_duration(meta.get("duration_domestic")),
             csp_available=_parse_csp(meta.get("fees_domestic")),
             price_annual_csp_aud=None,
             price_annual_dfee_aud=None,
-            atar_lowest_selection_rank=atar_rank,
-            atar_guaranteed=atar_guaranteed,
         )
 
 
