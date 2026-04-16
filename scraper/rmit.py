@@ -2,7 +2,6 @@
 import asyncio
 import re
 import urllib.robotparser
-from collections.abc import Callable
 
 from bs4 import BeautifulSoup
 
@@ -13,9 +12,7 @@ from models import CourseData
 
 SITEMAP_URL = "https://www.rmit.edu.au/sitemap.xml"
 _UG_PREFIX = "/study-with-us/levels-of-study/undergraduate-study/"
-# Root course URLs split to exactly 8 segments: ['https:', '', 'www.rmit.edu.au',
-# 'study-with-us', 'levels-of-study', 'undergraduate-study', '<type>', '<slug>'].
-# Sub-pages (apply-now, further-study, etc.) produce 9+ segments and are excluded.
+# Root course URLs split to exactly 8 segments.
 _COURSE_DEPTH = 8
 _CONCURRENCY = 5
 
@@ -23,78 +20,97 @@ _CONCURRENCY = 5
 class RmitScraper(BaseScraper):
     """Scraper for RMIT University. Discovers courses from sitemap.xml."""
 
-    async def scrape(self, rp: urllib.robotparser.RobotFileParser) -> list[CourseData]:
-        sem = asyncio.Semaphore(_CONCURRENCY)
+    _CONCURRENCY = _CONCURRENCY
+
+    async def discover_urls(
+        self, rp: urllib.robotparser.RobotFileParser
+    ) -> list[str]:
+        """Fetch sitemap.xml and return root-level UG course URLs."""
         async with make_client() as client:
-            urls = await _discover_urls(client)
-            campus_id = await get_campus_id(self.pool, self.university_id, "rmit-city")
+            resp = await client.get(SITEMAP_URL)
+            resp.raise_for_status()
+        return [
+            m.group(1)
+            for m in re.finditer(r"<loc>(https://[^<]+)</loc>", resp.text)
+            if _UG_PREFIX in m.group(1) and len(m.group(1).split("/")) == _COURSE_DEPTH
+        ]
+
+    async def scrape_url(
+        self, rp: urllib.robotparser.RobotFileParser, url: str
+    ) -> CourseData | None:
+        """Fetch and parse one RMIT course page."""
+        self.check_robots(rp, url)
+        async with make_client() as client:
+            resp = await client.get(url)
+        if resp.status_code != 200:
+            print(f"  rmit: {resp.status_code} {url}")
+            return None
+        return await self._parse(url, resp.text)
+
+    async def _process_batch(
+        self,
+        rp: urllib.robotparser.RobotFileParser,
+        urls: list[str],
+    ) -> list[tuple[str, CourseData | Exception | None]]:
+        """Override to share one httpx client across all concurrent requests."""
+        if not urls:
+            return []
+        campus_id = await get_campus_id(self.pool, self.university_id, "rmit-city")
+        sem = asyncio.Semaphore(self._CONCURRENCY)
+        async with make_client() as client:
             tasks = [
-                _scrape_one(client, rp, url, self.university_id, campus_id, sem, self.check_robots)
-                for url in urls
+                self._safe_fetch(rp, url, client, campus_id, sem) for url in urls
             ]
-            results = await asyncio.gather(*tasks, return_exceptions=True)
+            return list(await asyncio.gather(*tasks))
 
-        courses = []
-        for r in results:
-            if isinstance(r, PermissionError):
-                raise r   # propagate so BaseScraper marks status as robots_blocked
-            elif isinstance(r, CourseData):
-                courses.append(r)
-            elif isinstance(r, Exception):
-                print(f"  rmit: page skipped — {r}")
-        return courses
+    async def _safe_fetch(
+        self,
+        rp: urllib.robotparser.RobotFileParser,
+        url: str,
+        client,
+        campus_id: str | None,
+        sem: asyncio.Semaphore,
+    ) -> tuple[str, CourseData | Exception | None]:
+        self.check_robots(rp, url)
+        try:
+            async with sem:
+                resp = await client.get(url)
+            if resp.status_code != 200:
+                print(f"  rmit: {resp.status_code} {url}")
+                return url, None
+            return url, await self._parse(url, resp.text, campus_id)
+        except PermissionError:
+            raise
+        except Exception as e:
+            return url, e
 
-
-async def _discover_urls(client) -> list[str]:
-    """Fetch sitemap.xml and return root-level UG course URLs."""
-    resp = await client.get(SITEMAP_URL)
-    resp.raise_for_status()
-    return [
-        m.group(1)
-        for m in re.finditer(r"<loc>(https://[^<]+)</loc>", resp.text)
-        if _UG_PREFIX in m.group(1) and len(m.group(1).split("/")) == _COURSE_DEPTH
-    ]
-
-
-async def _scrape_one(
-    client,
-    rp: urllib.robotparser.RobotFileParser,
-    url: str,
-    university_id: str,
-    campus_id: str | None,
-    sem: asyncio.Semaphore,
-    check_robots: Callable,
-) -> CourseData | None:
-    """Fetch a single course page and return a CourseData, or None if unusable."""
-    check_robots(rp, url)
-    async with sem:
-        resp = await client.get(url)
-    if resp.status_code != 200:
-        print(f"  rmit: {resp.status_code} {url}")
-        return None
-
-    meta = _parse_meta(resp.text)
-    name = meta.get("product_name")
-    if not name:
-        return None
-
-    mode = meta.get("learning_mode_domestic", "")
-    effective_campus_id = None if "online" in mode.lower() else campus_id
-
-    return CourseData(
-        university_id=university_id,
-        name=name,
-        source_url=url,
-        faculty=meta.get("college") or None,
-        campus_id=effective_campus_id,
-        degree_type="UG",
-        duration_years=_parse_duration(meta.get("duration_domestic")),
-        csp_available=_parse_csp(meta.get("fees_domestic")),
-        price_annual_csp_aud=None,   # RMIT does not publish CSP amounts
-        price_annual_dfee_aud=None,  # RMIT does not publish domestic full-fee amounts
-        atar_lowest_selection_rank=_parse_atar(meta.get("atar")),
-        atar_guaranteed=None,   # RMIT does not publish a separate guaranteed entry ATAR
-    )
+    async def _parse(
+        self,
+        url: str,
+        html: str,
+        campus_id: str | None = None,
+    ) -> CourseData | None:
+        meta = _parse_meta(html)
+        name = meta.get("product_name")
+        if not name:
+            return None
+        mode = meta.get("learning_mode_domestic", "")
+        effective_campus_id = None if "online" in mode.lower() else campus_id
+        atar_rank, atar_guaranteed = _parse_atar(meta.get("atar"))
+        return CourseData(
+            university_id=self.university_id,
+            name=name,
+            source_url=url,
+            faculty=meta.get("college") or None,
+            campus_id=effective_campus_id,
+            degree_type="UG",
+            duration_years=_parse_duration(meta.get("duration_domestic")),
+            csp_available=_parse_csp(meta.get("fees_domestic")),
+            price_annual_csp_aud=None,
+            price_annual_dfee_aud=None,
+            atar_lowest_selection_rank=atar_rank,
+            atar_guaranteed=atar_guaranteed,
+        )
 
 
 def _parse_meta(html: str) -> dict[str, str]:
@@ -107,12 +123,26 @@ def _parse_meta(html: str) -> dict[str, str]:
     }
 
 
-def _parse_atar(value: str | None) -> int | None:
-    """Parse 'ATAR 75.10*' -> 75."""
+def _parse_atar(value: str | None) -> tuple[int | None, int | None]:
+    """
+    Parse the 'atar' meta tag into (atar_lowest_selection_rank, atar_guaranteed).
+
+    Format: '2026 Guaranteed ATAR 70.00, ATAR 70.15*'
+    ATAR values are always <= 99.95; anything larger (e.g. a year) is not an ATAR.
+    """
     if not value:
-        return None
-    m = re.search(r"\d+(?:\.\d+)?", value)
-    return int(float(m.group())) if m else None
+        return None, None
+    guaranteed = None
+    m = re.search(r"Guaranteed ATAR\s+(\d+(?:\.\d+)?)", value, re.IGNORECASE)
+    if m:
+        guaranteed = int(float(m.group(1)))
+    m = re.search(r",\s*ATAR\s+(\d+(?:\.\d+)?)", value, re.IGNORECASE)
+    if m:
+        return int(float(m.group(1))), guaranteed
+    m = re.search(r"\bATAR\s+(\d+(?:\.\d+)?)", value, re.IGNORECASE)
+    if m:
+        return int(float(m.group(1))), guaranteed
+    return None, guaranteed
 
 
 def _parse_duration(value: str | None) -> float | None:
