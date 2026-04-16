@@ -99,8 +99,8 @@ A `universities` table is required. University is not just a field on `courses`.
 | price_annual_csp_aud | integer | Student contribution (annual). Null if no CSP places. |
 | price_annual_dfee_aud | integer | Full-fee domestic (annual). Null if not offered. |
 | csp_available | boolean | |
-| atar_guaranteed | integer | Guaranteed entry ATAR. Nullable. |
-| atar_lowest_selection_rank | integer | Actual lowest rank offered. Nullable. |
+| atar_guaranteed | integer | Guaranteed entry ATAR. Nullable. Max value 99 (ATAR scale is 0–99.95, stored as truncated integer). |
+| atar_lowest_selection_rank | integer | Actual lowest rank offered. Nullable. Max value 99 (same scale). |
 | prerequisites | jsonb | Array of strings e.g. `["English (any)", "Maths Methods"]` |
 | updated_at | timestamptz | |
 | created_at | timestamptz | |

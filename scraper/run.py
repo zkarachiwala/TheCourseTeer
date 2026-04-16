@@ -1,41 +1,44 @@
+"""Entry point for the course scraper.
+
+Usage:
+  uv run python run.py                        # resume all scrapers
+  uv run python run.py --university monash    # resume monash only
+  uv run python run.py --force                # reset all and re-scrape
+  uv run python run.py --force --university monash  # reset monash only
+"""
+import argparse
 import asyncio
-import os
 import sys
 
 from dotenv import load_dotenv
 
 from base_scraper import BaseScraper
-from db import get_pool, upsert_course
+from db import get_pool
+from monash import MonashScraper
 from rmit import RmitScraper
 
-# Register per-university scrapers here as they are implemented (issues #4-8).
-# Key is the university slug from the universities table.
 SCRAPERS: dict[str, type[BaseScraper]] = {
     "rmit": RmitScraper,
-    # "monash": MonashScraper,
-    # "uq": UqScraper,
-    # "usyd": UsydScraper,
-    # "unimelb": UnimelbScraper,
+    "monash": MonashScraper,
 }
 
 
-async def main() -> None:
+async def main(universities: list[str], force: bool) -> None:
     load_dotenv()
     pool = await get_pool()
 
-    if not SCRAPERS:
-        print("No scrapers registered. Add entries to SCRAPERS in run.py.")
+    targets = {k: v for k, v in SCRAPERS.items() if k in universities}
+    if not targets:
+        print(f"No scrapers found for: {universities}. Available: {list(SCRAPERS)}")
         await pool.close()
         return
 
-    for slug, scraper_class in SCRAPERS.items():
-        print(f"Running scraper: {slug}")
+    for slug, scraper_class in targets.items():
+        print(f"Running scraper: {slug}{' (force reset)' if force else ''}")
         scraper = scraper_class(pool, slug)
         try:
-            courses = await scraper.run()
-            for course in courses:
-                await upsert_course(pool, course)
-            print(f"  {slug}: {len(courses)} courses upserted")
+            count = await scraper.run(force=force)
+            print(f"  {slug}: {count} courses upserted")
         except PermissionError as e:
             print(f"  {slug}: skipped — {e}")
         except Exception as e:
@@ -45,6 +48,21 @@ async def main() -> None:
 
 
 if __name__ == "__main__":
-    # psycopg3 requires SelectorEventLoop; Windows defaults to ProactorEventLoop.
+    parser = argparse.ArgumentParser(description="Run university course scrapers")
+    parser.add_argument(
+        "--university",
+        action="append",
+        dest="universities",
+        metavar="SLUG",
+        help="Scraper slug to run (repeatable). Defaults to all.",
+    )
+    parser.add_argument(
+        "--force",
+        action="store_true",
+        help="Reset queue and re-run discovery for the target universities.",
+    )
+    args = parser.parse_args()
+
+    universities = args.universities or list(SCRAPERS)
     loop_factory = asyncio.SelectorEventLoop if sys.platform == "win32" else None
-    asyncio.run(main(), loop_factory=loop_factory)
+    asyncio.run(main(universities, args.force), loop_factory=loop_factory)

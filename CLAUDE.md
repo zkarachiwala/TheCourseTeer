@@ -43,7 +43,17 @@ gh issue comment N --repo zkarachiwala/TheCourseTeer --body "## Feature-dev deci
 ```
 If any answer changes the broader architecture, also update `planning/PLAN_REVIEW.md` and `planning/PLAN.md`.
 
-**Step 4 — After implementation, move to "In Review":**
+**Step 4 — When creating the PR, link it to the issue and add it to the project:**
+```bash
+# Create PR linked to the issue (replace N with issue number)
+gh pr create --title "..." --body "Closes #N" ...
+
+# Add the PR to the project board
+PR_ID=$(gh pr view --json id -q '.id')
+gh project item-add 5 --owner zkarachiwala --url $(gh pr view --json url -q '.url')
+```
+
+**Step 5 — After creating the PR, move the issue to "In Review":**
 ```bash
 gh project item-edit --project-id PVT_kwHOAedlmM4BUdpc --id $ITEM_ID --field-id PVTSSF_lAHOAedlmM4BUdpczhBlk6g --single-select-option-id df73e18b
 ```
@@ -88,9 +98,20 @@ Delegate to OpenCode for:
 - Iterating on AI re-mapping logic for the scraper
 - Any task where Gemini is rate-limited and Claude context should be preserved
 
+### Delegate to Claude Haiku when:
+The task is mechanical and needs Claude tooling (e.g. file access, subagent tool use), or Gemini is rate-limited. Invoke via Agent tool with `model: "haiku"`:
+
+- Generating boilerplate when Gemini is unavailable
+- Writing unit tests for a specified function or module
+- Scraper AI re-mapping fallback if Ollama is insufficient
+- Any mechanical task that requires Claude tool access but not Sonnet reasoning
+
+Model ID: `claude-haiku-4-5-20251001`
+
 ### Routing decision checklist
 Before starting any task, ask:
-1. Does this require understanding how multiple files relate? → Claude
-2. Is the task fully specified with clear inputs and outputs? → Gemini CLI
-3. Is this scraper/extraction work that should stay local? → OpenCode
-4. Is Gemini rate-limited today? → OpenCode as fallback
+1. Does this require understanding how multiple files relate? → Claude Sonnet (main session)
+2. Is the task well-specified and mechanical? → Gemini CLI (`gemini-2.5-flash`)
+3. Is this scraper/extraction work that should stay local? → OpenCode + Ollama
+4. Is Gemini rate-limited and Claude tooling needed? → Claude Haiku (subagent)
+5. Is Gemini rate-limited and no Claude tooling needed? → OpenCode as fallback
