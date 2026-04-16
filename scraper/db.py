@@ -82,6 +82,7 @@ async def get_campus_map(
     return {row[0]: str(row[1]) for row in rows}
 
 
+
 async def upsert_course(pool: AsyncConnectionPool, course: CourseData) -> None:
     """Insert or update a course row, keyed on (university_id, source_url)."""
     async with pool.connection() as conn:
@@ -127,6 +128,142 @@ async def upsert_course(pool: AsyncConnectionPool, course: CourseData) -> None:
                 course.atar_lowest_selection_rank,
                 Jsonb(course.prerequisites) if course.prerequisites is not None else None,
             ),
+        )
+
+
+async def get_or_create_run(
+    pool: AsyncConnectionPool, university_id: str, force: bool = False
+) -> dict:
+    """Return the current in_progress run, or create a new one.
+
+    If force=True, delete all scrape_queue rows for this university first,
+    then always create a new run.
+    """
+    async with pool.connection() as conn:
+        if force:
+            await conn.execute(
+                "DELETE FROM scrape_queue WHERE university_id = %s", (university_id,)
+            )
+        else:
+            async with conn.cursor(row_factory=dict_row) as cur:
+                await cur.execute(
+                    """
+                    SELECT * FROM scrape_runs
+                    WHERE university_id = %s AND status = 'in_progress'
+                    ORDER BY run_number DESC LIMIT 1
+                    """,
+                    (university_id,),
+                )
+                row = await cur.fetchone()
+            if row:
+                return dict(row)
+
+        async with conn.cursor(row_factory=dict_row) as cur:
+            await cur.execute(
+                """
+                INSERT INTO scrape_runs (university_id, run_number, forced)
+                SELECT %s, COALESCE(MAX(run_number), 0) + 1, %s
+                FROM scrape_runs WHERE university_id = %s
+                RETURNING *
+                """,
+                (university_id, force, university_id),
+            )
+            return dict(await cur.fetchone())
+
+
+async def mark_discovery_complete(pool: AsyncConnectionPool, run_id: str) -> None:
+    """Mark discovery as complete for this run."""
+    async with pool.connection() as conn:
+        await conn.execute(
+            "UPDATE scrape_runs SET discovery_complete = true WHERE id = %s",
+            (run_id,),
+        )
+
+
+async def enqueue_urls(
+    pool: AsyncConnectionPool, university_id: str, run_id: str, urls: list[str]
+) -> None:
+    """Insert URLs as pending queue entries. Skips duplicates (ON CONFLICT DO NOTHING)."""
+    if not urls:
+        return
+    async with pool.connection() as conn:
+        async with conn.cursor() as cur:
+            await cur.executemany(
+                """
+                INSERT INTO scrape_queue (university_id, discovered_run_id, url)
+                VALUES (%s, %s, %s)
+                ON CONFLICT (university_id, url) DO NOTHING
+                """,
+                [(university_id, run_id, url) for url in urls],
+            )
+
+
+async def get_pending_urls(
+    pool: AsyncConnectionPool, university_id: str, max_attempts: int = 3
+) -> list[str]:
+    """Return pending URLs for this university where attempt_count < max_attempts."""
+    async with pool.connection() as conn:
+        async with conn.cursor() as cur:
+            await cur.execute(
+                """
+                SELECT url FROM scrape_queue
+                WHERE university_id = %s
+                  AND status = 'pending'
+                  AND attempt_count < %s
+                ORDER BY created_at
+                """,
+                (university_id, max_attempts),
+            )
+            rows = await cur.fetchall()
+    return [row[0] for row in rows]
+
+
+async def mark_url_complete(
+    pool: AsyncConnectionPool, university_id: str, url: str, run_id: str
+) -> None:
+    """Mark a queue entry as complete."""
+    async with pool.connection() as conn:
+        await conn.execute(
+            """
+            UPDATE scrape_queue
+            SET status = 'complete', completed_run_id = %s
+            WHERE university_id = %s AND url = %s
+            """,
+            (run_id, university_id, url),
+        )
+
+
+async def mark_url_failed(
+    pool: AsyncConnectionPool,
+    university_id: str,
+    url: str,
+    error: str,
+    max_attempts: int = 3,
+) -> None:
+    """Increment attempt count; set status='failed' once max_attempts is reached."""
+    async with pool.connection() as conn:
+        await conn.execute(
+            """
+            UPDATE scrape_queue
+            SET attempt_count = attempt_count + 1,
+                last_error = %s,
+                status = CASE WHEN attempt_count + 1 >= %s THEN 'failed' ELSE 'pending' END
+            WHERE university_id = %s AND url = %s
+            """,
+            (error, max_attempts, university_id, url),
+        )
+
+
+async def complete_run(pool: AsyncConnectionPool, run_id: str) -> None:
+    """Mark a run as complete."""
+    async with pool.connection() as conn:
+        await conn.execute(
+            """
+            UPDATE scrape_runs
+            SET status = 'complete', completed_at = now()
+            WHERE id = %s
+            """,
+            (run_id,),
         )
 
 
