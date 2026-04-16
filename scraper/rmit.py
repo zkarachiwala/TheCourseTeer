@@ -136,9 +136,11 @@ def _parse_atar(value: str | None) -> tuple[int | None, int | None]:
     m = re.search(r"Guaranteed ATAR\s+(\d+(?:\.\d+)?)", value, re.IGNORECASE)
     if m:
         guaranteed = int(float(m.group(1)))
+    # Selection rank follows a comma when a guaranteed ATAR is also present.
     m = re.search(r",\s*ATAR\s+(\d+(?:\.\d+)?)", value, re.IGNORECASE)
     if m:
         return int(float(m.group(1))), guaranteed
+    # Only one ATAR value present — treat it as the selection rank.
     m = re.search(r"\bATAR\s+(\d+(?:\.\d+)?)", value, re.IGNORECASE)
     if m:
         return int(float(m.group(1))), guaranteed
