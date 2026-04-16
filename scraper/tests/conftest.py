@@ -5,9 +5,9 @@ fixture deletes test rows before and after each test to avoid interference.
 """
 import asyncio
 import os
+import sys
 from pathlib import Path
 
-import pytest
 import pytest_asyncio
 from dotenv import load_dotenv
 from psycopg.rows import dict_row
@@ -16,14 +16,8 @@ from psycopg_pool import AsyncConnectionPool
 # Load .env from project root (one level up from scraper/)
 load_dotenv(Path(__file__).parent.parent.parent / ".env")
 
-
-@pytest.fixture(scope="session")
-def event_loop_policy():
-    # psycopg3 requires SelectorEventLoop on Windows (ProactorEventLoop is the default)
-    import sys
-    if sys.platform == "win32":
-        return asyncio.WindowsSelectorEventLoopPolicy()
-    return asyncio.DefaultEventLoopPolicy()
+if sys.platform == "win32":
+    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
 
 @pytest_asyncio.fixture(scope="session")

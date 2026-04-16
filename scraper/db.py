@@ -142,6 +142,10 @@ async def get_or_create_run(
     async with pool.connection() as conn:
         if force:
             await conn.execute(
+                "UPDATE scrape_runs SET status = 'cancelled' WHERE university_id = %s AND status = 'in_progress'",
+                (university_id,),
+            )
+            await conn.execute(
                 "DELETE FROM scrape_queue WHERE university_id = %s", (university_id,)
             )
         else:
