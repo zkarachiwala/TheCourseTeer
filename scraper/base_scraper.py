@@ -72,7 +72,6 @@ class BaseScraper(ABC):
             completed = 0
             for url, result in pairs:
                 if isinstance(result, PermissionError):
-                    await update_university_status(self.pool, university_id, "robots_blocked")
                     raise result
                 elif isinstance(result, Exception):
                     await mark_url_failed(self.pool, university_id, url, str(result), MAX_ATTEMPTS)
