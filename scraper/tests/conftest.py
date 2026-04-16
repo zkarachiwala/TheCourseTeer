@@ -19,7 +19,10 @@ load_dotenv(Path(__file__).parent.parent.parent / ".env")
 
 @pytest.fixture(scope="session")
 def event_loop_policy():
-    # psycopg3 requires SelectorEventLoop on Windows
+    # psycopg3 requires SelectorEventLoop on Windows (ProactorEventLoop is the default)
+    import sys
+    if sys.platform == "win32":
+        return asyncio.WindowsSelectorEventLoopPolicy()
     return asyncio.DefaultEventLoopPolicy()
 
 
@@ -36,7 +39,7 @@ async def pool():
     await p.close()
 
 
-@pytest_asyncio.fixture
+@pytest_asyncio.fixture(scope="session")
 async def university_id(pool):
     """Return the UUID of the 'monash' university row (seeded in migrations)."""
     async with pool.connection() as conn:
