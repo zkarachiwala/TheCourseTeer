@@ -26,6 +26,22 @@ The system employs a hybrid approach to data collection, prioritizing efficiency
 - **API First:** The engine will first check for publicly available APIs or structured data feeds (JSON/LD, Schema.org metadata).
 - **Government Databases:** Cross-reference with CRICOS (Commonwealth Register of Institutions and Courses for Overseas Students) or the Department of Education datasets where applicable.
 
+### 2.3 Scraper Execution Options
+
+The scraper is decoupled from app hosting. It runs independently and writes directly to Supabase. FastAPI scraper management endpoints are not required — trigger, logs, and status are handled as described below.
+
+Given the expected run frequency (annually for handbook updates), options ranked by preference:
+
+| Option | Cost | Trigger | Logs | Notes |
+|---|---|---|---|---|
+| **GitHub Actions** (recommended) | Free (public repo) / 2,000 min/month free (private) | Manual (`workflow_dispatch`) or cron schedule | Actions run log | No infrastructure to maintain. Playwright installs cleanly on Ubuntu runners. |
+| **Local machine** | Free | Manual | Terminal | Simplest for infrequent runs. No cloud dependency. |
+| **Azure Container Apps** (consumption plan) | Free allowance: 180k vCPU-sec/month | Azure scheduler or manual | Container log stream | Use if automation or team access is needed without GitHub Actions. |
+
+For all options, scraper status is visible in the Next.js health dashboard via the `scraper_status` and `last_scraped_at` columns in the `universities` table.
+
+**LLM note:** GitHub Actions and Azure Container Apps have no local Ollama available. Selector re-mapping failures fall through to Claude Haiku (API cost is negligible for infrequent runs). Running locally keeps Ollama available.
+
 ### 2.2 AI-Adaptive Scraping (The "Self-Healing" Scraper)
 - **Technology:** Playwright (Python). Not Puppeteer.
 - **LLM:** Local/open-source model preferred to minimize cost (investigate Ollama + Mistral/Llama 3 as first option). Fallback: Claude Haiku (`claude-haiku-4-5-20251001`). BERT/fine-tuned models dropped — no training data available.
@@ -40,8 +56,9 @@ The system employs a hybrid approach to data collection, prioritizing efficiency
 ### 3.1 Infrastructure
 - **Local dev:** Docker Compose with Postgres 17 + Adminer (web DB browser on port 8080).
 - **Migrations:** dbmate. Plain SQL files in `db/migrations/`. Run with `scripts/migrate.bat` (Windows) or `bash scripts/migrate.sh`.
-- **Production:** Supabase (managed Postgres, free tier for MVP). Migrate to RDS if scale demands it.
-- **Scraper worker:** Long-running Python process on a VPS or Railway worker. Not serverless (Playwright requires a real browser).
+- **Production database:** Supabase (managed Postgres, free tier for MVP). Migrate to RDS if scale demands it.
+- **App hosting:** Azure Static Web Apps (free tier). Next.js App Router with hybrid SSR via built-in serverless runtime.
+- **Scraper:** Decoupled from app hosting. Runs independently on demand. See Section 2.3 for execution options.
 
 ### 3.2 Universities Table
 A `universities` table is required. University is not just a field on `courses`.
@@ -82,8 +99,8 @@ A `universities` table is required. University is not just a field on `courses`.
 | price_annual_csp_aud | integer | Student contribution (annual). Null if no CSP places. |
 | price_annual_dfee_aud | integer | Full-fee domestic (annual). Null if not offered. |
 | csp_available | boolean | |
-| atar_guaranteed | integer | Guaranteed entry ATAR. Nullable. |
-| atar_lowest_selection_rank | integer | Actual lowest rank offered. Nullable. |
+| atar_guaranteed | integer | Guaranteed entry ATAR. Nullable. Max value 99 (ATAR scale is 0–99.95, stored as truncated integer). |
+| atar_lowest_selection_rank | integer | Actual lowest rank offered. Nullable. Max value 99 (same scale). |
 | prerequisites | jsonb | Array of strings e.g. `["English (any)", "Maths Methods"]` |
 | updated_at | timestamptz | |
 | created_at | timestamptz | |
@@ -116,9 +133,9 @@ Created at schema setup even if empty in MVP.
 - **Theming:** `next-themes` for System/Dark/Light mode.
 
 ### 4.2 Backend / Scraper Management
-- **Scraper:** Python service (Playwright + FastAPI). FastAPI exposes scraper management endpoints (trigger run, view status, view logs).
-- **Read path:** Next.js Server Components -> Postgres (via ORM, e.g. Drizzle or Prisma).
-- **Write path:** Python scraper -> Postgres directly.
+- **Scraper:** Standalone Python service (Playwright). Runs independently of the app — no FastAPI layer required. See Section 2.3 for execution options.
+- **Read path:** Next.js Server Components -> Supabase Postgres (via ORM, e.g. Drizzle or Prisma).
+- **Write path:** Python scraper -> Supabase Postgres directly.
 
 ### 4.3 Key Features
 - **Search & Filter:** Multi-select filters for Faculty, Campus, Degree Type, and ATAR ranges.
