@@ -80,9 +80,11 @@ A `universities` table is required. University is not just a field on `courses`.
 | id | uuid | PK |
 | university_id | uuid | FK -> universities ON DELETE CASCADE |
 | name | text | e.g. "City Campus", "Clayton" |
+| slug | text | URL-safe identifier |
 | address | text | Full street address |
 | latitude | numeric | For map display (mapping service integration deferred) |
 | longitude | numeric | For map display (mapping service integration deferred) |
+| is_online | boolean | True for virtual/online campuses |
 
 ### 3.4 Courses Table
 
@@ -92,18 +94,28 @@ A `universities` table is required. University is not just a field on `courses`.
 | university_id | uuid | FK -> universities |
 | name | text | |
 | faculty | text | |
-| campus_id | uuid | FK -> campuses ON DELETE SET NULL. NULL means online or no fixed campus. |
 | degree_type | text | UG or PG |
 | duration_years | numeric | Standard duration |
 | source_url | text | Direct link to course page |
 | price_annual_csp_aud | integer | Student contribution (annual). Null if no CSP places. |
 | price_annual_dfee_aud | integer | Full-fee domestic (annual). Null if not offered. |
 | csp_available | boolean | |
-| atar_guaranteed | integer | Guaranteed entry ATAR. Nullable. Max value 99 (ATAR scale is 0–99.95, stored as truncated integer). |
-| atar_lowest_selection_rank | integer | Actual lowest rank offered. Nullable. Max value 99 (same scale). |
 | prerequisites | jsonb | Array of strings e.g. `["English (any)", "Maths Methods"]` |
 | updated_at | timestamptz | |
 | created_at | timestamptz | |
+
+### 3.4a Course Campuses Table
+
+A course may be offered at multiple campuses. ATAR requirements can differ per campus.
+
+| Field | Type | Notes |
+|---|---|---|
+| course_id | uuid | FK -> courses ON DELETE CASCADE |
+| campus_id | uuid | FK -> campuses ON DELETE CASCADE |
+| atar_guaranteed | integer | Guaranteed entry ATAR for this campus. Nullable. |
+| atar_lowest_selection_rank | integer | Lowest selection rank for this campus. Nullable. |
+
+Primary key: `(course_id, campus_id)`.
 
 ### 3.5 Course Prerequisites Table (UG -> PG pathways)
 Created at schema setup even if empty in MVP.
@@ -147,7 +159,9 @@ Created at schema setup even if empty in MVP.
 
 ### Phase 1: MVP
 - Database schema setup (all tables including `course_prerequisites` and `scraper_configs`).
-- Scraper for 5 MVP universities: University of Melbourne, University of Sydney, RMIT, Monash University, University of Queensland.
+- Scraper for Victorian universities: RMIT, Monash University, University of Melbourne, La Trobe, Deakin, Federation University, Swinburne, Victoria University.
+- Multi-campus model: courses link to campuses via `course_campuses` join table; ATAR stored per campus.
+- One "Online" campus per university (flagged `is_online = true`).
 - Per-university scraping approach, URL patterns, and data availability: see [UNIVERSITIES.md](UNIVERSITIES.md).
 - robots.txt compliance built in from the start.
 - Basic search interface with Dark/Light/System mode.

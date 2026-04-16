@@ -18,7 +18,7 @@ from playwright.async_api import BrowserContext
 from base_scraper import BaseScraper
 from browser import browser_context
 from db import get_campus_map
-from models import CourseData
+from models import CampusLink, CourseData
 
 LISTING_URL = "https://www.monash.edu/study/courses/find-a-course"
 _BASE_URL = "https://www.monash.edu"
@@ -128,8 +128,6 @@ async def _fetch_one(
         try:
             await page.goto(url, wait_until="domcontentloaded", timeout=60000)
             html = await page.content()
-        except PermissionError:
-            raise
         except Exception as e:
             return url, e
         finally:
@@ -156,24 +154,21 @@ def _parse_course(
         m = re.search(r"-([a-z])\d{4}$", url)
         if m:
             degree_type = "UG" if m.group(1) == "b" else "PG"
-    campus_id = _resolve_campus(table.get("Location", ""), campus_map)
     duration = _parse_duration(table.get("Duration", ""))
     csp_fee, dfee = _parse_fees(html)
-    atar_rank, atar_guaranteed = _parse_atar(soup)
+    campuses = _build_campus_links(soup, table.get("Location", ""), campus_map)
 
     return CourseData(
         university_id=university_id,
         name=name,
         source_url=url,
         faculty=None,
-        campus_id=campus_id,
+        campuses=campuses,
         degree_type=degree_type,
         duration_years=duration,
         price_annual_csp_aud=csp_fee,
         price_annual_dfee_aud=dfee,
         csp_available=csp_fee is not None,
-        atar_lowest_selection_rank=atar_rank,
-        atar_guaranteed=atar_guaranteed,
     )
 
 
@@ -217,16 +212,43 @@ def _parse_degree_type(qualification: str) -> str | None:
     return None
 
 
-def _resolve_campus(location: str, campus_map: dict[str, str]) -> str | None:
-    """Extract campus name from location string and resolve to a DB uuid."""
-    m = re.search(r"on.campus at ([^:,]+)", location, re.IGNORECASE)
-    if not m:
-        return None
-    raw = m.group(1).strip()
-    for name, campus_id in campus_map.items():
-        if raw.lower() == name.lower():
-            return campus_id
-    return None
+def _build_campus_links(
+    soup: BeautifulSoup, location: str, campus_map: dict[str, str]
+) -> list[CampusLink]:
+    """Build CampusLink list with per-campus ATAR extracted from campus sections."""
+    links: list[CampusLink] = []
+
+    for raw in re.findall(r"on.campus at ([^,]+)", location, re.IGNORECASE):
+        raw = raw.strip()
+        campus_id = next(
+            (cid for name, cid in campus_map.items() if name.lower() == raw.lower()),
+            None,
+        )
+        if campus_id is None:
+            print(f"  monash: unrecognised campus '{raw}' in location '{location}'")
+            continue
+        atar_rank, atar_guaranteed = _parse_atar_in_section(soup, raw)
+        links.append(CampusLink(
+            campus_id=campus_id,
+            atar_guaranteed=atar_guaranteed,
+            atar_lowest_selection_rank=atar_rank,
+        ))
+
+    if "online" in location.lower():
+        online_id = campus_map.get("Online")
+        if online_id:
+            links.append(CampusLink(campus_id=online_id))
+
+    return links
+
+
+def _parse_atar_in_section(
+    soup: BeautifulSoup, campus_name: str
+) -> tuple[int | None, int | None]:
+    """Extract ATAR from the campus-specific page section; fall back to global."""
+    slug = campus_name.lower().replace(" ", "-")
+    section = soup.find(id=slug) or soup.find(id=campus_name.lower())
+    return _parse_atar(section if section else soup)
 
 
 def _parse_duration(text: str) -> float | None:
@@ -251,14 +273,14 @@ def _parse_fees(html: str) -> tuple[int | None, int | None]:
     return csp, dfee
 
 
-def _parse_atar(soup: BeautifulSoup) -> tuple[int | None, int | None]:
+def _parse_atar(tag) -> tuple[int | None, int | None]:
     """
     Return (atar_lowest_selection_rank, atar_guaranteed) from course-page__subject-req-item
-    elements. Values are integers (fractional parts truncated).
+    elements within tag. Values are integers (fractional parts truncated).
     """
     atar_rank: int | None = None
     atar_guaranteed: int | None = None
-    for div in soup.find_all("div", class_="course-page__subject-req-item"):
+    for div in tag.find_all("div", class_="course-page__subject-req-item"):
         h2 = div.find("h2")
         if not h2:
             continue
