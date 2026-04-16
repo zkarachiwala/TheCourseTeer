@@ -38,14 +38,9 @@ class RmitScraper(BaseScraper):
     async def scrape_url(
         self, rp: urllib.robotparser.RobotFileParser, url: str
     ) -> CourseData | None:
-        """Fetch and parse one RMIT course page."""
-        self.check_robots(rp, url)
-        async with make_client() as client:
-            resp = await client.get(url)
-        if resp.status_code != 200:
-            print(f"  rmit: {resp.status_code} {url}")
-            return None
-        return await self._parse(url, resp.text)
+        # Not used directly — _process_batch handles all fetching with a shared
+        # httpx client. This satisfies the abstract method requirement.
+        raise NotImplementedError("RmitScraper fetches via _process_batch")
 
     async def _process_batch(
         self,
@@ -82,8 +77,6 @@ class RmitScraper(BaseScraper):
                 print(f"  rmit: {resp.status_code} {url}")
                 return url, None
             return url, await self._parse(url, resp.text, city_id, online_id)
-        except PermissionError:
-            raise
         except Exception as e:
             return url, e
 

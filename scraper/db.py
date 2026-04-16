@@ -73,58 +73,57 @@ async def get_campus_map(
 async def upsert_course(pool: AsyncConnectionPool, course: CourseData) -> None:
     """Insert or update a course row and replace its campus associations."""
     async with pool.connection() as conn:
-        async with conn.cursor() as cur:
-            await cur.execute(
-                """
-                INSERT INTO courses (
-                    university_id, name, source_url, faculty,
-                    degree_type, duration_years,
-                    price_annual_csp_aud, price_annual_dfee_aud, csp_available,
-                    prerequisites
-                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-                ON CONFLICT (university_id, source_url) DO UPDATE SET
-                    name                 = EXCLUDED.name,
-                    faculty              = EXCLUDED.faculty,
-                    degree_type          = EXCLUDED.degree_type,
-                    duration_years       = EXCLUDED.duration_years,
-                    price_annual_csp_aud = EXCLUDED.price_annual_csp_aud,
-                    price_annual_dfee_aud= EXCLUDED.price_annual_dfee_aud,
-                    csp_available        = EXCLUDED.csp_available,
-                    prerequisites        = EXCLUDED.prerequisites,
-                    updated_at           = now()
-                RETURNING id
-                """,
-                (
-                    course.university_id,
-                    course.name,
-                    course.source_url,
-                    course.faculty,
-                    course.degree_type,
-                    course.duration_years,
-                    course.price_annual_csp_aud,
-                    course.price_annual_dfee_aud,
-                    course.csp_available,
-                    Jsonb(course.prerequisites) if course.prerequisites is not None else None,
-                ),
-            )
-            course_id = str((await cur.fetchone())[0])
-
-        await conn.execute(
-            "DELETE FROM course_campuses WHERE course_id = %s", (course_id,)
-        )
-        if course.campuses:
+        async with conn.transaction():
             async with conn.cursor() as cur:
-                await cur.executemany(
+                await cur.execute(
                     """
-                    INSERT INTO course_campuses
-                        (course_id, campus_id, atar_guaranteed, atar_lowest_selection_rank)
-                    VALUES (%s, %s, %s, %s)
+                    INSERT INTO courses (
+                        university_id, name, source_url, faculty,
+                        degree_type, duration_years,
+                        price_annual_csp_aud, price_annual_dfee_aud, csp_available,
+                        prerequisites
+                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    ON CONFLICT (university_id, source_url) DO UPDATE SET
+                        name                 = EXCLUDED.name,
+                        faculty              = EXCLUDED.faculty,
+                        degree_type          = EXCLUDED.degree_type,
+                        duration_years       = EXCLUDED.duration_years,
+                        price_annual_csp_aud = EXCLUDED.price_annual_csp_aud,
+                        price_annual_dfee_aud= EXCLUDED.price_annual_dfee_aud,
+                        csp_available        = EXCLUDED.csp_available,
+                        prerequisites        = EXCLUDED.prerequisites,
+                        updated_at           = now()
+                    RETURNING id
                     """,
-                    [
-                        (course_id, cl.campus_id, cl.atar_guaranteed, cl.atar_lowest_selection_rank)
-                        for cl in course.campuses
-                    ],
+                    (
+                        course.university_id,
+                        course.name,
+                        course.source_url,
+                        course.faculty,
+                        course.degree_type,
+                        course.duration_years,
+                        course.price_annual_csp_aud,
+                        course.price_annual_dfee_aud,
+                        course.csp_available,
+                        Jsonb(course.prerequisites) if course.prerequisites is not None else None,
+                    ),
                 )
+                course_id = str((await cur.fetchone())[0])
+                await cur.execute(
+                    "DELETE FROM course_campuses WHERE course_id = %s", (course_id,)
+                )
+                if course.campuses:
+                    await cur.executemany(
+                        """
+                        INSERT INTO course_campuses
+                            (course_id, campus_id, atar_guaranteed, atar_lowest_selection_rank)
+                        VALUES (%s, %s, %s, %s)
+                        """,
+                        [
+                            (course_id, cl.campus_id, cl.atar_guaranteed, cl.atar_lowest_selection_rank)
+                            for cl in course.campuses
+                        ],
+                    )
 
 
 async def get_or_create_run(

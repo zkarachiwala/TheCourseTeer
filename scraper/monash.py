@@ -128,8 +128,6 @@ async def _fetch_one(
         try:
             await page.goto(url, wait_until="domcontentloaded", timeout=60000)
             html = await page.content()
-        except PermissionError:
-            raise
         except Exception as e:
             return url, e
         finally:
@@ -227,6 +225,7 @@ def _build_campus_links(
             None,
         )
         if campus_id is None:
+            print(f"  monash: unrecognised campus '{raw}' in location '{location}'")
             continue
         atar_rank, atar_guaranteed = _parse_atar_in_section(soup, raw)
         links.append(CampusLink(
