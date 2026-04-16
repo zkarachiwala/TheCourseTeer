@@ -31,64 +31,61 @@ _CONCURRENCY = 3
 class MonashScraper(BaseScraper):
     """Scraper for Monash University. Uses Playwright to bypass Cloudflare."""
 
-    async def scrape(self, rp: urllib.robotparser.RobotFileParser) -> list[CourseData]:
-        campus_map = await get_campus_map(self.pool, self.university_id)
+    _CONCURRENCY = _CONCURRENCY
 
-        # Playwright must run in a separate thread with its own event loop on Windows.
+    async def discover_urls(
+        self, rp: urllib.robotparser.RobotFileParser
+    ) -> list[str]:
+        """Fetch the listing page via Playwright and return all degree-course URLs."""
         loop = asyncio.get_running_loop()
         check_robots = self.check_robots
-        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
-            url_html_pairs: list[tuple[str, str]] = await loop.run_in_executor(
-                executor,
-                lambda: asyncio.run(_playwright_fetch_all(rp, check_robots)),
+        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as ex:
+            return await loop.run_in_executor(
+                ex,
+                lambda: asyncio.run(_playwright_discover(rp, check_robots)),
             )
 
-        courses = []
-        for url, html in url_html_pairs:
-            c = _parse_course(html, url, self.university_id, campus_map)
-            if c:
-                courses.append(c)
-        return courses
+    async def scrape_url(
+        self, rp: urllib.robotparser.RobotFileParser, url: str
+    ) -> CourseData | None:
+        # Not used directly — _process_batch handles all Playwright fetching
+        # in a single browser session. This satisfies the abstract method requirement.
+        raise NotImplementedError("MonashScraper fetches via _process_batch")
+
+    async def _process_batch(
+        self,
+        rp: urllib.robotparser.RobotFileParser,
+        urls: list[str],
+    ) -> list[tuple[str, CourseData | Exception | None]]:
+        """Run all URL fetches in one Playwright browser session (thread executor)."""
+        if not urls:
+            return []
+        campus_map = await get_campus_map(self.pool, self.university_id)
+        loop = asyncio.get_running_loop()
+        check_robots = self.check_robots
+        university_id = self.university_id
+        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as ex:
+            return await loop.run_in_executor(
+                ex,
+                lambda: asyncio.run(
+                    _playwright_fetch_batch(rp, check_robots, urls, university_id, campus_map)
+                ),
+            )
 
 
-async def _playwright_fetch_all(
-    rp: urllib.robotparser.RobotFileParser,
-    check_robots: Callable,
-) -> list[tuple[str, str]]:
-    """
-    Run inside asyncio.run() in a thread. Fetches listing page + all course pages
-    via Playwright. Returns list of (url, html) pairs for successful fetches.
-    """
-    async with browser_context() as ctx:
-        urls = await _discover_urls(ctx, rp, check_robots)
-        sem = asyncio.Semaphore(_CONCURRENCY)
-        tasks = [_fetch_page(ctx, url, rp, check_robots, sem) for url in urls]
-        results = await asyncio.gather(*tasks, return_exceptions=True)
-
-    pairs: list[tuple[str, str]] = []
-    for r in results:
-        if isinstance(r, PermissionError):
-            raise r  # propagate so BaseScraper marks robots_blocked
-        elif isinstance(r, tuple):
-            pairs.append(r)
-        elif isinstance(r, Exception):
-            print(f"  monash: page skipped — {r}")
-    return pairs
-
-
-async def _discover_urls(
-    ctx: BrowserContext,
+async def _playwright_discover(
     rp: urllib.robotparser.RobotFileParser,
     check_robots: Callable,
 ) -> list[str]:
-    """Load the course listing page and return degree-course URLs."""
-    check_robots(rp, LISTING_URL)
-    page = await ctx.new_page()
-    try:
-        await page.goto(LISTING_URL, wait_until="networkidle", timeout=30000)
-        html = await page.content()
-    finally:
-        await page.close()
+    """Run inside asyncio.run() in a thread. Fetches listing page, returns course URLs."""
+    async with browser_context() as ctx:
+        check_robots(rp, LISTING_URL)
+        page = await ctx.new_page()
+        try:
+            await page.goto(LISTING_URL, wait_until="domcontentloaded", timeout=30000)
+            html = await page.content()
+        finally:
+            await page.close()
 
     seen: set[str] = set()
     for m in re.finditer(
@@ -101,23 +98,41 @@ async def _discover_urls(
     return list(seen)
 
 
-async def _fetch_page(
-    ctx: BrowserContext,
-    url: str,
+async def _playwright_fetch_batch(
     rp: urllib.robotparser.RobotFileParser,
     check_robots: Callable,
+    urls: list[str],
+    university_id: str,
+    campus_map: dict[str, str],
+) -> list[tuple[str, CourseData | Exception | None]]:
+    """Run inside asyncio.run() in a thread. Fetches all URLs, returns (url, result) pairs."""
+    async with browser_context() as ctx:
+        sem = asyncio.Semaphore(_CONCURRENCY)
+        tasks = [_fetch_one(ctx, rp, check_robots, url, university_id, campus_map, sem) for url in urls]
+        return list(await asyncio.gather(*tasks))
+
+
+async def _fetch_one(
+    ctx: BrowserContext,
+    rp: urllib.robotparser.RobotFileParser,
+    check_robots: Callable,
+    url: str,
+    university_id: str,
+    campus_map: dict[str, str],
     sem: asyncio.Semaphore,
-) -> tuple[str, str]:
-    """Fetch a single course page and return (url, html)."""
+) -> tuple[str, CourseData | Exception | None]:
     check_robots(rp, url)
     async with sem:
+        await asyncio.sleep(2)
         page = await ctx.new_page()
         try:
-            await page.goto(url, wait_until="networkidle", timeout=30000)
+            await page.goto(url, wait_until="domcontentloaded", timeout=60000)
             html = await page.content()
+        except Exception as e:
+            return url, e
         finally:
             await page.close()
-    return url, html
+    return url, _parse_course(html, url, university_id, campus_map)
 
 
 def _parse_course(
@@ -136,7 +151,6 @@ def _parse_course(
     qualification = table.get("Qualification", "")
     degree_type = _parse_degree_type(qualification)
     if degree_type is None:
-        # Fallback: infer from URL code prefix (b = bachelor/UG, others = PG)
         m = re.search(r"-([a-z])\d{4}$", url)
         if m:
             degree_type = "UG" if m.group(1) == "b" else "PG"
@@ -149,7 +163,7 @@ def _parse_course(
         university_id=university_id,
         name=name,
         source_url=url,
-        faculty=None,  # not published on Monash course pages
+        faculty=None,
         campus_id=campus_id,
         degree_type=degree_type,
         duration_years=duration,
@@ -203,7 +217,6 @@ def _parse_degree_type(qualification: str) -> str | None:
 
 def _resolve_campus(location: str, campus_map: dict[str, str]) -> str | None:
     """Extract campus name from location string and resolve to a DB uuid."""
-    # "On-campus at Caulfield: Full time & part time" -> "Caulfield"
     m = re.search(r"on.campus at ([^:,]+)", location, re.IGNORECASE)
     if not m:
         return None
