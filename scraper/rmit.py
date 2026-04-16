@@ -15,6 +15,8 @@ _UG_PREFIX = "/study-with-us/levels-of-study/undergraduate-study/"
 # Root course URLs split to exactly 8 segments.
 _COURSE_DEPTH = 8
 _CONCURRENCY = 5
+# Maps RMIT's location_domestic values to campus names in the DB.
+_LOCATION_MAP = {"Melbourne City": "City Campus"}
 
 
 class RmitScraper(BaseScraper):
@@ -51,12 +53,10 @@ class RmitScraper(BaseScraper):
         if not urls:
             return []
         campus_map = await get_campus_map(self.pool, self.university_id)
-        city_id = campus_map.get("City Campus")
-        online_id = campus_map.get("Online")
         sem = asyncio.Semaphore(self._CONCURRENCY)
         async with make_client() as client:
             tasks = [
-                self._safe_fetch(rp, url, client, city_id, online_id, sem) for url in urls
+                self._safe_fetch(rp, url, client, campus_map, sem) for url in urls
             ]
             return list(await asyncio.gather(*tasks))
 
@@ -65,8 +65,7 @@ class RmitScraper(BaseScraper):
         rp: urllib.robotparser.RobotFileParser,
         url: str,
         client,
-        city_id: str | None,
-        online_id: str | None,
+        campus_map: dict[str, str],
         sem: asyncio.Semaphore,
     ) -> tuple[str, CourseData | Exception | None]:
         self.check_robots(rp, url)
@@ -76,7 +75,7 @@ class RmitScraper(BaseScraper):
             if resp.status_code != 200:
                 print(f"  rmit: {resp.status_code} {url}")
                 return url, None
-            return url, await self._parse(url, resp.text, city_id, online_id)
+            return url, await self._parse(url, resp.text, campus_map)
         except Exception as e:
             return url, e
 
@@ -84,8 +83,7 @@ class RmitScraper(BaseScraper):
         self,
         url: str,
         html: str,
-        city_id: str | None = None,
-        online_id: str | None = None,
+        campus_map: dict[str, str],
     ) -> CourseData | None:
         meta = _parse_meta(html)
         name = meta.get("product_name")
@@ -93,17 +91,13 @@ class RmitScraper(BaseScraper):
             return None
         mode = meta.get("learning_mode_domestic", "")
         atar_rank, atar_guaranteed = _parse_atar(meta.get("atar"))
-
-        if "online" in mode.lower():
-            campuses = [CampusLink(campus_id=online_id)] if online_id else []
-        else:
-            campuses = [
-                CampusLink(
-                    campus_id=city_id,
-                    atar_guaranteed=atar_guaranteed,
-                    atar_lowest_selection_rank=atar_rank,
-                )
-            ] if city_id else []
+        campuses = _resolve_campuses(
+            meta.get("location_domestic", ""),
+            mode,
+            campus_map,
+            atar_guaranteed,
+            atar_rank,
+        )
 
         return CourseData(
             university_id=self.university_id,
@@ -129,6 +123,46 @@ def _parse_meta(html: str) -> dict[str, str]:
     }
 
 
+def _resolve_campuses(
+    location: str,
+    mode: str,
+    campus_map: dict[str, str],
+    atar_guaranteed: int | None,
+    atar_rank: int | None,
+) -> list[CampusLink]:
+    """
+    Build CampusLink list from location_domestic and learning_mode_domestic.
+
+    location_domestic is a comma-separated list of RMIT location names
+    (e.g. 'Melbourne City, Brunswick'). Each is translated via _LOCATION_MAP
+    then looked up in campus_map. Unrecognised values are warned and skipped.
+    Online delivery is detected from learning_mode_domestic as a safeguard.
+    The same ATAR applies to all physical campuses (one value per course page).
+    """
+    campuses: list[CampusLink] = []
+
+    for raw in [loc.strip() for loc in location.split(",") if loc.strip()]:
+        if raw.lower() == "online":
+            continue  # handled separately below
+        db_name = _LOCATION_MAP.get(raw, raw)
+        campus_id = campus_map.get(db_name)
+        if campus_id is None:
+            print(f"  rmit: unrecognised location '{raw}' (mapped to '{db_name}')")
+            continue
+        campuses.append(CampusLink(
+            campus_id=campus_id,
+            atar_guaranteed=atar_guaranteed,
+            atar_lowest_selection_rank=atar_rank,
+        ))
+
+    if "online" in mode.lower() or "online" in location.lower():
+        online_id = campus_map.get("Online")
+        if online_id:
+            campuses.append(CampusLink(campus_id=online_id))
+
+    return campuses
+
+
 def _parse_atar(value: str | None) -> tuple[int | None, int | None]:
     """
     Parse the 'atar' meta tag into (atar_lowest_selection_rank, atar_guaranteed).
@@ -146,10 +180,11 @@ def _parse_atar(value: str | None) -> tuple[int | None, int | None]:
     m = re.search(r",\s*ATAR\s+(\d+(?:\.\d+)?)", value, re.IGNORECASE)
     if m:
         return int(float(m.group(1))), guaranteed
-    # Only one ATAR value present — treat it as the selection rank.
-    m = re.search(r"\bATAR\s+(\d+(?:\.\d+)?)", value, re.IGNORECASE)
-    if m:
-        return int(float(m.group(1))), guaranteed
+    # Only one ATAR value present and no guaranteed — treat it as the selection rank.
+    if guaranteed is None:
+        m = re.search(r"\bATAR\s+(\d+(?:\.\d+)?)", value, re.IGNORECASE)
+        if m:
+            return int(float(m.group(1))), None
     return None, guaranteed
 
 
