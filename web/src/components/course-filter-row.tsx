@@ -76,6 +76,19 @@ export function FilterRow({ universities, durations, campuses, sort, dir, filter
         </select>
       </td>
       <td className="py-1 pr-4">
+        <input
+          type="number"
+          value={atarMin}
+          onChange={e => setAtarMin(e.target.value)}
+          onBlur={() => router.push(buildUrl({}))}
+          onKeyDown={e => e.key === "Enter" && router.push(buildUrl({}))}
+          placeholder="Min ATAR"
+          min={0}
+          max={99}
+          className={inputCls}
+        />
+      </td>
+      <td className="hidden sm:table-cell py-1 pr-4">
         <select value={f.duration} onChange={e => router.push(buildUrl({ duration: e.target.value }))} className={inputCls}>
           <option value="">All</option>
           {durations.map(d => <option key={d} value={d}>{d}y</option>)}
@@ -92,19 +105,6 @@ export function FilterRow({ universities, durations, campuses, sort, dir, filter
           <option value="">All</option>
           {campuses.map(c => <option key={`${c.name}-${c.university}`} value={c.name}>{c.name} ({c.university})</option>)}
         </select>
-      </td>
-      <td className="py-1">
-        <input
-          type="number"
-          value={atarMin}
-          onChange={e => setAtarMin(e.target.value)}
-          onBlur={() => router.push(buildUrl({}))}
-          onKeyDown={e => e.key === "Enter" && router.push(buildUrl({}))}
-          placeholder="Min ATAR"
-          min={0}
-          max={99}
-          className={inputCls}
-        />
       </td>
     </tr>
   );

@@ -111,11 +111,11 @@ function colUrl(col: SortCol, current: SortCol, dir: SortDir, filters: Filters) 
   return `/courses?${p.toString()}`;
 }
 
-function SortHeader({ col, label, current, dir, filters }: { col: SortCol; label: string; current: SortCol; dir: SortDir; filters: Filters }) {
+function SortHeader({ col, label, current, dir, filters, className }: { col: SortCol; label: string; current: SortCol; dir: SortDir; filters: Filters; className?: string }) {
   const active = col === current;
   const indicator = active ? (dir === "asc" ? " ↑" : " ↓") : "";
   return (
-    <th className="pb-2 pr-4 text-left font-medium">
+    <th className={`pb-2 pr-4 text-left font-medium ${className ?? ""}`}>
       <Link href={colUrl(col, current, dir, filters)} className={active ? "underline underline-offset-2" : "hover:underline hover:underline-offset-2"}>
         {label}{indicator}
       </Link>
@@ -194,9 +194,9 @@ export default async function CoursesPage({
               <SortHeader col="name" label="Course" current={sort} dir={dir} filters={filters} />
               <SortHeader col="university" label="University" current={sort} dir={dir} filters={filters} />
               <SortHeader col="type" label="Type" current={sort} dir={dir} filters={filters} />
-              <SortHeader col="duration" label="Duration" current={sort} dir={dir} filters={filters} />
+              <th className="pb-2 pr-4 text-left font-medium">ATAR</th>
+              <SortHeader col="duration" label="Duration" current={sort} dir={dir} filters={filters} className="hidden sm:table-cell" />
               <SortHeader col="campus" label="Campus" current={sort} dir={dir} filters={filters} />
-              <th className="pb-2 text-left font-medium">ATAR</th>
             </tr>
             <FilterRow
               universities={filterOptions.universities}
@@ -225,11 +225,11 @@ export default async function CoursesPage({
                     {course.degreeType}
                   </abbr>
                 </td>
-                <td className="py-2 pr-4 text-gray-600 dark:text-gray-400">
+                <td className="py-2 pr-4 text-gray-600 dark:text-gray-400">{course.atarGuaranteed ?? "–"}</td>
+                <td className="hidden sm:table-cell py-2 pr-4 text-gray-600 dark:text-gray-400">
                   {course.durationYears ? `${course.durationYears}y` : "–"}
                 </td>
                 <td className="py-2 pr-4 text-gray-600 dark:text-gray-400">{course.campusName ?? "–"}</td>
-                <td className="py-2 text-gray-600 dark:text-gray-400">{course.atarGuaranteed ?? "–"}</td>
               </tr>
             ))}
           </tbody>
