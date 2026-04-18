@@ -21,6 +21,9 @@ export function Header() {
           <Link href="/courses" className="text-sm text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100">
             Courses
           </Link>
+          <Link href="/admin" className="text-sm text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100">
+            Admin
+          </Link>
           <ThemeToggle />
         </nav>
       </div>
