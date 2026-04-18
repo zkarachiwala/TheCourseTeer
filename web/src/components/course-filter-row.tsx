@@ -12,10 +12,12 @@ export type Filters = {
   atarMin: string;
 };
 
+type CampusOption = { name: string; university: string };
+
 type Props = {
   universities: string[];
   durations: string[];
-  campuses: string[];
+  campuses: CampusOption[];
   sort: string;
   dir: string;
   filters: Filters;
@@ -69,8 +71,8 @@ export function FilterRow({ universities, durations, campuses, sort, dir, filter
       <td className="py-1 pr-4">
         <select value={f.type} onChange={e => router.push(buildUrl({ type: e.target.value }))} className={inputCls}>
           <option value="">All</option>
-          <option value="UG">UG</option>
-          <option value="PG">PG</option>
+          <option value="UG">UG (Undergraduate)</option>
+          <option value="PG">PG (Postgraduate)</option>
         </select>
       </td>
       <td className="py-1 pr-4">
@@ -80,9 +82,15 @@ export function FilterRow({ universities, durations, campuses, sort, dir, filter
         </select>
       </td>
       <td className="py-1 pr-4">
-        <select value={f.campus} onChange={e => router.push(buildUrl({ campus: e.target.value }))} className={inputCls}>
+        {/* Mobile: name only */}
+        <select value={f.campus} onChange={e => router.push(buildUrl({ campus: e.target.value }))} className={`${inputCls} sm:hidden`}>
           <option value="">All</option>
-          {campuses.map(c => <option key={c} value={c}>{c}</option>)}
+          {campuses.map(c => <option key={`${c.name}-${c.university}`} value={c.name}>{c.name}</option>)}
+        </select>
+        {/* Desktop: name (university) */}
+        <select value={f.campus} onChange={e => router.push(buildUrl({ campus: e.target.value }))} className={`${inputCls} hidden sm:block`}>
+          <option value="">All</option>
+          {campuses.map(c => <option key={`${c.name}-${c.university}`} value={c.name}>{c.name} ({c.university})</option>)}
         </select>
       </td>
       <td className="py-1">

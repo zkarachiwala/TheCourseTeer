@@ -86,12 +86,16 @@ async function getFilterOptions() {
   const [uniRows, durRows, camRows] = await Promise.all([
     db.selectDistinct({ name: universities.name }).from(universities).orderBy(asc(universities.name)),
     db.selectDistinct({ dur: courses.durationYears }).from(courses).where(isNotNull(courses.durationYears)).orderBy(asc(courses.durationYears)),
-    db.selectDistinct({ name: campuses.name }).from(campuses).orderBy(asc(campuses.name)),
+    db
+      .selectDistinct({ name: campuses.name, university: universities.name })
+      .from(campuses)
+      .innerJoin(universities, eq(campuses.universityId, universities.id))
+      .orderBy(asc(campuses.name)),
   ]);
   return {
     universities: uniRows.map(r => r.name),
     durations: durRows.map(r => r.dur!),
-    campuses: camRows.map(r => r.name),
+    campuses: camRows as { name: string; university: string }[],
   };
 }
 
