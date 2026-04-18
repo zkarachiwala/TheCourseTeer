@@ -8,6 +8,7 @@ class CampusLink:
     campus_id: str
     atar_guaranteed: int | None = None
     atar_lowest_selection_rank: int | None = None
+    extraction_notes: str | None = None
 
 
 @dataclass

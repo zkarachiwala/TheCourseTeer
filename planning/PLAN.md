@@ -114,8 +114,11 @@ A course may be offered at multiple campuses. ATAR requirements can differ per c
 | campus_id | uuid | FK -> campuses ON DELETE CASCADE |
 | atar_guaranteed | integer | Guaranteed entry ATAR for this campus. Nullable. |
 | atar_lowest_selection_rank | integer | Lowest selection rank for this campus. Nullable. |
+| extraction_notes | text | Nullable. Populated only when a fallback was used during scraping (e.g. ATAR read from global page rather than a campus-specific section). NULL means extraction was clean. |
 
 Primary key: `(course_id, campus_id)`.
+
+**Scraper convention:** All university scrapers must populate `extraction_notes` on a `CampusLink` whenever data is inferred or read from a fallback source rather than the expected location. Leave it `None` when extraction matched the expected template exactly.
 
 ### 3.5 Course Prerequisites Table (UG -> PG pathways)
 Created at schema setup even if empty in MVP.

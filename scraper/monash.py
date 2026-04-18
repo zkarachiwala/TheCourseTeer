@@ -227,11 +227,12 @@ def _build_campus_links(
         if campus_id is None:
             print(f"  monash: unrecognised campus '{raw}' in location '{location}'")
             continue
-        atar_rank, atar_guaranteed = _parse_atar_in_section(soup, raw)
+        atar_rank, atar_guaranteed, notes = _parse_atar_in_section(soup, raw)
         links.append(CampusLink(
             campus_id=campus_id,
             atar_guaranteed=atar_guaranteed,
             atar_lowest_selection_rank=atar_rank,
+            extraction_notes=notes,
         ))
 
     if "online" in location.lower():
@@ -244,11 +245,13 @@ def _build_campus_links(
 
 def _parse_atar_in_section(
     soup: BeautifulSoup, campus_name: str
-) -> tuple[int | None, int | None]:
+) -> tuple[int | None, int | None, str | None]:
     """Extract ATAR from the campus-specific page section; fall back to global."""
     slug = campus_name.lower().replace(" ", "-")
     section = soup.find(id=slug) or soup.find(id=campus_name.lower())
-    return _parse_atar(section if section else soup)
+    notes = None if section else "ATAR from global page (no campus section found)"
+    atar_rank, atar_guaranteed = _parse_atar(section if section else soup)
+    return atar_rank, atar_guaranteed, notes
 
 
 def _parse_duration(text: str) -> float | None:

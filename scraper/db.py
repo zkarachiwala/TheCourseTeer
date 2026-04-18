@@ -116,11 +116,11 @@ async def upsert_course(pool: AsyncConnectionPool, course: CourseData) -> None:
                     await cur.executemany(
                         """
                         INSERT INTO course_campuses
-                            (course_id, campus_id, atar_guaranteed, atar_lowest_selection_rank)
-                        VALUES (%s, %s, %s, %s)
+                            (course_id, campus_id, atar_guaranteed, atar_lowest_selection_rank, extraction_notes)
+                        VALUES (%s, %s, %s, %s, %s)
                         """,
                         [
-                            (course_id, cl.campus_id, cl.atar_guaranteed, cl.atar_lowest_selection_rank)
+                            (course_id, cl.campus_id, cl.atar_guaranteed, cl.atar_lowest_selection_rank, cl.extraction_notes)
                             for cl in course.campuses
                         ],
                     )
