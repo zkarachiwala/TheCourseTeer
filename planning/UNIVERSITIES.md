@@ -86,16 +86,20 @@ Spike evidence for MVP universities: see [ROBOTS_SPIKE.md](ROBOTS_SPIKE.md).
 | Field | Value |
 |---|---|
 | Homepage | https://www.unimelb.edu.au |
-| Course URL pattern | `https://study.unimelb.edu.au/find/courses/[level]/[course-name]/` |
+| Course URL pattern | `https://study.unimelb.edu.au/find/courses/undergraduate/[course-name]/` |
 | robots.txt blocks courses | No |
-| Bot protection | Cloudflare (main domain); study subdomain appears unprotected |
+| Bot protection | Cloudflare on both domains — Playwright required |
 | Rendering | Nuxt.js SPA — all course data rendered client-side |
 | JSON-LD / Schema.org | None |
 | ATAR in static HTML | No — rendered by JS |
 | Fees in static HTML | No — rendered by JS |
 | Scraper mode | `browser` |
-| Course discovery | Sitemap at `/sitemap.xml` or Nuxt API interception |
-| Notes | Highest complexity in MVP set. Nuxt.js renders all data client-side. Playwright with full JS execution required. If Cloudflare escalates, intercept the XHR/fetch calls Nuxt makes to its backend API — these return structured JSON and bypass the rendering layer entirely. Monitor closely during initial runs. |
+| Degree scope | UG only (MVP) |
+| Course discovery | XHR interception on listing page — captures JSON responses from Nuxt backend. Falls back to regex over rendered HTML if no JSON match. |
+| Campus | Parkville (primary), Southbank (arts/music). Courses at both flagged in `atar_issues` as `multiple_campuses`. Default to Parkville when no campus detected on page. |
+| ATAR | Extracted from rendered page text via regex (`selection rank`, `guaranteed ATAR`). Per-campus sections searched first; global fallback. |
+| Fees | All domestic UG are CSP (`csp_available=true`). `price_annual_csp_aud` deferred (fees tab pass not yet implemented). `price_annual_dfee_aud` null (no domestic full-fee UG places). |
+| Faculty | Inferred from course name via keyword map (see `unimelb.py`). Reference: https://about.unimelb.edu.au/strategy/our-structure/faculties-and-graduate-schools |
 | Phase | `mvp` |
 
 ---
