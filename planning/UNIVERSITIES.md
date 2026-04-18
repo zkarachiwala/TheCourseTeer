@@ -95,9 +95,9 @@ Spike evidence for MVP universities: see [ROBOTS_SPIKE.md](ROBOTS_SPIKE.md).
 | Fees in static HTML | No — rendered by JS |
 | Scraper mode | `browser` |
 | Degree scope | UG only (MVP) |
-| Course discovery | XHR interception on listing page — captures JSON responses from Nuxt backend. Falls back to regex over rendered HTML if no JSON match. |
+| Course discovery | Parse `explore-courses-by-atar` listing page — server-rendered HTML (Squiz Matrix, not Nuxt). Course cards contain URLs, names, and ATAR data directly. ~25 unique UG courses total. |
 | Campus | Parkville (primary), Southbank (arts/music). Courses at both flagged in `atar_issues` as `multiple_campuses`. Default to Parkville when no campus detected on page. |
-| ATAR | Extracted from rendered page text via regex (`selection rank`, `guaranteed ATAR`). Per-campus sections searched first; global fallback. |
+| ATAR | Extracted from listing page course cards (guaranteed ATAR + lowest selection rank). Per-course pages used only for duration and campus confirmation. |
 | Fees | All domestic UG are CSP (`csp_available=true`). `price_annual_csp_aud` deferred (fees tab pass not yet implemented). `price_annual_dfee_aud` null (no domestic full-fee UG places). |
 | Faculty | Inferred from course name via keyword map (see `unimelb.py`). Reference: https://about.unimelb.edu.au/strategy/our-structure/faculties-and-graduate-schools |
 | Phase | `mvp` |
