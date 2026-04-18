@@ -6,7 +6,6 @@ import { useState, useEffect } from "react";
 export type Filters = {
   name: string;
   university: string;
-  type: string;
   duration: string;
   campus: string;
   atarMin: string;
@@ -42,7 +41,6 @@ export function FilterRow({ universities, durations, campuses, sort, dir, filter
     p.set("page", "1");
     if (merged.name) p.set("f_name", merged.name);
     if (merged.university) p.set("f_uni", merged.university);
-    if (merged.type) p.set("f_type", merged.type);
     if (merged.duration) p.set("f_dur", merged.duration);
     if (merged.campus) p.set("f_cam", merged.campus);
     if (merged.atarMin) p.set("f_atar_min", merged.atarMin);
@@ -69,13 +67,6 @@ export function FilterRow({ universities, durations, campuses, sort, dir, filter
         </select>
       </td>
       <td className="py-1 pr-4">
-        <select value={f.type} onChange={e => router.push(buildUrl({ type: e.target.value }))} className={inputCls}>
-          <option value="">All</option>
-          <option value="UG">UG (Undergraduate)</option>
-          <option value="PG">PG (Postgraduate)</option>
-        </select>
-      </td>
-      <td className="py-1 pr-4">
         <input
           type="number"
           value={atarMin}
@@ -88,12 +79,6 @@ export function FilterRow({ universities, durations, campuses, sort, dir, filter
           className={inputCls}
         />
       </td>
-      <td className="hidden sm:table-cell py-1 pr-4">
-        <select value={f.duration} onChange={e => router.push(buildUrl({ duration: e.target.value }))} className={inputCls}>
-          <option value="">All</option>
-          {durations.map(d => <option key={d} value={d}>{d}y</option>)}
-        </select>
-      </td>
       <td className="py-1 pr-4">
         {/* Mobile: name only */}
         <select value={f.campus} onChange={e => router.push(buildUrl({ campus: e.target.value }))} className={`${inputCls} sm:hidden`}>
@@ -104,6 +89,12 @@ export function FilterRow({ universities, durations, campuses, sort, dir, filter
         <select value={f.campus} onChange={e => router.push(buildUrl({ campus: e.target.value }))} className={`${inputCls} hidden sm:block`}>
           <option value="">All</option>
           {campuses.map(c => <option key={`${c.name}-${c.university}`} value={c.name}>{c.name} ({c.university})</option>)}
+        </select>
+      </td>
+      <td className="hidden sm:table-cell py-1 pr-4">
+        <select value={f.duration} onChange={e => router.push(buildUrl({ duration: e.target.value }))} className={inputCls}>
+          <option value="">All</option>
+          {durations.map(d => <option key={d} value={d}>{d}y</option>)}
         </select>
       </td>
     </tr>

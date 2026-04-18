@@ -8,27 +8,21 @@ import { FilterRow, type Filters } from "@/components/course-filter-row";
 
 const PAGE_SIZE = 25;
 
-type SortCol = "name" | "university" | "type" | "duration" | "campus";
+type SortCol = "name" | "university" | "atar" | "campus" | "duration";
 type SortDir = "asc" | "desc";
 
 const SORT_COLUMNS = {
   name: courses.name,
   university: universities.name,
-  type: courses.degreeType,
-  duration: courses.durationYears,
+  atar: courseCampuses.atarGuaranteed,
   campus: campuses.name,
+  duration: courses.durationYears,
 } as const;
-
-const DEGREE_LABELS: Record<string, string> = {
-  UG: "Undergraduate",
-  PG: "Postgraduate",
-};
 
 type CourseRow = {
   id: string;
   name: string;
   sourceUrl: string | null;
-  degreeType: string;
   durationYears: string | null;
   universityName: string;
   campusName: string | null;
@@ -36,14 +30,13 @@ type CourseRow = {
 };
 
 function buildWhere(f: Filters) {
-  const conds = [];
+  const conds = [eq(courses.degreeType, "UG")];
   if (f.name) conds.push(ilike(courses.name, `%${f.name}%`));
   if (f.university) conds.push(eq(universities.name, f.university));
-  if (f.type) conds.push(eq(courses.degreeType, f.type));
   if (f.duration) conds.push(eq(courses.durationYears, f.duration));
   if (f.campus) conds.push(eq(campuses.name, f.campus));
   if (f.atarMin) conds.push(gte(courseCampuses.atarGuaranteed, parseInt(f.atarMin, 10)));
-  return conds.length > 0 ? and(...conds) : undefined;
+  return and(...conds);
 }
 
 async function getCourses(sort: SortCol, dir: SortDir, page: number, filters: Filters) {
@@ -56,7 +49,6 @@ async function getCourses(sort: SortCol, dir: SortDir, page: number, filters: Fi
         id: courses.id,
         name: courses.name,
         sourceUrl: courses.sourceUrl,
-        degreeType: courses.degreeType,
         durationYears: courses.durationYears,
         universityName: universities.name,
         campusName: campuses.name,
@@ -104,7 +96,6 @@ function colUrl(col: SortCol, current: SortCol, dir: SortDir, filters: Filters) 
   const p = new URLSearchParams({ sort: col, dir: nextDir, page: "1" });
   if (filters.name) p.set("f_name", filters.name);
   if (filters.university) p.set("f_uni", filters.university);
-  if (filters.type) p.set("f_type", filters.type);
   if (filters.duration) p.set("f_dur", filters.duration);
   if (filters.campus) p.set("f_cam", filters.campus);
   if (filters.atarMin) p.set("f_atar_min", filters.atarMin);
@@ -129,7 +120,6 @@ function Pagination({ page, total, sort, dir, filters }: { page: number; total: 
   const base = new URLSearchParams({ sort, dir });
   if (filters.name) base.set("f_name", filters.name);
   if (filters.university) base.set("f_uni", filters.university);
-  if (filters.type) base.set("f_type", filters.type);
   if (filters.duration) base.set("f_dur", filters.duration);
   if (filters.campus) base.set("f_cam", filters.campus);
   if (filters.atarMin) base.set("f_atar_min", filters.atarMin);
@@ -153,12 +143,12 @@ function Pagination({ page, total, sort, dir, filters }: { page: number; total: 
   );
 }
 
-const VALID_SORTS: SortCol[] = ["name", "university", "type", "duration", "campus"];
+const VALID_SORTS: SortCol[] = ["name", "university", "atar", "campus", "duration"];
 
 export default async function CoursesPage({
   searchParams,
 }: {
-  searchParams: { sort?: string; dir?: string; page?: string; f_name?: string; f_uni?: string; f_type?: string; f_dur?: string; f_cam?: string; f_atar_min?: string };
+  searchParams: { sort?: string; dir?: string; page?: string; f_name?: string; f_uni?: string; f_dur?: string; f_cam?: string; f_atar_min?: string };
 }) {
   const sort = (VALID_SORTS.includes(searchParams.sort as SortCol) ? searchParams.sort : "name") as SortCol;
   const dir: SortDir = searchParams.dir === "desc" ? "desc" : "asc";
@@ -167,7 +157,6 @@ export default async function CoursesPage({
   const filters: Filters = {
     name: searchParams.f_name ?? "",
     university: searchParams.f_uni ?? "",
-    type: searchParams.f_type ?? "",
     duration: searchParams.f_dur ?? "",
     campus: searchParams.f_cam ?? "",
     atarMin: searchParams.f_atar_min ?? "",
@@ -193,10 +182,9 @@ export default async function CoursesPage({
             <tr className="border-b border-gray-200 dark:border-gray-700">
               <SortHeader col="name" label="Course" current={sort} dir={dir} filters={filters} />
               <SortHeader col="university" label="University" current={sort} dir={dir} filters={filters} />
-              <SortHeader col="type" label="Type" current={sort} dir={dir} filters={filters} />
-              <th className="pb-2 pr-4 text-left font-medium">ATAR</th>
-              <SortHeader col="duration" label="Duration" current={sort} dir={dir} filters={filters} className="hidden sm:table-cell" />
+              <SortHeader col="atar" label="ATAR" current={sort} dir={dir} filters={filters} />
               <SortHeader col="campus" label="Campus" current={sort} dir={dir} filters={filters} />
+              <SortHeader col="duration" label="Duration" current={sort} dir={dir} filters={filters} className="hidden sm:table-cell" />
             </tr>
             <FilterRow
               universities={filterOptions.universities}
@@ -220,16 +208,11 @@ export default async function CoursesPage({
                   )}
                 </td>
                 <td className="py-2 pr-4 text-gray-600 dark:text-gray-400">{course.universityName}</td>
-                <td className="py-2 pr-4 text-gray-600 dark:text-gray-400">
-                  <abbr title={DEGREE_LABELS[course.degreeType] ?? course.degreeType} className="cursor-help">
-                    {course.degreeType}
-                  </abbr>
-                </td>
                 <td className="py-2 pr-4 text-gray-600 dark:text-gray-400">{course.atarGuaranteed ?? "–"}</td>
+                <td className="py-2 pr-4 text-gray-600 dark:text-gray-400">{course.campusName ?? "–"}</td>
                 <td className="hidden sm:table-cell py-2 pr-4 text-gray-600 dark:text-gray-400">
                   {course.durationYears ? `${course.durationYears}y` : "–"}
                 </td>
-                <td className="py-2 pr-4 text-gray-600 dark:text-gray-400">{course.campusName ?? "–"}</td>
               </tr>
             ))}
           </tbody>

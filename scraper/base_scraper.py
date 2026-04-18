@@ -6,6 +6,7 @@ from abc import ABC, abstractmethod
 from psycopg_pool import AsyncConnectionPool
 
 from db import (
+    cleanup_old_atar_issues,
     complete_run,
     enqueue_urls,
     get_or_create_run,
@@ -43,6 +44,7 @@ class BaseScraper(ABC):
         self.pool = pool
         self.slug = university_slug
         self._university: dict | None = None
+        self._run_id: str | None = None
 
     async def run(self, force: bool = False) -> int:
         """Run the scraper with queue-based resume support. Returns count of upserted courses."""
@@ -57,6 +59,7 @@ class BaseScraper(ABC):
         try:
             scrape_run = await get_or_create_run(self.pool, university_id, force)
             run_id = str(scrape_run["id"])
+            self._run_id = run_id
 
             if not scrape_run["discovery_complete"]:
                 urls = await self.discover_urls(rp)
@@ -83,6 +86,7 @@ class BaseScraper(ABC):
                     await mark_url_complete(self.pool, university_id, url, run_id)
 
             await complete_run(self.pool, run_id)
+            await cleanup_old_atar_issues(self.pool, university_id, run_id)
             await update_university_status(self.pool, university_id, "last_ok")
             return completed
 

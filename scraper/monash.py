@@ -22,9 +22,8 @@ from models import CampusLink, CourseData
 
 LISTING_URL = "https://www.monash.edu/study/courses/find-a-course"
 _BASE_URL = "https://www.monash.edu"
-# Degree course codes: single letter + 4 digits (e.g. b2029, m6014, a6013).
-# Excludes professional-development codes like pdm1176, pdd1092.
-_DEGREE_CODE_RE = re.compile(r"-[a-z]\d{4}$")
+# UG bachelor codes: b + 4 digits (e.g. b2029). PG codes use other letters (m6014, etc.).
+_UG_CODE_RE = re.compile(r"-b\d{4}$")
 _CONCURRENCY = 3
 
 
@@ -93,7 +92,7 @@ async def _playwright_discover(
     ):
         path = m.group(1)
         slug = path.split("/")[-1]
-        if _DEGREE_CODE_RE.search(slug):
+        if _UG_CODE_RE.search(slug):
             seen.add(_BASE_URL + path)
     return list(seen)
 
