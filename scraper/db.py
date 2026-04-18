@@ -266,6 +266,38 @@ async def complete_run(pool: AsyncConnectionPool, run_id: str) -> None:
         )
 
 
+async def cleanup_old_atar_issues(
+    pool: AsyncConnectionPool, university_id: str, current_run_id: str
+) -> None:
+    """Delete atar_issues from all prior runs for this university, keeping only the current run."""
+    async with pool.connection() as conn:
+        await conn.execute(
+            "DELETE FROM atar_issues WHERE university_id = %s AND run_id != %s",
+            (university_id, current_run_id),
+        )
+
+
+async def log_atar_issue(
+    pool: AsyncConnectionPool,
+    university_id: str,
+    run_id: str,
+    course_name: str,
+    course_url: str,
+    issue_type: str,
+    description: str,
+) -> None:
+    """Record an ATAR extraction issue for later investigation."""
+    async with pool.connection() as conn:
+        await conn.execute(
+            """
+            INSERT INTO atar_issues
+                (university_id, run_id, course_name, course_url, issue_type, description)
+            VALUES (%s, %s, %s, %s, %s, %s)
+            """,
+            (university_id, run_id, course_name, course_url, issue_type, description),
+        )
+
+
 async def upsert_selector(
     pool: AsyncConnectionPool,
     university_id: str,
