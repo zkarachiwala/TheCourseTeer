@@ -218,7 +218,7 @@ def _build_campus_links(
     """Build CampusLink list with per-campus ATAR extracted from campus sections."""
     links: list[CampusLink] = []
 
-    for raw in re.findall(r"on.campus at ([^,]+)", location, re.IGNORECASE):
+    for raw in re.findall(r"on.campus at ([^,:]+)", location, re.IGNORECASE):
         raw = raw.strip()
         campus_id = next(
             (cid for name, cid in campus_map.items() if name.lower() == raw.lower()),
