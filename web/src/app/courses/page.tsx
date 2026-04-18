@@ -2,8 +2,9 @@ export const dynamic = "force-dynamic";
 
 import { db } from "../../../db";
 import { courses, universities, courseCampuses, campuses } from "../../../db/schema";
-import { eq, asc, desc, sql } from "drizzle-orm";
+import { eq, asc, desc, sql, and, ilike, gte, lte, isNotNull } from "drizzle-orm";
 import Link from "next/link";
+import { FilterRow, type Filters } from "@/components/course-filter-row";
 
 const PAGE_SIZE = 25;
 
@@ -17,7 +18,12 @@ const SORT_COLUMNS = {
   duration: courses.durationYears,
 } as const;
 
-type CampusSummary = { name: string; atar: number | null };
+const DEGREE_LABELS: Record<string, string> = {
+  UG: "Undergraduate",
+  PG: "Postgraduate",
+};
+
+type CampusAgg = { campus: string | null; atar: number | null };
 
 type CourseRow = {
   id: string;
@@ -26,13 +32,28 @@ type CourseRow = {
   degreeType: string;
   durationYears: string | null;
   universityName: string;
-  campuses: CampusSummary[];
+  campuses: CampusAgg[];
 };
 
-async function getCourses(sort: SortCol, dir: SortDir, page: number) {
-  const col = SORT_COLUMNS[sort];
-  const order = dir === "asc" ? asc(col) : desc(col);
-  const offset = (page - 1) * PAGE_SIZE;
+function buildWhere(f: Filters) {
+  const conds = [];
+  if (f.name) conds.push(ilike(courses.name, `%${f.name}%`));
+  if (f.university) conds.push(eq(universities.name, f.university));
+  if (f.type) conds.push(eq(courses.degreeType, f.type));
+  if (f.duration) conds.push(eq(courses.durationYears, f.duration));
+  if (f.atarMin) conds.push(gte(courseCampuses.atarGuaranteed, parseInt(f.atarMin, 10)));
+  if (f.atarMax) conds.push(lte(courseCampuses.atarGuaranteed, parseInt(f.atarMax, 10)));
+  return conds.length > 0 ? and(...conds) : undefined;
+}
+
+async function getCourses(sort: SortCol, dir: SortDir, page: number, filters: Filters) {
+  const order = dir === "asc" ? asc(SORT_COLUMNS[sort]) : desc(SORT_COLUMNS[sort]);
+  const where = buildWhere(filters);
+
+  const campusAgg = sql<CampusAgg[]>`
+    json_agg(json_build_object('campus', ${campuses.name}, 'atar', ${courseCampuses.atarGuaranteed}))
+    FILTER (WHERE ${campuses.name} IS NOT NULL)
+  `;
 
   const [rows, [{ total }]] = await Promise.all([
     db
@@ -43,72 +64,92 @@ async function getCourses(sort: SortCol, dir: SortDir, page: number) {
         degreeType: courses.degreeType,
         durationYears: courses.durationYears,
         universityName: universities.name,
-        campusName: campuses.name,
-        atarGuaranteed: courseCampuses.atarGuaranteed,
+        campuses: campusAgg,
       })
       .from(courses)
       .innerJoin(universities, eq(courses.universityId, universities.id))
       .leftJoin(courseCampuses, eq(courseCampuses.courseId, courses.id))
       .leftJoin(campuses, eq(courseCampuses.campusId, campuses.id))
+      .where(where)
+      .groupBy(courses.id, universities.name)
       .orderBy(order)
       .limit(PAGE_SIZE)
-      .offset(offset),
-    db.select({ total: sql<number>`count(distinct ${courses.id})` }).from(courses),
+      .offset((page - 1) * PAGE_SIZE),
+    db
+      .select({ total: sql<number>`count(distinct ${courses.id})` })
+      .from(courses)
+      .innerJoin(universities, eq(courses.universityId, universities.id))
+      .leftJoin(courseCampuses, eq(courseCampuses.courseId, courses.id))
+      .where(where),
   ]);
 
-  const map = new Map<string, CourseRow>();
-  for (const row of rows) {
-    if (!map.has(row.id)) {
-      map.set(row.id, {
-        id: row.id,
-        name: row.name,
-        sourceUrl: row.sourceUrl,
-        degreeType: row.degreeType,
-        durationYears: row.durationYears,
-        universityName: row.universityName,
-        campuses: [],
-      });
-    }
-    if (row.campusName) {
-      map.get(row.id)!.campuses.push({ name: row.campusName, atar: row.atarGuaranteed });
-    }
-  }
-
-  return { rows: Array.from(map.values()), total: Number(total) };
+  return {
+    rows: rows.map(r => ({ ...r, campuses: r.campuses ?? [] })) as CourseRow[],
+    total: Number(total),
+  };
 }
 
-function colUrl(col: SortCol, current: SortCol, dir: SortDir) {
+async function getFilterOptions() {
+  const [uniRows, durRows] = await Promise.all([
+    db.selectDistinct({ name: universities.name }).from(universities).orderBy(asc(universities.name)),
+    db
+      .selectDistinct({ dur: courses.durationYears })
+      .from(courses)
+      .where(isNotNull(courses.durationYears))
+      .orderBy(asc(courses.durationYears)),
+  ]);
+  return {
+    universities: uniRows.map(r => r.name),
+    durations: durRows.map(r => r.dur!),
+  };
+}
+
+function colUrl(col: SortCol, current: SortCol, dir: SortDir, filters: Filters) {
   const nextDir = col === current && dir === "asc" ? "desc" : "asc";
-  return `/courses?sort=${col}&dir=${nextDir}&page=1`;
+  const p = new URLSearchParams({ sort: col, dir: nextDir, page: "1" });
+  if (filters.name) p.set("f_name", filters.name);
+  if (filters.university) p.set("f_uni", filters.university);
+  if (filters.type) p.set("f_type", filters.type);
+  if (filters.duration) p.set("f_dur", filters.duration);
+  if (filters.atarMin) p.set("f_atar_min", filters.atarMin);
+  if (filters.atarMax) p.set("f_atar_max", filters.atarMax);
+  return `/courses?${p.toString()}`;
 }
 
-function SortHeader({ col, label, current, dir }: { col: SortCol; label: string; current: SortCol; dir: SortDir }) {
+function SortHeader({ col, label, current, dir, filters }: { col: SortCol; label: string; current: SortCol; dir: SortDir; filters: Filters }) {
   const active = col === current;
   const indicator = active ? (dir === "asc" ? " ↑" : " ↓") : "";
   return (
     <th className="pb-2 pr-4 text-left font-medium">
-      <Link href={colUrl(col, current, dir)} className={active ? "underline underline-offset-2" : "hover:underline hover:underline-offset-2"}>
+      <Link href={colUrl(col, current, dir, filters)} className={active ? "underline underline-offset-2" : "hover:underline hover:underline-offset-2"}>
         {label}{indicator}
       </Link>
     </th>
   );
 }
 
-function Pagination({ page, total, sort, dir }: { page: number; total: number; sort: SortCol; dir: SortDir }) {
+function Pagination({ page, total, sort, dir, filters }: { page: number; total: number; sort: SortCol; dir: SortDir; filters: Filters }) {
   const totalPages = Math.ceil(total / PAGE_SIZE);
   if (totalPages <= 1) return null;
-  const base = `/courses?sort=${sort}&dir=${dir}`;
+  const base = new URLSearchParams({ sort, dir });
+  if (filters.name) base.set("f_name", filters.name);
+  if (filters.university) base.set("f_uni", filters.university);
+  if (filters.type) base.set("f_type", filters.type);
+  if (filters.duration) base.set("f_dur", filters.duration);
+  if (filters.atarMin) base.set("f_atar_min", filters.atarMin);
+  if (filters.atarMax) base.set("f_atar_max", filters.atarMax);
+  const href = (p: number) => `/courses?${base.toString()}&page=${p}`;
   return (
     <div className="mt-6 flex items-center justify-between text-sm">
       <span className="text-gray-500 dark:text-gray-400">Page {page} of {totalPages}</span>
       <div className="flex gap-2">
         {page > 1 && (
-          <Link href={`${base}&page=${page - 1}`} className="rounded border border-gray-300 px-3 py-1 hover:bg-gray-50 dark:border-gray-600 dark:hover:bg-gray-800">
+          <Link href={href(page - 1)} className="rounded border border-gray-300 px-3 py-1 hover:bg-gray-50 dark:border-gray-600 dark:hover:bg-gray-800">
             Previous
           </Link>
         )}
         {page < totalPages && (
-          <Link href={`${base}&page=${page + 1}`} className="rounded border border-gray-300 px-3 py-1 hover:bg-gray-50 dark:border-gray-600 dark:hover:bg-gray-800">
+          <Link href={href(page + 1)} className="rounded border border-gray-300 px-3 py-1 hover:bg-gray-50 dark:border-gray-600 dark:hover:bg-gray-800">
             Next
           </Link>
         )}
@@ -122,13 +163,26 @@ const VALID_SORTS: SortCol[] = ["name", "university", "type", "duration"];
 export default async function CoursesPage({
   searchParams,
 }: {
-  searchParams: { sort?: string; dir?: string; page?: string };
+  searchParams: { sort?: string; dir?: string; page?: string; f_name?: string; f_uni?: string; f_type?: string; f_dur?: string; f_atar_min?: string; f_atar_max?: string };
 }) {
   const sort = (VALID_SORTS.includes(searchParams.sort as SortCol) ? searchParams.sort : "name") as SortCol;
   const dir: SortDir = searchParams.dir === "desc" ? "desc" : "asc";
   const page = Math.max(1, parseInt(searchParams.page ?? "1", 10) || 1);
 
-  const { rows: courseList, total } = await getCourses(sort, dir, page);
+  const filters: Filters = {
+    name: searchParams.f_name ?? "",
+    university: searchParams.f_uni ?? "",
+    type: searchParams.f_type ?? "",
+    duration: searchParams.f_dur ?? "",
+    atarMin: searchParams.f_atar_min ?? "",
+    atarMax: searchParams.f_atar_max ?? "",
+  };
+
+  const [{ rows: courseList, total }, filterOptions] = await Promise.all([
+    getCourses(sort, dir, page, filters),
+    getFilterOptions(),
+  ]);
+
   const start = (page - 1) * PAGE_SIZE + 1;
   const end = Math.min(page * PAGE_SIZE, total);
 
@@ -142,12 +196,20 @@ export default async function CoursesPage({
         <table className="w-full border-collapse text-sm">
           <thead>
             <tr className="border-b border-gray-200 dark:border-gray-700">
-              <SortHeader col="name" label="Course" current={sort} dir={dir} />
-              <SortHeader col="university" label="University" current={sort} dir={dir} />
-              <SortHeader col="type" label="Type" current={sort} dir={dir} />
-              <SortHeader col="duration" label="Duration" current={sort} dir={dir} />
-              <th className="pb-2 text-left font-medium">Campuses / ATAR</th>
+              <SortHeader col="name" label="Course" current={sort} dir={dir} filters={filters} />
+              <SortHeader col="university" label="University" current={sort} dir={dir} filters={filters} />
+              <SortHeader col="type" label="Type" current={sort} dir={dir} filters={filters} />
+              <SortHeader col="duration" label="Duration" current={sort} dir={dir} filters={filters} />
+              <th className="pb-2 pr-4 text-left font-medium">Campuses</th>
+              <th className="pb-2 text-left font-medium">ATAR</th>
             </tr>
+            <FilterRow
+              universities={filterOptions.universities}
+              durations={filterOptions.durations}
+              sort={sort}
+              dir={dir}
+              filters={filters}
+            />
           </thead>
           <tbody>
             {courseList.map((course) => (
@@ -162,19 +224,28 @@ export default async function CoursesPage({
                   )}
                 </td>
                 <td className="py-2 pr-4 text-gray-600 dark:text-gray-400">{course.universityName}</td>
-                <td className="py-2 pr-4 text-gray-600 dark:text-gray-400">{course.degreeType}</td>
                 <td className="py-2 pr-4 text-gray-600 dark:text-gray-400">
-                  {course.durationYears ? `${course.durationYears}y` : "-"}
+                  <abbr title={DEGREE_LABELS[course.degreeType] ?? course.degreeType} className="cursor-help">
+                    {course.degreeType}
+                  </abbr>
+                </td>
+                <td className="py-2 pr-4 text-gray-600 dark:text-gray-400">
+                  {course.durationYears ? `${course.durationYears}y` : "–"}
+                </td>
+                <td className="py-2 pr-4 text-gray-600 dark:text-gray-400">
+                  {course.campuses.map(c => c.campus).filter(Boolean).join(", ") || "–"}
                 </td>
                 <td className="py-2 text-gray-600 dark:text-gray-400">
-                  {course.campuses.map((c) => (c.atar ? `${c.name} (${c.atar})` : c.name)).join(", ") || "-"}
+                  {course.campuses.some(c => c.atar !== null)
+                    ? course.campuses.filter(c => c.atar !== null).map(c => c.atar).join(", ")
+                    : "–"}
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
-      <Pagination page={page} total={total} sort={sort} dir={dir} />
+      <Pagination page={page} total={total} sort={sort} dir={dir} filters={filters} />
     </div>
   );
 }
