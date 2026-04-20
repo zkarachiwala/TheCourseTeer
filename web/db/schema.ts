@@ -63,6 +63,7 @@ export const scraperConfigs = pgTable("scraper_configs", {
   universityId: uuid("university_id").notNull().references(() => universities.id),
   fieldName: text("field_name").notNull(),
   selector: text("selector").notNull(),
+  urlPath: text("url_path"),
   lastVerifiedAt: timestamp("last_verified_at", { withTimezone: true }),
   aiGenerated: boolean("ai_generated").default(false),
   mode: text("mode"),

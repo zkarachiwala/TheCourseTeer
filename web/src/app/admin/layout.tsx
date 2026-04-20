@@ -16,6 +16,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         >
           ATAR Issues
         </Link>
+        <Link
+          href="/admin/scraper-builder"
+          className="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"
+        >
+          Scraper Builder
+        </Link>
       </nav>
       {children}
     </div>
