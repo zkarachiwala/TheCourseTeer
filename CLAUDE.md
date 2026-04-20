@@ -12,6 +12,17 @@ The key document is PLAN.md included in full here:
 
 All feature work must follow the `/feature-dev:feature-dev` 7-phase workflow. Do not write implementation code before Phase 4 approval.
 
+### Phase-to-model mapping
+
+| Phase | Model | Reason |
+|---|---|---|
+| 1–4 (Discovery → Architecture) | Claude Sonnet (main session) | Requires reasoning across the codebase and design trade-offs |
+| 5 (Implementation) | Claude Haiku (subagent) | Well-specified after Phase 4; mechanical execution only |
+| 6 (Quality Review) | Claude Sonnet (main session) | Requires judgment about correctness and consistency |
+| 7 (Summary) | Claude Sonnet (main session) | Requires understanding of what was built and why |
+
+**Phase 5 rule:** After Phase 4 approval, delegate implementation to a Haiku subagent via the Agent tool (`model: "haiku"`). Pass the approved architecture, relevant file paths, and conventions as the prompt. Review and integrate the output in Sonnet before committing.
+
 ### GitHub Project Integration
 
 When a feature-dev request references an issue number (e.g. "feature-dev #4" or "work on issue 4"):
@@ -110,8 +121,9 @@ Model ID: `claude-haiku-4-5-20251001`
 
 ### Routing decision checklist
 Before starting any task, ask:
-1. Does this require understanding how multiple files relate? → Claude Sonnet (main session)
-2. Is the task well-specified and mechanical? → Gemini CLI (`gemini-2.5-flash`)
-3. Is this scraper/extraction work that should stay local? → OpenCode + Ollama
-4. Is Gemini rate-limited and Claude tooling needed? → Claude Haiku (subagent)
-5. Is Gemini rate-limited and no Claude tooling needed? → OpenCode as fallback
+1. Is this Phase 5 (Implementation) of a feature-dev workflow? → Claude Haiku (subagent)
+2. Does this require understanding how multiple files relate? → Claude Sonnet (main session)
+3. Is the task well-specified and mechanical, and needs no Claude tooling? → Gemini CLI (`gemini-2.5-flash`)
+4. Is this scraper/extraction work that should stay local? → OpenCode + Ollama
+5. Is Gemini rate-limited and Claude tooling needed? → Claude Haiku (subagent)
+6. Is Gemini rate-limited and no Claude tooling needed? → OpenCode as fallback
