@@ -179,6 +179,19 @@ def _parse_fees_block(
             rank = val
         elif "yearly fee" in label and is_domestic and not is_international and val > 100:
             csp_fee = val
+
+    # Fallback: some courses (e.g. Associate Degrees) only show ATAR in the
+    # summary tile, not in the detailed fees section.
+    if guaranteed is None and rank is None:
+        summary = soup.find("div", class_="course-details__atar")
+        if summary:
+            p = summary.find("p", class_="h3")
+            if p:
+                try:
+                    guaranteed = int(float(p.get_text(strip=True)))
+                except ValueError:
+                    pass
+
     return guaranteed, rank, csp_fee
 
 
