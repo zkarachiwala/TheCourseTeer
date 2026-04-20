@@ -16,12 +16,14 @@ from base_scraper import BaseScraper
 from db import get_pool
 from monash import MonashScraper
 from rmit import RmitScraper
+from swinburne import SwinburneScraper
 from unimelb import UniMelbScraper
 
 SCRAPERS: dict[str, type[BaseScraper]] = {
     "rmit": RmitScraper,
     "monash": MonashScraper,
     "unimelb": UniMelbScraper,
+    "swinburne": SwinburneScraper,
 }
 
 
