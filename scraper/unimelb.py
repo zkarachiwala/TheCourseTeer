@@ -1,18 +1,20 @@
-"""University of Melbourne course scraper (Playwright — Nuxt.js SPA).
+"""University of Melbourne course scraper (Playwright + Funnelback JSON API).
 
-Discovery: XHR interception on the UG listing page — captures JSON responses
-from Nuxt's backend API to collect course URLs without relying on DOM link
-structure. Falls back to regex over rendered HTML if no JSON intercept matches.
+Discovery: Load the UoM course search page via Playwright (for Cloudflare clearance),
+then use page.evaluate() to call the Funnelback JSON API from within the browser.
+The API returns structured metadata including course URLs, names, and ATAR data.
 
-Per-course: Playwright renders each page (waitUntil=networkidle), then parses
-the resulting HTML. CSP fee lookup is deferred — price_annual_csp_aud is left
-null until the fees tab scraping pass is implemented.
+Per-course: Playwright renders each course page to extract duration and campus.
+All other data (name, ATAR, CSP flag) comes from the Funnelback metadata.
+
+CSP fee amounts are deferred — price_annual_csp_aud is left null.
 """
 import asyncio
 import concurrent.futures
 import re
 import urllib.robotparser
 from collections.abc import Callable
+from dataclasses import dataclass
 
 from bs4 import BeautifulSoup
 from playwright.async_api import BrowserContext
@@ -22,10 +24,26 @@ from browser import browser_context
 from db import get_campus_map, log_atar_issue
 from models import CampusLink, CourseData
 
-LISTING_URL = "https://study.unimelb.edu.au/find/courses/undergraduate/"
+# Load this page first to get Cloudflare clearance for the funnelback domain
+_CF_CLEARANCE_URL = "https://study.unimelb.edu.au/find?collection=uom%7Esp-courses&profile=_default&query=%21showall"
+_FUNNELBACK_URL = "https://uom-search.funnelback.squiz.cloud/s/search.json"
 _BASE_URL = "https://study.unimelb.edu.au"
-_COURSE_PATH_RE = re.compile(r"^/find/courses/undergraduate/[^/]+/$")
 _CONCURRENCY = 3
+
+_FUNNELBACK_JS = """async () => {
+    const params = new URLSearchParams({
+        'collection': 'uom~sp-courses',
+        'profile': '_default',
+        'query': '!showall',
+        'num_ranks': '200',
+        'start_rank': '1',
+        'sort': 'metacourseDisplayTitle',
+        'f.Study level|courseStudyLevel': 'undergraduate',
+    });
+    const url = 'https://uom-search.funnelback.squiz.cloud/s/search.json?' + params.toString();
+    const resp = await fetch(url, {headers: {'Referer': 'https://study.unimelb.edu.au/'}});
+    return resp.json();
+}"""
 
 # Checked in order; first match wins. Keywords matched against lowercased course name.
 _FACULTY_MAP: list[tuple[str, list[str]]] = [
@@ -47,6 +65,7 @@ _FACULTY_MAP: list[tuple[str, list[str]]] = [
     ("Faculty of Science", [
         "science", "biology", "chemistry", "physics", "mathematics",
         "statistics", "ecology", "genetics", "neuroscience", "geology",
+        "mathematical sciences",
     ]),
     ("Faculty of Business and Economics", [
         "commerce", "economics", "business", "accounting", "finance",
@@ -60,17 +79,20 @@ _FACULTY_MAP: list[tuple[str, list[str]]] = [
         "arts", "humanities", "social science", "history", "philosophy",
         "linguistics", "media", "communications", "politics", "criminology",
         "psychology", "sociology", "geography", "anthropology", "cultural",
+        "languages",
     ]),
     ("Faculty of Veterinary and Agricultural Sciences", [
         "veterinary", "agriculture", "food", "animal science", "forest",
     ]),
 ]
 
-_CAMPUS_NAMES = {
-    "parkville": "Parkville",
-    "southbank": "Southbank",
-    "online": "Online",
-}
+
+@dataclass
+class _ListingEntry:
+    name: str
+    atar_guaranteed: int | None
+    atar_rank: int | None
+    csp_available: bool
 
 
 def _infer_faculty(course_name: str) -> str | None:
@@ -81,10 +103,57 @@ def _infer_faculty(course_name: str) -> str | None:
     return None
 
 
+def _parse_atar_from_entry_requirements(html: str) -> tuple[int | None, int | None]:
+    """Parse guaranteed ATAR and lowest selection rank from Funnelback metadata HTML.
+
+    Format: '<strong>72.00</strong> - Guaranteed ATAR 2026 <br>
+             <strong>72.75</strong> - Lowest selection rank 2025 (guide only)'
+    Returns (atar_guaranteed, atar_rank).
+    """
+    if not html:
+        return None, None
+    soup = BeautifulSoup(html, "lxml")
+    text = soup.get_text(" ").lower()
+    guaranteed = None
+    rank = None
+    for strong in soup.find_all("strong"):
+        try:
+            val = int(float(strong.get_text(strip=True)))
+        except ValueError:
+            continue
+        # Determine what this number refers to from following text context
+        following = strong.find_next_sibling(string=True) or ""
+        if not isinstance(following, str):
+            following = ""
+        following = following.lower()
+        parent_text = (strong.parent.get_text(" ") if strong.parent else "").lower()
+        if "guaranteed" in following or "guaranteed" in parent_text:
+            guaranteed = val
+        elif "lowest selection rank" in following or "lowest selection rank" in parent_text:
+            rank = val
+    # Fallback: if we couldn't match by context, use position
+    if guaranteed is None and rank is None:
+        nums = []
+        for strong in soup.find_all("strong"):
+            try:
+                nums.append(int(float(strong.get_text(strip=True))))
+            except ValueError:
+                pass
+        if "guaranteed" in text and nums:
+            guaranteed = nums[0]
+        if "lowest selection rank" in text and len(nums) > 1:
+            rank = nums[1]
+    return guaranteed, rank
+
+
 class UniMelbScraper(BaseScraper):
-    """Scraper for University of Melbourne. Uses Playwright for Nuxt.js SPA."""
+    """Scraper for University of Melbourne."""
 
     _CONCURRENCY = _CONCURRENCY
+
+    def __init__(self, pool, university_slug: str) -> None:
+        super().__init__(pool, university_slug)
+        self._listing: dict[str, _ListingEntry] = {}
 
     async def discover_urls(
         self, rp: urllib.robotparser.RobotFileParser
@@ -92,10 +161,12 @@ class UniMelbScraper(BaseScraper):
         loop = asyncio.get_running_loop()
         check_robots = self.check_robots
         with concurrent.futures.ThreadPoolExecutor(max_workers=1) as ex:
-            return await loop.run_in_executor(
+            listing = await loop.run_in_executor(
                 ex,
                 lambda: asyncio.run(_playwright_discover(rp, check_robots)),
             )
+        self._listing = listing
+        return list(listing.keys())
 
     async def scrape_url(
         self, rp: urllib.robotparser.RobotFileParser, url: str
@@ -110,6 +181,7 @@ class UniMelbScraper(BaseScraper):
         if not urls:
             return []
         campus_map = await get_campus_map(self.pool, self.university_id)
+        listing = self._listing
         loop = asyncio.get_running_loop()
         check_robots = self.check_robots
         university_id = self.university_id
@@ -117,7 +189,9 @@ class UniMelbScraper(BaseScraper):
             raw = await loop.run_in_executor(
                 ex,
                 lambda: asyncio.run(
-                    _playwright_fetch_batch(rp, check_robots, urls, university_id, campus_map)
+                    _playwright_fetch_batch(
+                        rp, check_robots, urls, university_id, campus_map, listing
+                    )
                 ),
             )
         for url, result, issues in raw:
@@ -133,58 +207,44 @@ class UniMelbScraper(BaseScraper):
 async def _playwright_discover(
     rp: urllib.robotparser.RobotFileParser,
     check_robots: Callable,
-) -> list[str]:
-    """Open listing page, intercept JSON responses, extract course URLs."""
-    check_robots(rp, LISTING_URL)
-    course_urls: set[str] = set()
-
+) -> dict[str, _ListingEntry]:
+    """Load search page for CF clearance, then call Funnelback API via page.evaluate()."""
+    check_robots(rp, _CF_CLEARANCE_URL)
     async with browser_context() as ctx:
         page = await ctx.new_page()
-        json_responses: list = []
-
-        async def _on_response(response):
-            if "json" in response.headers.get("content-type", ""):
-                try:
-                    json_responses.append(await response.json())
-                except Exception:
-                    pass
-
-        page.on("response", _on_response)
         try:
-            await page.goto(LISTING_URL, wait_until="networkidle", timeout=60000)
-            html = await page.content()
+            await page.goto(_CF_CLEARANCE_URL, wait_until="networkidle", timeout=60000)
+            data = await page.evaluate(_FUNNELBACK_JS)
         finally:
             await page.close()
 
-    # XHR intercept: walk any JSON structure looking for course URL patterns
-    for data in json_responses:
-        _collect_urls_from_json(data, course_urls)
+    results = (
+        data.get("response", {})
+        .get("resultPacket", {})
+        .get("results", [])
+    )
+    listing: dict[str, _ListingEntry] = {}
+    for result in results:
+        url = result.get("liveUrl") or result.get("indexUrl") or ""
+        if "/find/courses/undergraduate/" not in url:
+            continue
+        meta = result.get("listMetadata", {})
+        name = (meta.get("courseDisplayTitle") or [""])[0]
+        if not name:
+            continue
+        entry_req_html = (meta.get("courseEntryRequirements") or [""])[0]
+        atar_guaranteed, atar_rank = _parse_atar_from_entry_requirements(entry_req_html)
+        fees = (meta.get("courseFeesDomestic") or [""])[0].lower()
+        csp_available = "commonwealth supported" in fees
+        listing[url] = _ListingEntry(
+            name=name,
+            atar_guaranteed=atar_guaranteed,
+            atar_rank=atar_rank,
+            csp_available=csp_available,
+        )
 
-    # DOM fallback: find hrefs matching the UG course path pattern
-    if not course_urls:
-        print("  unimelb: no course URLs from XHR intercept — falling back to DOM parse")
-        for m in re.finditer(r'href="(/find/courses/undergraduate/[^/"]+/)"', html):
-            course_urls.add(_BASE_URL + m.group(1))
-
-    return list(course_urls)
-
-
-def _collect_urls_from_json(data, found: set[str]) -> None:
-    """Recursively walk a JSON structure and collect UG course URLs."""
-    if isinstance(data, dict):
-        for v in data.values():
-            # Check for URL-like string values matching the course path pattern
-            if isinstance(v, str) and _COURSE_PATH_RE.match(v):
-                found.add(_BASE_URL + v)
-            elif isinstance(v, str) and _BASE_URL in v:
-                path = v.replace(_BASE_URL, "")
-                if _COURSE_PATH_RE.match(path):
-                    found.add(v if v.startswith("http") else _BASE_URL + path)
-            else:
-                _collect_urls_from_json(v, found)
-    elif isinstance(data, list):
-        for item in data:
-            _collect_urls_from_json(item, found)
+    print(f"  unimelb: {len(listing)} UG courses from Funnelback API")
+    return listing
 
 
 async def _playwright_fetch_batch(
@@ -193,11 +253,12 @@ async def _playwright_fetch_batch(
     urls: list[str],
     university_id: str,
     campus_map: dict[str, str],
+    listing: dict[str, _ListingEntry],
 ) -> list[tuple[str, CourseData | Exception | None, list[tuple[str, str]]]]:
     async with browser_context() as ctx:
         sem = asyncio.Semaphore(_CONCURRENCY)
         tasks = [
-            _fetch_one(ctx, rp, check_robots, url, university_id, campus_map, sem)
+            _fetch_one(ctx, rp, check_robots, url, university_id, campus_map, listing, sem)
             for url in urls
         ]
         return list(await asyncio.gather(*tasks))
@@ -210,6 +271,7 @@ async def _fetch_one(
     url: str,
     university_id: str,
     campus_map: dict[str, str],
+    listing: dict[str, _ListingEntry],
     sem: asyncio.Semaphore,
 ) -> tuple[str, CourseData | Exception | None, list[tuple[str, str]]]:
     check_robots(rp, url)
@@ -224,7 +286,8 @@ async def _fetch_one(
             return url, e, []
         finally:
             await page.close()
-    result, issues = _parse_course(html, url, university_id, campus_map)
+    entry = listing.get(url)
+    result, issues = _parse_course(html, url, university_id, campus_map, entry)
     return url, result, issues
 
 
@@ -233,16 +296,23 @@ def _parse_course(
     url: str,
     university_id: str,
     campus_map: dict[str, str],
+    entry: _ListingEntry | None,
 ) -> tuple[CourseData | None, list[tuple[str, str]]]:
     soup = BeautifulSoup(html, "lxml")
     issues: list[tuple[str, str]] = []
 
-    name = _parse_name(soup)
+    # Prefer h1 for full specialisation name (e.g. "Bachelor of Fine Arts (Acting)")
+    name = _parse_name(soup) or (entry.name if entry else None)
     if not name:
         return None, issues
 
+    atar_guaranteed = entry.atar_guaranteed if entry else None
+    atar_rank = entry.atar_rank if entry else None
+    csp_available = entry.csp_available if entry else True
     duration = _parse_duration(soup)
-    campuses = _build_campus_links(soup, campus_map, name, url, issues)
+    campuses = _build_campus_links(
+        soup, campus_map, name, url, issues, atar_guaranteed, atar_rank,
+    )
 
     return CourseData(
         university_id=university_id,
@@ -252,7 +322,7 @@ def _parse_course(
         campuses=campuses,
         degree_type="UG",
         duration_years=duration,
-        csp_available=True,
+        csp_available=csp_available,
         price_annual_csp_aud=None,   # deferred: fees tab pass not yet implemented
         price_annual_dfee_aud=None,  # Melbourne UG has no domestic full-fee places
     ), issues
@@ -263,14 +333,15 @@ def _parse_name(soup: BeautifulSoup) -> str | None:
     if not h1:
         return None
     name = h1.get_text(strip=True)
-    # Skip generic error/loading pages
     return name if len(name) > 5 else None
 
 
 def _parse_duration(soup: BeautifulSoup) -> float | None:
     text = soup.get_text(" ")
-    # Match patterns like "3 years full-time" or "4-year" anywhere in page text
-    m = re.search(r"(\d+(?:\.\d+)?)\s*[-\s]?year", text, re.IGNORECASE)
+    m = re.search(r"(\d+(?:\.\d+)?)\s+years?\s+(?:full.?time|standard)", text, re.IGNORECASE)
+    if m:
+        return float(m.group(1))
+    m = re.search(r"(\d+(?:\.\d+)?)[- ]year", text, re.IGNORECASE)
     return float(m.group(1)) if m else None
 
 
@@ -280,102 +351,56 @@ def _build_campus_links(
     course_name: str,
     url: str,
     issues: list[tuple[str, str]],
+    atar_guaranteed: int | None,
+    atar_rank: int | None,
 ) -> list[CampusLink]:
-    """Detect campus from page content and build CampusLink list.
-
-    Flags both-campus courses in issues for manual review.
-    """
     page_text = soup.get_text(" ").lower()
-    links: list[CampusLink] = []
-
     has_parkville = "parkville" in page_text
     has_southbank = "southbank" in page_text
-    has_online = re.search(r"\bonline\b", page_text) is not None
-
-    if has_parkville:
-        campus_id = campus_map.get("Parkville")
-        if campus_id:
-            atar_rank, atar_guaranteed = _parse_atar_near_campus(soup, "parkville")
-            links.append(CampusLink(
-                campus_id=campus_id,
-                atar_guaranteed=atar_guaranteed,
-                atar_lowest_selection_rank=atar_rank,
-            ))
-
-    if has_southbank:
-        campus_id = campus_map.get("Southbank")
-        if campus_id:
-            atar_rank, atar_guaranteed = _parse_atar_near_campus(soup, "southbank")
-            links.append(CampusLink(
-                campus_id=campus_id,
-                atar_guaranteed=atar_guaranteed,
-                atar_lowest_selection_rank=atar_rank,
-            ))
+    has_online = bool(re.search(r"\bonline\b", page_text))
+    links: list[CampusLink] = []
 
     if has_parkville and has_southbank:
+        parkville_id = campus_map.get("Parkville")
+        southbank_id = campus_map.get("Southbank")
+        if parkville_id:
+            links.append(CampusLink(
+                campus_id=parkville_id,
+                atar_guaranteed=atar_guaranteed,
+                atar_lowest_selection_rank=atar_rank,
+            ))
+        if southbank_id:
+            links.append(CampusLink(
+                campus_id=southbank_id,
+                atar_guaranteed=atar_guaranteed,
+                atar_lowest_selection_rank=atar_rank,
+            ))
         issues.append((
             "multiple_campuses",
-            f"Course '{course_name}' appears at both Parkville and Southbank — verify campus split",
+            f"'{course_name}' appears at both Parkville and Southbank — verify campus split",
         ))
+    elif has_southbank:
+        campus_id = campus_map.get("Southbank")
+        if campus_id:
+            links.append(CampusLink(
+                campus_id=campus_id,
+                atar_guaranteed=atar_guaranteed,
+                atar_lowest_selection_rank=atar_rank,
+            ))
+    else:
+        campus_id = campus_map.get("Parkville")
+        if campus_id:
+            notes = None if has_parkville else "Campus not detected on page — defaulted to Parkville"
+            links.append(CampusLink(
+                campus_id=campus_id,
+                atar_guaranteed=atar_guaranteed,
+                atar_lowest_selection_rank=atar_rank,
+                extraction_notes=notes,
+            ))
 
     if has_online:
         online_id = campus_map.get("Online")
         if online_id:
             links.append(CampusLink(campus_id=online_id))
 
-    # If no campus detected, default to Parkville (Melbourne's primary campus)
-    if not links:
-        parkville_id = campus_map.get("Parkville")
-        if parkville_id:
-            atar_rank, atar_guaranteed = _parse_atar_near_campus(soup, None)
-            links.append(CampusLink(
-                campus_id=parkville_id,
-                atar_guaranteed=atar_guaranteed,
-                atar_lowest_selection_rank=atar_rank,
-                extraction_notes="Campus not detected on page — defaulted to Parkville",
-            ))
-
     return links
-
-
-def _parse_atar_near_campus(
-    soup: BeautifulSoup, campus_slug: str | None
-) -> tuple[int | None, int | None]:
-    """Extract ATAR values near a campus section, or globally if campus_slug is None."""
-    # Try to find a section/heading containing the campus name first
-    section = None
-    if campus_slug:
-        for tag in soup.find_all(["h2", "h3", "h4", "section", "div"]):
-            if campus_slug in tag.get_text().lower():
-                section = tag.find_parent(["section", "div"]) or tag
-                break
-
-    search_root = section if section else soup
-    return _extract_atar_values(search_root)
-
-
-def _extract_atar_values(
-    root: BeautifulSoup,
-) -> tuple[int | None, int | None]:
-    """Scan root for ATAR/selection rank numbers. Returns (lowest_rank, guaranteed)."""
-    text = root.get_text(" ")
-    atar_rank: int | None = None
-    atar_guaranteed: int | None = None
-
-    # Match patterns like "Lowest selection rank 75" or "Selection rank: 75.00"
-    m = re.search(
-        r"(?:lowest\s+)?selection\s+rank[:\s]+(\d{2,3}(?:\.\d+)?)",
-        text, re.IGNORECASE,
-    )
-    if m:
-        atar_rank = int(float(m.group(1)))
-
-    # Match "Guaranteed ATAR 90" or "Guaranteed entry: 90"
-    m = re.search(
-        r"guaranteed\s+(?:atar|entry)[:\s]+(\d{2,3}(?:\.\d+)?)",
-        text, re.IGNORECASE,
-    )
-    if m:
-        atar_guaranteed = int(float(m.group(1)))
-
-    return atar_rank, atar_guaranteed
