@@ -14,16 +14,18 @@ from dotenv import load_dotenv
 
 from base_scraper import BaseScraper
 from db import get_pool
+from latrobe import LaTrobeScraper
 from monash import MonashScraper
 from rmit import RmitScraper
 from swinburne import SwinburneScraper
 from unimelb import UniMelbScraper
 
 SCRAPERS: dict[str, type[BaseScraper]] = {
-    "rmit": RmitScraper,
+    "latrobe": LaTrobeScraper,
     "monash": MonashScraper,
-    "unimelb": UniMelbScraper,
+    "rmit": RmitScraper,
     "swinburne": SwinburneScraper,
+    "unimelb": UniMelbScraper,
 }
 
 
