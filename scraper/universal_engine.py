@@ -50,6 +50,34 @@ class UniversalEngine:
                 
         return None
 
+    def extract_admissions_codes(self, soup: BeautifulSoup, config: dict) -> list[str]:
+        """
+        Extract admissions codes (VTAC, UAC, etc.) based on anchor or regex.
+        Returns a list of unique codes found.
+        """
+        results = set()
+        
+        # Try finding by anchor label first
+        anchor = config.get("anchor")
+        regex = config.get("regex")
+        
+        if anchor:
+            label_text = self.find_by_anchor(soup, anchor)
+            if label_text:
+                if regex:
+                    matches = re.findall(regex, label_text)
+                    results.update(matches)
+                else:
+                    results.add(label_text)
+        
+        # Fallback to general regex search on the whole page if no anchor result
+        if not results and regex:
+            text = soup.get_text(" ")
+            matches = re.findall(regex, text)
+            results.update(matches)
+            
+        return sorted(list(results))
+
     async def scrape_page(self, html: str, config: SiteConfig) -> CourseData:
         """Scrape a course page using the provided configuration."""
         soup = BeautifulSoup(html, "lxml")
