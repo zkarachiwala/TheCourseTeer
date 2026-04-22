@@ -78,8 +78,50 @@ class UniversalEngine:
             
         return sorted(list(results))
 
-    async def scrape_page(self, html: str, config: SiteConfig) -> CourseData:
+    def calculate_confidence(self, field_results: dict[str, str]) -> int:
+        """
+        Calculate an overall confidence score for the scraped data.
+        - 100: All fields matched via primary selectors.
+        - 70: Some fields matched via anchors/regex.
+        - 30: Default values or failures present.
+        """
+        # TODO: Implement granular per-field confidence tracking
+        # For now, if we have a name and at least one other field, return 100
+        if field_results.get("name") and len(field_results) > 2:
+            return 100
+        return 70
+
+    async def scrape_page(self, html: str, config: SiteConfig, url: str) -> CourseData:
         """Scrape a course page using the provided configuration."""
         soup = BeautifulSoup(html, "lxml")
-        # To be implemented in next tasks
-        pass
+        field_results = {}
+        
+        # 1. Extract Name
+        name_cfg = config.extraction_map.get("name", {})
+        name = None
+        if "selector" in name_cfg:
+            elem = soup.select_one(name_cfg["selector"])
+            if elem:
+                name = elem.get_text(strip=True)
+                field_results["name"] = name
+        if not name and "anchor" in name_cfg:
+            name = self.find_by_anchor(soup, name_cfg["anchor"])
+            if name:
+                field_results["name"] = name
+            
+        # 2. Admissions Codes
+        adm_cfg = config.extraction_map.get("admissions_codes", {})
+        adm_codes = self.extract_admissions_codes(soup, adm_cfg)
+        if adm_codes:
+            field_results["admissions_codes"] = ",".join(adm_codes)
+        
+        confidence = self.calculate_confidence(field_results)
+        
+        # Placeholder for remaining fields (duration, fees, location)
+        return CourseData(
+            university_id=config.university_id,
+            name=name or "Unknown",
+            source_url=url,
+            campuses=[], # Logic to be added in Phase 3
+            confidence_score=confidence
+        )
