@@ -89,39 +89,101 @@ class UniversalEngine:
         # For now, if we have a name and at least one other field, return 100
         if field_results.get("name") and len(field_results) > 2:
             return 100
-        return 70
+        async def scrape_page(self, html: str, config: SiteConfig, url: str) -> CourseData:
+            """Scrape a course page using the provided configuration."""
+            soup = BeautifulSoup(html, "lxml")
+            field_results = {}
 
-    async def scrape_page(self, html: str, config: SiteConfig, url: str) -> CourseData:
-        """Scrape a course page using the provided configuration."""
-        soup = BeautifulSoup(html, "lxml")
-        field_results = {}
-        
-        # 1. Extract Name
-        name_cfg = config.extraction_map.get("name", {})
-        name = None
-        if "selector" in name_cfg:
-            elem = soup.select_one(name_cfg["selector"])
-            if elem:
-                name = elem.get_text(strip=True)
-                field_results["name"] = name
-        if not name and "anchor" in name_cfg:
-            name = self.find_by_anchor(soup, name_cfg["anchor"])
+            # 1. Extract Name
+            name_cfg = config.extraction_map.get("name", {})
+            name = self._extract_field(soup, name_cfg)
             if name:
                 field_results["name"] = name
-            
-        # 2. Admissions Codes
-        adm_cfg = config.extraction_map.get("admissions_codes", {})
-        adm_codes = self.extract_admissions_codes(soup, adm_cfg)
-        if adm_codes:
-            field_results["admissions_codes"] = ",".join(adm_codes)
-        
-        confidence = self.calculate_confidence(field_results)
-        
-        # Placeholder for remaining fields (duration, fees, location)
-        return CourseData(
-            university_id=config.university_id,
-            name=name or "Unknown",
-            source_url=url,
-            campuses=[], # Logic to be added in Phase 3
-            confidence_score=confidence
-        )
+
+            # 2. Extract Duration
+            dur_cfg = config.extraction_map.get("duration", {})
+            duration_str = self._extract_field(soup, dur_cfg)
+            duration = self._parse_duration(duration_str)
+            if duration:
+                field_results["duration"] = str(duration)
+
+            # 3. Extract ATAR
+            atar_cfg = config.extraction_map.get("atar", {})
+            atar_str = self._extract_field(soup, atar_cfg)
+            atar_guaranteed, atar_rank = self._parse_atar(atar_str)
+            if atar_guaranteed or atar_rank:
+                field_results["atar"] = atar_str
+
+            # 4. Extract Fees
+            fees_cfg = config.extraction_map.get("fees", {})
+            fees_str = self._extract_field(soup, fees_cfg)
+            csp_available = "commonwealth" in (fees_str or "").lower()
+            if fees_str:
+                field_results["fees"] = fees_str
+
+            # 5. Admissions Codes
+            adm_cfg = config.extraction_map.get("admissions_codes", {})
+            adm_codes = self.extract_admissions_codes(soup, adm_cfg)
+            if adm_codes:
+                field_results["admissions_codes"] = ",".join(adm_codes)
+
+            confidence = self.calculate_confidence(field_results)
+
+            return CourseData(
+                university_id=config.university_id,
+                name=name or "Unknown",
+                source_url=url,
+                campuses=[], # To be implemented in Phase 3
+                degree_type="UG",
+                duration_years=duration,
+                csp_available=csp_available,
+                confidence_score=confidence
+            )
+
+        def _extract_field(self, soup: BeautifulSoup, field_cfg: dict) -> str | None:
+            """Helper to extract a field based on selector, attr, anchor, or regex."""
+            val = None
+
+            # Try selector first
+            selector = field_cfg.get("selector")
+            if selector:
+                elem = soup.select_one(selector)
+                if elem:
+                    attr = field_cfg.get("attr")
+                    val = elem.get(attr) if attr else elem.get_text(strip=True)
+
+            # Fallback to anchor
+            if not val:
+                anchor = field_cfg.get("anchor")
+                if anchor:
+                    val = self.find_by_anchor(soup, anchor)
+
+            # Apply regex if provided
+            regex = field_cfg.get("regex")
+            if val and regex:
+                m = re.search(regex, val, re.IGNORECASE)
+                if m:
+                    # Use group 1 if it exists, else full match
+                    try:
+                        val = m.group(1)
+                    except IndexError:
+                        val = m.group(0)
+
+            return val
+
+        def _parse_duration(self, text: str | None) -> float | None:
+            if not text: return None
+            m = re.search(r"(\d+(?:\.\d+)?)", text)
+            return float(m.group(1)) if m else None
+
+        def _parse_atar(self, text: str | None) -> tuple[int | None, int | None]:
+            # Simplistic parser for now
+            if not text: return None, None
+            m = re.findall(r"(\d{2}(?:\.\d+)?)", text)
+            nums = [int(float(n)) for n in m]
+            if len(nums) >= 2: return nums[0], nums[1]
+            if len(nums) == 1: return nums[0], None
+            return None, None
+
+        def extract_admissions_codes(self, soup: BeautifulSoup, config: dict) -> list[str]:
+
