@@ -64,10 +64,10 @@ SITE_CONFIGS = [
         "university_id": UNI_MAP["unimelb"],
         "base_url": "https://study.unimelb.edu.au",
         "extraction_map": {
-            "name": {"selector": "h1", "anchor": "Course title"},
-            "duration": {"anchor": "Duration", "regex": r"(\d+(?:\.\d+)?)\s+years?"},
-            "atar": {"anchor": "Guaranteed ATAR", "regex": r"(\d{2}(?:\.\d+)?)"},
-            "fees": {"anchor": "Commonwealth Supported Place", "type": "boolean"},
+            "name": {"selector": "h1"},
+            "duration": {"anchor": "Duration", "regex": r"(\d+(?:\.\d+)?)"},
+            "atar": {"anchor": "Guaranteed ATAR", "regex": r":\s*(\d{2}(?:\.\d+)?)"},
+            "fees": {"anchor": "Commonwealth Supported Place"},
             "location": {"anchor": "Campus", "regex": r"(Parkville|Southbank|Online)"},
             "admissions_codes": {"anchor": "VTAC code", "regex": r"(\d{9,10})"}
         },

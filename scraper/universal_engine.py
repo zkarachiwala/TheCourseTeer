@@ -39,8 +39,17 @@ class UniversalEngine:
         for label_node in labels:
             # 1. Check if the label node itself contains the value (e.g., "Duration: 3 years")
             full_text = label_node.strip()
-            # It's a value if it contains numbers and is significantly longer than the anchor
-            if any(c.isdigit() for c in full_text) and len(full_text) > len(anchor_text) + 2:
+            # Heuristic: it's a value if it contains:
+            # - numbers
+            # - "available", "yes", "no"
+            # - a colon or dash separating the label and value (e.g. "Campus: Parkville")
+            is_val = (
+                any(c.isdigit() for c in full_text) or
+                any(k in full_text.lower() for k in ["available", "yes", "no"]) or
+                (':' in full_text and len(full_text.split(':', 1)[1].strip()) > 0) or
+                ('-' in full_text and len(full_text.split('-', 1)[1].strip()) > 0)
+            )
+            if is_val:
                 logger.debug(f"Found value in same node as anchor '{anchor_text}': {full_text}")
                 return full_text
 
