@@ -1,7 +1,7 @@
 'use client'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { ThemeToggle } from './theme-toggle'
+import { UserMenu } from './user-menu'
 import { useShortlist } from '@/contexts/shortlist-context'
 import { ShortlistDrawer } from './shortlist-drawer'
 
@@ -34,7 +34,7 @@ export function Header() {
             <span style={{ background: 'var(--accent)', color: 'var(--accent-fg)', borderRadius: 'var(--radius-pill)', fontSize: '11px', padding: '1px 6px', fontWeight: 700 }}>{shortlisted.length}</span>
           </button>
         )}
-        <ThemeToggle />
+        <UserMenu />
       </header>
       {drawerOpen && <ShortlistDrawer courses={shortlisted} onClose={closeDrawer} onRemove={remove} />}
     </>
