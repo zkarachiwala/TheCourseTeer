@@ -26,6 +26,47 @@ _BASE_URL = "https://www.monash.edu"
 _UG_CODE_RE = re.compile(r"-b\d{4}$")
 _CONCURRENCY = 3
 
+_FACULTY_MAP: list[tuple[str, list[str]]] = [
+    ("Faculty of Engineering", [
+        "engineering", "electrical", "civil", "mechanical", "chemical",
+        "software", "aerospace", "biomedical", "environmental engineering",
+        "materials", "mechatronics",
+    ]),
+    ("Faculty of Information Technology", [
+        "information technology", "computer science", "computing", "data science",
+        "cybersecurity", "artificial intelligence", "software systems",
+    ]),
+    ("Faculty of Business and Economics", [
+        "business", "commerce", "economics", "accounting", "finance",
+        "marketing", "management", "actuarial",
+    ]),
+    ("Faculty of Law", [
+        "law", "legal",
+    ]),
+    ("Faculty of Medicine, Nursing and Health Sciences", [
+        "medicine", "medical", "nursing", "pharmacy", "physiotherapy",
+        "nutrition", "dietetics", "paramedicine", "occupational therapy",
+        "speech pathology", "radiation therapy",
+    ]),
+    ("Faculty of Science", [
+        "science", "biology", "chemistry", "physics", "mathematics",
+        "statistics", "environmental science", "genetics", "microbiology",
+        "psychology", "neuroscience",
+    ]),
+    ("Faculty of Arts", [
+        "arts", "humanities", "history", "philosophy", "languages",
+        "literature", "music", "creative writing", "criminology",
+        "politics", "sociology", "communications", "journalism",
+    ]),
+    ("Faculty of Education", [
+        "education", "teaching",
+    ]),
+    ("Faculty of Art, Design and Architecture", [
+        "design", "architecture", "fine art", "fashion", "interior design",
+        "industrial design",
+    ]),
+]
+
 
 class MonashScraper(BaseScraper):
     """Scraper for Monash University. Uses Playwright to bypass Cloudflare."""
@@ -161,7 +202,7 @@ def _parse_course(
         university_id=university_id,
         name=name,
         source_url=url,
-        faculty=None,
+        faculty=_infer_faculty(name) if name else None,
         campuses=campuses,
         degree_type=degree_type,
         duration_years=duration,
@@ -184,6 +225,14 @@ def _parse_name(soup: BeautifulSoup, html: str) -> str | None:
             pass
     h1 = soup.find("h1")
     return h1.get_text(strip=True) if h1 else None
+
+
+def _infer_faculty(course_name: str) -> str | None:
+    name_lower = course_name.lower()
+    for faculty, keywords in _FACULTY_MAP:
+        if any(kw in name_lower for kw in keywords):
+            return faculty
+    return None
 
 
 def _parse_info_table(soup: BeautifulSoup) -> dict[str, str]:
