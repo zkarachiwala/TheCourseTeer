@@ -35,8 +35,6 @@ export const courses = pgTable("courses", {
   priceAnnualDfeeAud: integer("price_annual_dfee_aud"),
   cspAvailable: boolean("csp_available"),
   prerequisites: jsonb("prerequisites"),
-  sponsored: boolean("sponsored").notNull().default(false),
-  sponsoredRank: integer("sponsored_rank"),
   updatedAt: timestamp("updated_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }),
 });
@@ -91,3 +89,4 @@ export const leads = pgTable("leads", {
   courseIds: uuid("course_ids").array().notNull().default([]),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
+

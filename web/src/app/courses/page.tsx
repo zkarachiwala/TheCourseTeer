@@ -2,10 +2,9 @@ export const dynamic = 'force-dynamic'
 
 import { db } from '../../../db'
 import { courses, universities, courseCampuses, campuses } from '../../../db/schema'
-import { eq, asc, desc } from 'drizzle-orm'
+import { eq, asc } from 'drizzle-orm'
 import { CourseListClient } from '@/components/course-list-client'
 import type { CourseCardData } from '@/components/course-card'
-import type { FeaturedUniConfig } from '@/components/featured-uni-banner'
 
 export default async function CoursesPage() {
   const rows = await db
@@ -16,8 +15,6 @@ export default async function CoursesPage() {
       degreeType: courses.degreeType,
       durationYears: courses.durationYears,
       sourceUrl: courses.sourceUrl,
-      sponsored: courses.sponsored,
-      sponsoredRank: courses.sponsoredRank,
       universityName: universities.name,
       universitySlug: universities.slug,
       atarGuaranteed: courseCampuses.atarGuaranteed,
@@ -27,7 +24,7 @@ export default async function CoursesPage() {
     .leftJoin(universities, eq(courses.universityId, universities.id))
     .leftJoin(courseCampuses, eq(courses.id, courseCampuses.courseId))
     .leftJoin(campuses, eq(courseCampuses.campusId, campuses.id))
-    .orderBy(desc(courses.sponsored), courses.sponsoredRank, asc(courses.name))
+    .orderBy(asc(courses.name))
 
   // Deduplicate by course — keep the row with the highest guaranteed ATAR
   const map = new Map<string, CourseCardData>()
@@ -55,13 +52,5 @@ export default async function CoursesPage() {
     .from(universities)
     .orderBy(asc(universities.name))
 
-  const featuredUni: FeaturedUniConfig | null = process.env.FEATURED_UNI_NAME ? {
-    universityName: process.env.FEATURED_UNI_NAME,
-    tagline: process.env.FEATURED_UNI_TAGLINE ?? '',
-    highlight: process.env.FEATURED_UNI_HIGHLIGHT ?? '',
-    ctaText: process.env.FEATURED_UNI_CTA_TEXT ?? 'Learn More',
-    ctaUrl: process.env.FEATURED_UNI_CTA_URL ?? '#',
-  } : null
-
-  return <CourseListClient courses={[...map.values()]} universities={uniList} featuredUni={featuredUni} />
+  return <CourseListClient courses={[...map.values()]} universities={uniList} />
 }
