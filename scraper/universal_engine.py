@@ -9,16 +9,117 @@ from psycopg_pool import AsyncConnectionPool
 from db import get_site_config
 from models import SiteConfig, CourseData
 
+from base_scraper import BaseScraper
+from http_client import make_client
+from db import get_site_config, get_campus_map
+
 logger = logging.getLogger(__name__)
 
-class UniversalEngine:
+_FACULTY_KEYWORDS: list[tuple[str, list[str]]] = [
+    ("Faculty of Engineering", [
+        "engineering", "electrical", "civil", "mechanical", "chemical",
+        "aerospace", "biomedical", "mechatronics", "materials",
+    ]),
+    ("Faculty of Information Technology", [
+        "information technology", "computer science", "computing", "data science",
+        "cybersecurity", "artificial intelligence", "software",
+    ]),
+    ("Faculty of Business and Economics", [
+        "business", "commerce", "economics", "accounting", "finance",
+        "marketing", "management", "actuarial",
+    ]),
+    ("Faculty of Law", ["laws", "legal studies", "legal"]),
+    ("Faculty of Medicine and Health Sciences", [
+        "medicine", "medical", "nursing", "pharmacy", "physiotherapy",
+        "nutrition", "dietetics", "paramedicine", "occupational therapy",
+        "speech pathology", "radiation therapy", "dentistry", "biomedicine",
+        "health sciences",
+    ]),
+    ("Faculty of Science", [
+        "science", "biology", "chemistry", "physics", "mathematics",
+        "statistics", "genetics", "microbiology", "neuroscience",
+        "environmental science",
+    ]),
+    ("Faculty of Arts and Humanities", [
+        "arts", "humanities", "history", "philosophy", "languages",
+        "literature", "creative writing", "criminology", "politics",
+        "sociology", "communications", "journalism", "psychology",
+    ]),
+    ("Faculty of Education", ["education", "teaching"]),
+    ("Faculty of Art, Design and Architecture", [
+        "design", "architecture", "fine art", "fashion", "interior design",
+        "industrial design", "music", "film", "animation", "media arts",
+    ]),
+]
+
+
+def _infer_faculty(course_name: str) -> str | None:
+    name_lower = course_name.lower()
+    for faculty, keywords in _FACULTY_KEYWORDS:
+        if any(kw in name_lower for kw in keywords):
+            return faculty
+    return None
+
+
+class UniversalEngine(BaseScraper):
     """
     Centralized scraping engine driven by database-stored configurations.
     Includes visual anchor fallback logic and confidence scoring.
     """
 
-    def __init__(self, pool: AsyncConnectionPool):
-        self.pool = pool
+    def __init__(self, pool: AsyncConnectionPool, university_slug: str = ""):
+        super().__init__(pool, university_slug)
+        self._config: SiteConfig | None = None
+        self._campus_map: dict[str, str] | None = None
+
+    async def _ensure_config(self):
+        if not self._config:
+            self._config = await get_site_config(self.pool, self.university_id)
+            if not self._config:
+                raise ValueError(f"No active SiteConfig for {self.slug}")
+            self._campus_map = await get_campus_map(self.pool, self.university_id)
+
+    async def discover_urls(self, rp: urllib.robotparser.RobotFileParser) -> list[str]:
+        await self._ensure_config()
+        disc_cfg = self._config.extraction_map.get("discovery_config", {})
+        method = disc_cfg.get("method")
+        
+        urls = []
+        if method == "sitemap":
+            sitemap_url = disc_cfg.get("url")
+            include_patterns = disc_cfg.get("include_patterns", [])
+            async with make_client() as client:
+                resp = await client.get(sitemap_url)
+                resp.raise_for_status()
+                # Basic sitemap parsing
+                import re
+                found = re.findall(r"<loc>(https://[^<]+)</loc>", resp.text)
+                for url in found:
+                    if not include_patterns or any(p in url for p in include_patterns):
+                        urls.append(url)
+        elif method == "listing":
+            # Implementation for listing pages if needed
+            pass
+            
+        return list(set(urls))
+
+    async def scrape_url(self, rp: urllib.robotparser.RobotFileParser, url: str) -> CourseData | None:
+        await self._ensure_config()
+        self.check_robots(rp, url)
+        
+        async with make_client() as client:
+            resp = await client.get(url)
+            if resp.status_code != 200:
+                logger.warning(f"Failed to fetch {url}: {resp.status_code}")
+                return None
+            
+            async def fetch_sub(sub_url: str) -> str:
+                # Re-use client for sub-requests
+                sub_resp = await client.get(sub_url)
+                sub_resp.raise_for_status()
+                return sub_resp.text
+
+            return await self.scrape_page(resp.text, self._config, url, campus_map=self._campus_map, fetch_fn=fetch_sub)
 
     async def get_config(self, university_id: str) -> SiteConfig:
         """Fetch the active configuration for the given university."""
@@ -83,7 +184,7 @@ class UniversalEngine:
             return 100
         return 70
 
-    async def scrape_page(self, html: str, config: SiteConfig, url: str) -> CourseData:
+    async def scrape_page(self, html: str, config: SiteConfig, url: str, campus_map: dict[str, str] | None = None, fetch_fn: Any | None = None) -> CourseData:
         """Scrape a course page using the provided configuration."""
         soup = BeautifulSoup(html, "lxml")
         field_results = {}
@@ -96,20 +197,7 @@ class UniversalEngine:
 
         # 2. Extract Duration
         dur_cfg = config.extraction_map.get("duration", {})
-        # Note: UniMelb duration is sometimes found with "Duration" label
         duration_str = self._extract_field(soup, dur_cfg, html)
-        if not duration_str:
-            # Fallback specifically for UniMelb structure
-            dur_label = soup.find(string=lambda s: s and "Duration" in s)
-            if dur_label:
-                # Get the parent, and look for text within it
-                parent = dur_label.find_parent()
-                if parent:
-                    # Look for the duration in the parent or next sibling
-                    text_content = parent.get_text(" ", strip=True)
-                    logger.debug(f"Duration parent text: {text_content}")
-                    duration_str = text_content
-        
         duration = self._parse_duration(duration_str)
         if duration:
             field_results["duration"] = str(duration)
@@ -123,24 +211,19 @@ class UniversalEngine:
 
         # 4. Extract Fees
         fees_cfg = config.extraction_map.get("fees", {})
-        # Check anchor specifically for CSP availability
         anchor = fees_cfg.get("anchor")
         csp_available = False
         if anchor:
             anchor_val = self.find_by_anchor(soup, anchor)
             if anchor_val:
-                # Generous detection: commonwealth, csp, supported, or just a dollar sign for domestic fees
                 csp_available = any(k in anchor_val.lower() for k in ["commonwealth", "csp", "supported", "$"])
                 field_results["fees"] = anchor_val
         
-        # Fallback to general extraction (including regex on whole HTML)
         if not csp_available:
             fees_str = self._extract_field(soup, fees_cfg, html)
             if fees_str:
                 field_results["fees"] = fees_str
-                # If regex found something and it looks like a price, or contains CSP keywords
                 csp_available = any(k in fees_str.lower() for k in ["commonwealth", "csp", "supported", "$"])
-                # Fallback: if regex matched "FeeDomesticCSP" (we check the regex string in config)
                 if not csp_available and "FeeDomesticCSP" in fees_cfg.get("regex", ""):
                     csp_available = True
 
@@ -152,19 +235,79 @@ class UniversalEngine:
 
         # 6. Location / Campuses
         loc_cfg = config.extraction_map.get("location", {})
-        location_str = self._extract_field(soup, loc_cfg, html)
+        location_raw = self._extract_field(soup, loc_cfg, html)
         
         campuses = []
-        if location_str:
+        if location_raw:
+            # Parse multiple locations if present (comma-separated or JSON list)
+            location_list = []
+            if location_raw.startswith('[') and location_raw.endswith(']'):
+                try:
+                    location_list = json.loads(location_raw)
+                except:
+                    location_list = [location_raw]
+            else:
+                location_list = [loc.strip() for loc in location_raw.split(',') if loc.strip()]
+
+            location_mapping = loc_cfg.get("mapping", {})
+
             from models import CampusLink
-            # Simple mapping for now
-            campuses.append(CampusLink(
-                campus_id=location_str, # Will be mapped to real ID in Phase 3
-                atar_guaranteed=atar_guaranteed,
-                atar_lowest_selection_rank=atar_rank,
-                admissions_codes=adm_codes,
-                confidence_score=70
-            ))
+            for loc in location_list:
+                # Map location to campus_id if campus_map or config mapping is provided
+                campus_id = loc
+                if location_mapping and loc in location_mapping:
+                    campus_id = location_mapping[loc]
+                elif campus_map:
+                    # Try exact match
+                    campus_id = campus_map.get(loc, loc)
+
+                campuses.append(CampusLink(
+                    campus_id=campus_id,
+                    atar_guaranteed=atar_guaranteed,
+                    atar_lowest_selection_rank=atar_rank,
+                    admissions_codes=list(adm_codes),
+                    confidence_score=70
+                ))
+
+        # 7. Follow URLs (e.g. for La Trobe detail JSONs)
+        follow_cfg = config.extraction_map.get("follow_urls")
+        if follow_cfg and fetch_fn:
+            regex = follow_cfg.get("regex")
+            if regex:
+                # Find all matching URLs in the HTML
+                matches = re.findall(regex, html)
+                for sub_url in matches:
+                    if not sub_url.startswith('http'):
+                        sub_url = config.base_url.rstrip('/') + '/' + sub_url.lstrip('/')
+                    
+                    try:
+                        sub_html = await fetch_fn(sub_url)
+                        # Extract more data from the sub-page
+                        # For La Trobe, we want VTAC codes from the detail JSON
+                        sub_adm_codes = self.extract_admissions_codes(BeautifulSoup(sub_html, "lxml"), adm_cfg)
+                        if sub_adm_codes:
+                            # Heuristic: try to match sub_url to a campus
+                            # La Trobe URLs have campus code in them, e.g. /domestic/bu/
+                            matched_campus = None
+                            for campus in campuses:
+                                if f"/{campus.campus_id.lower()}/" in sub_url.lower():
+                                    matched_campus = campus
+                                    break
+                            
+                            if matched_campus:
+                                matched_campus.admissions_codes.extend(sub_adm_codes)
+                                matched_campus.admissions_codes = sorted(list(set(matched_campus.admissions_codes)))
+                            else:
+                                # If no specific campus match, add to all
+                                for campus in campuses:
+                                    campus.admissions_codes.extend(sub_adm_codes)
+                                    campus.admissions_codes = sorted(list(set(campus.admissions_codes)))
+                    except Exception as e:
+                        logger.error(f"Failed to fetch followed URL {sub_url}: {e}")
+
+        if adm_codes or any(c.admissions_codes for c in campuses):
+            # Just for field_results tracking
+            field_results["admissions_codes"] = "found"
 
         confidence = self.calculate_confidence(field_results)
 
@@ -172,6 +315,7 @@ class UniversalEngine:
             university_id=config.university_id,
             name=name or "Unknown",
             source_url=url,
+            faculty=_infer_faculty(name) if name else None,
             campuses=campuses,
             degree_type="UG",
             duration_years=duration,
@@ -301,9 +445,9 @@ class UniversalEngine:
             rank = vals[0]
             if len(vals) > 1: guaranteed = vals[1]
         else:
-            # Fallback if no keywords found
-            guaranteed = vals[0]
-            if len(vals) > 1: rank = vals[1]
+            # Default to selection rank if no keywords
+            rank = vals[0]
+            if len(vals) > 1: guaranteed = vals[1]
             
         return guaranteed, rank
 
