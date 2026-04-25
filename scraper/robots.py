@@ -58,7 +58,7 @@ def _serialise_rules(rp: urllib.robotparser.RobotFileParser) -> dict:
     """Extract allow/disallow/crawl-delay from the parser into a plain dict."""
     entries = {}
     for entry in rp.entries:
-        agents = [ua.useragent for ua in entry.useragents] or ["*"]
+        agents = list(entry.useragents) or ["*"]
         rules = {
             "allow": [r.path for r in entry.rulelines if r.allowance],
             "disallow": [r.path for r in entry.rulelines if not r.allowance],
