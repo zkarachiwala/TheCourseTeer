@@ -4,14 +4,16 @@ import { HeroSection } from './hero-section'
 import { CourseCard, CourseCardData } from './course-card'
 import { CourseRow } from './course-row'
 import { CourseDetailPanel } from './course-detail-panel'
+import { FeaturedUniBanner, FeaturedUniConfig } from './featured-uni-banner'
 import { getArea } from '@/lib/area-map'
+import { useShortlist } from '@/contexts/shortlist-context'
 
 type Layout = 'grid' | 'list' | 'compact'
 
 interface Props {
   courses: CourseCardData[]
   universities: { slug: string; name: string }[]
-  featuredUni?: { universityName: string; tagline: string; highlight: string; ctaText: string; ctaUrl: string } | null
+  featuredUni?: FeaturedUniConfig | null
 }
 
 export function CourseListClient({ courses, universities, featuredUni }: Props) {
@@ -22,6 +24,8 @@ export function CourseListClient({ courses, universities, featuredUni }: Props) 
   const [university, setUniversity] = useState('')
   const [duration, setDuration] = useState('')
   const [minAtar, setMinAtar] = useState('')
+
+  const { isShortlisted, toggle } = useShortlist()
 
   const filtered = useMemo(() => courses.filter(c => {
     if (search) { const q = search.toLowerCase(); if (!c.name.toLowerCase().includes(q) && !c.universityName.toLowerCase().includes(q)) return false }
@@ -55,24 +59,28 @@ export function CourseListClient({ courses, universities, featuredUni }: Props) 
         universities={universities}
       />
 
-      <div style={{ maxWidth: 'var(--max-w)', margin: '0 auto', padding: '16px var(--px)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <p style={{ fontSize: '14px', color: 'var(--text2)', margin: 0 }}>
-          {filtered.length} {filtered.length === 1 ? 'course' : 'courses'}
-        </p>
-        <div style={{ display: 'flex', gap: '4px', background: 'var(--bg2)', borderRadius: '10px', padding: '4px' }}>
-          {(['grid', 'list', 'compact'] as Layout[]).map(l => (
-            <button key={l} onClick={() => setLayout(l)} style={{ padding: '6px 12px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontSize: '12px', background: layout === l ? 'var(--accent)' : 'transparent', color: layout === l ? 'var(--accent-fg)' : 'var(--text2)' }}>
-              {l === 'grid' ? '⊞ Grid' : l === 'list' ? '☰ List' : '≡ Compact'}
-            </button>
-          ))}
+      <div style={{ maxWidth: 'var(--max-w)', margin: '0 auto', padding: '16px var(--px) 8px' }}>
+        {featuredUni && <FeaturedUniBanner config={featuredUni} />}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <p style={{ fontSize: '14px', color: 'var(--text2)', margin: 0 }}>
+            {filtered.length} {filtered.length === 1 ? 'course' : 'courses'}
+          </p>
+          <div style={{ display: 'flex', gap: '4px', background: 'var(--bg2)', borderRadius: '10px', padding: '4px' }}>
+            {(['grid', 'list', 'compact'] as Layout[]).map(l => (
+              <button key={l} onClick={() => setLayout(l)} style={{ padding: '6px 12px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontSize: '12px', background: layout === l ? 'var(--accent)' : 'transparent', color: layout === l ? 'var(--accent-fg)' : 'var(--text2)' }}>
+                {l === 'grid' ? '⊞ Grid' : l === 'list' ? '☰ List' : '≡ Compact'}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
-      <main style={{ maxWidth: 'var(--max-w)', margin: '0 auto', padding: '0 var(--px) 48px' }}>
+      <main style={{ maxWidth: 'var(--max-w)', margin: '0 auto', padding: '8px var(--px) 48px' }}>
         {layout === 'grid' && (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px' }}>
             {filtered.map(c => (
-              <CourseCard key={c.id} course={c} onClick={() => setSelected(c)} selected={selected?.id === c.id} />
+              <CourseCard key={c.id} course={c} onClick={() => setSelected(c)} selected={selected?.id === c.id}
+                onShortlist={() => toggle(c)} shortlisted={isShortlisted(c.id)} />
             ))}
           </div>
         )}
@@ -105,7 +113,8 @@ export function CourseListClient({ courses, universities, featuredUni }: Props) 
         )}
         {filtered.length === 0 && (
           <p style={{ textAlign: 'center', color: 'var(--text3)', padding: '48px 0', fontSize: '15px' }}>
-            No courses match your filters. <button onClick={clearAll} style={{ background: 'none', border: 'none', color: 'var(--accent)', cursor: 'pointer', fontSize: '15px', textDecoration: 'underline' }}>Clear filters</button>
+            No courses match your filters.{' '}
+            <button onClick={clearAll} style={{ background: 'none', border: 'none', color: 'var(--accent)', cursor: 'pointer', fontSize: '15px', textDecoration: 'underline' }}>Clear filters</button>
           </p>
         )}
       </main>
