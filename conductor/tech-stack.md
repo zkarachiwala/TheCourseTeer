@@ -10,7 +10,13 @@
 - **Drizzle ORM:** Managing database operations and schema integration.
 - **Next.js Server Actions:** Handling selector saving and database updates.
 
-**Web Loading & Scraper Integration:**
-- **Proxy/CORS Handler:** Node.js-based proxy to bypass CORS and load university sites within the UI.
-- **Playwright (Python):** For simulating and validating generated selectors against live sites.
-- **Selector Engine:** Logic to generate CSS and XPath selectors from user-selected elements.
+**Scraper Engine:**
+- **Python 3.12+:** Core language for the scraper backend.
+- **UniversalEngine:** Centralized, configuration-driven scraper class.
+- **BeautifulSoup & HTTPX:** For high-performance static scraping.
+- **Playwright (Python):** For dynamic rendering and Cloudflare bypass.
+- **psycopg3:** For asynchronous database pooling and interaction.
+
+**Web Loading & Proxying:**
+- **Node.js Proxy:** For bypassing CORS when loading university sites in the UI.
+- **Selector Engine:** Logic to generate resilient CSS/XPath selectors from user clicks.
