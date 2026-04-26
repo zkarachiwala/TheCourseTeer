@@ -25,7 +25,7 @@ SCRAPERS: dict[str, type[BaseScraper]] = {
 }
 
 
-async def main(universities: list[str], force: bool) -> None:
+async def main(universities: list[str], force: bool, use_cache: bool = True, refresh: bool = False) -> None:
     load_dotenv()
     pool = await get_pool()
 
@@ -38,6 +38,8 @@ async def main(universities: list[str], force: bool) -> None:
     for slug, scraper_class in targets.items():
         print(f"Running scraper: {slug}{' (force reset)' if force else ''}")
         scraper = scraper_class(pool, slug)
+        scraper.use_cache = use_cache
+        scraper.force_refresh = refresh
         try:
             count = await scraper.run(force=force)
             print(f"  {slug}: {count} courses upserted")
@@ -63,8 +65,20 @@ if __name__ == "__main__":
         action="store_true",
         help="Reset queue and re-run discovery for the target universities.",
     )
+    parser.add_argument(
+        "--no-cache",
+        action="store_false",
+        dest="use_cache",
+        default=True,
+        help="Disable local HTML snapshot caching.",
+    )
+    parser.add_argument(
+        "--refresh",
+        action="store_true",
+        help="Force refresh cached snapshots (bypass existing cache).",
+    )
     args = parser.parse_args()
 
     universities = args.universities or list(SCRAPERS)
     loop_factory = asyncio.SelectorEventLoop if sys.platform == "win32" else None
-    asyncio.run(main(universities, args.force), loop_factory=loop_factory)
+    asyncio.run(main(universities, args.force, args.use_cache, args.refresh), loop_factory=loop_factory)

@@ -21,6 +21,7 @@ from db import (
 from http_client import make_client
 from models import CourseData
 from robots import fetch_and_store_robots, is_allowed
+from snapshot_manager import SnapshotManager
 
 MAX_ATTEMPTS = 3
 
@@ -45,6 +46,9 @@ class BaseScraper(ABC):
         self.slug = university_slug
         self._university: dict | None = None
         self._run_id: str | None = None
+        self.snapshots = SnapshotManager()
+        self.use_cache = True
+        self.force_refresh = False
 
     async def run(self, force: bool = False) -> int:
         """Run the scraper with queue-based resume support. Returns count of upserted courses."""
