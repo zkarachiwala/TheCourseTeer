@@ -211,3 +211,6 @@ __marimo__/
 # Local AI tool config
 .claude/
 .playwright-mcp/
+
+# Scraper snapshots
+scraper/snapshots/

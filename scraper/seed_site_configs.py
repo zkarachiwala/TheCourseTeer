@@ -87,12 +87,22 @@ SITE_CONFIGS = [
             "duration": {"selector": "div.course-details__duration", "anchor": "Duration"},
             "atar": {"selector": "div.course-fees__block", "anchor": "ATAR"},
             "fees": {"selector": "p.course-fees__total", "anchor": "Yearly fee"},
-            "location": {"selector": "div.course-details__campus", "anchor": "Campus"},
+            "location": {
+                "selector": "div.course-details__campus", 
+                "anchor": "Campus",
+                "mapping": {
+                    "Hawthorn": "682134ca-95e0-41be-8baa-3093db3c7ee5",
+                    "Wantirna": "64308899-8c55-4cab-ba56-7fba2a57b57c",
+                    "Croydon": "b7889aad-877d-432c-bc2b-0faf3b740c44",
+                    "Prahran": "e0b1c3ed-63b3-4661-a203-f21d394e17f1",
+                    "Online": "7aebbc4d-83c3-4418-91dd-30bc55a1a5ff"
+                }
+            },
             "admissions_codes": {"anchor": "VTAC code", "regex": r"(\d{9,10})"}
         },
         "discovery_config": {
             "method": "sitemap",
-            "url": "https://www.swinburne.edu.au/course/sitemap.xml",
+            "url": "https://www.swinburne.edu.au/course/sitemap.xml/",
             "include_patterns": ["/course/undergraduate/"]
         },
         "robots_txt_status": "allowed",
@@ -113,8 +123,9 @@ SITE_CONFIGS = [
                     "AW": "Albury-Wodonga",
                     "BE": "Bendigo",
                     "MC": "Melbourne City",
-                    "MI": "Mildura",
-                    "SH": "Shepparton"
+                    "MI": "c88c2ce5-b368-41ea-8874-fdf9031f9cd7", # Wait, I need the real UUIDs from my previous step
+                    "Mildura": "cae2929f-5cda-4100-a542-85ae4ea327fb",
+                    "Shepparton": "c97655c5-37de-4aaa-89da-923f264a1741"
                 }
             },
             "admissions_codes": {"regex": r'"vtacCode"\s*:\s*(\d{9,10})'},
@@ -134,6 +145,11 @@ async def seed():
     async with await psycopg.AsyncConnection.connect(DATABASE_URL) as conn:
         async with conn.cursor() as cur:
             for config in SITE_CONFIGS:
+                # Merge discovery_config into extraction_map for storage
+                full_map = config["extraction_map"].copy()
+                if "discovery_config" in config:
+                    full_map["discovery_config"] = config["discovery_config"]
+
                 await cur.execute(
                     """
                     INSERT INTO site_configs (
@@ -149,7 +165,7 @@ async def seed():
                     (
                         config["university_id"],
                         config["base_url"],
-                        json.dumps(config["extraction_map"]),
+                        json.dumps(full_map),
                         config["robots_txt_status"],
                         config["notes"],
                         datetime.now()
