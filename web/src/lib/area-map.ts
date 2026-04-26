@@ -36,6 +36,23 @@ export function getArea(faculty: string | null | undefined): AreaKey | null {
   return null
 }
 
+export function getAreasFromName(name: string): AreaKey[] {
+  if (!name.includes('/')) return []
+  const areas: AreaKey[] = []
+  for (const part of name.split('/')) {
+    for (const [pattern, area] of FACULTY_MAP) {
+      if (pattern.test(part) && !areas.includes(area)) { areas.push(area); break }
+    }
+  }
+  return areas
+}
+
+export function degreeLabel(type: string | null | undefined): string {
+  if (type === 'UG') return 'Undergraduate'
+  if (type === 'PG') return 'Postgraduate'
+  return type ?? ''
+}
+
 const SKIP = new Set(['of', 'and', 'the', 'for', 'in', 'at', 'a', 'an'])
 
 export function getMonogram(name: string): string {

@@ -1,5 +1,5 @@
 import { CourseCardData } from './course-card'
-import { getArea, getMonogram, atarColor, AREAS } from '@/lib/area-map'
+import { getArea, getMonogram, atarColor, degreeLabel, AREAS } from '@/lib/area-map'
 
 interface Props { course: CourseCardData; onClick: () => void; selected?: boolean }
 
@@ -18,7 +18,7 @@ export function CourseRow({ course, onClick, selected }: Props) {
           {area && <span style={{ marginLeft: 8, background: area.color, color: '#fff', fontSize: '10px', padding: '1px 7px', borderRadius: 'var(--radius-pill)' }}>{area.label}</span>}
         </p>
       </div>
-      <span style={{ fontSize: '13px', color: 'var(--text3)', textAlign: 'right' }}>{course.durationYears != null ? `${course.durationYears}yr` : '—'}</span>
+      <span style={{ fontSize: '13px', color: 'var(--text3)', textAlign: 'right' }}>{course.durationYears != null ? `${course.durationYears} ${course.durationYears === 1 ? 'yr' : 'yrs'}` : '—'}</span>
       <span style={{ fontSize: '13px', fontWeight: 700, color: course.atarGuaranteed != null ? atarColor(course.atarGuaranteed) : 'var(--text3)', textAlign: 'right' }}>{course.atarGuaranteed ?? '—'}</span>
       <span style={{ color: 'var(--text3)', fontSize: '18px', textAlign: 'right' }}>›</span>
     </div>
