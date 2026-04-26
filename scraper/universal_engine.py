@@ -95,7 +95,7 @@ class UniversalEngine(BaseScraper):
                 resp = await client.get(sitemap_url)
                 resp.raise_for_status()
                 # Basic sitemap parsing
-                found = re.findall(r"<loc>(https://[^<]+)</loc>", resp.text)
+                found = re.findall(r"<loc>(https?://[^<]+)</loc>", resp.text)
                 for url in found:
                     if not include_patterns or any(p in url for p in include_patterns):
                         urls.append(url)
@@ -111,25 +111,51 @@ class UniversalEngine(BaseScraper):
         await self._ensure_config()
         self.check_robots(rp, url)
 
-        async with make_client() as client:
-            resp = await client.get(url)
-            if resp.status_code != 200:
-                logger.warning(f"Failed to fetch {url}: {resp.status_code}")
-                return None
+        html = None
+        if self.use_cache:
+            html = self.snapshots.load(
+                self.university_id, url, force_refresh=self.force_refresh
+            )
+            if html:
+                logger.info(f"Using cached snapshot for {url}")
 
-            async def fetch_sub(sub_url: str) -> str:
-                # Re-use client for sub-requests
+        if not html:
+            async with make_client() as client:
+                resp = await client.get(url)
+                if resp.status_code != 200:
+                    logger.warning(f"Failed to fetch {url}: {resp.status_code}")
+                    return None
+                html = resp.text
+                if self.use_cache:
+                    self.snapshots.save(self.university_id, url, html)
+
+        async def fetch_sub(sub_url: str) -> str:
+            # Determine extension (json or html)
+            ext = "json" if "json" in sub_url or "/data/" in sub_url else "html"
+
+            if self.use_cache:
+                cached = self.snapshots.load(
+                    self.university_id, sub_url, ext=ext, force_refresh=self.force_refresh
+                )
+                if cached:
+                    return cached
+
+            # Re-use client or make new one? For simplicity make new for now
+            async with make_client() as client:
                 sub_resp = await client.get(sub_url)
                 sub_resp.raise_for_status()
-                return sub_resp.text
+                content = sub_resp.text
+                if self.use_cache:
+                    self.snapshots.save(self.university_id, sub_url, content, ext=ext)
+                return content
 
-            return await self.scrape_page(
-                resp.text,
-                self._config,
-                url,
-                campus_map=self._campus_map,
-                fetch_fn=fetch_sub,
-            )
+        return await self.scrape_page(
+            html,
+            self._config,
+            url,
+            campus_map=self._campus_map,
+            fetch_fn=fetch_sub,
+        )
 
     async def get_config(self, university_id: str) -> SiteConfig:
         """Fetch the active configuration for the given university."""
@@ -276,22 +302,40 @@ class UniversalEngine(BaseScraper):
                 except:
                     location_list = [location_raw]
             else:
-                location_list = [
-                    loc.strip() for loc in location_raw.split(",") if loc.strip()
-                ]
+                # Common separators: comma, semicolon, or "and"
+                raw_list = re.split(r",|;| and ", location_raw, flags=re.IGNORECASE)
+                # Clean each location - remove parentheticals like [Full-time] or (Parkville)
+                location_list = []
+                for loc in raw_list:
+                    cleaned = re.sub(r"\[[^\]]+\]|\([^\)]+\)", "", loc).strip()
+                    if cleaned:
+                        location_list.append(cleaned)
 
             location_mapping = loc_cfg.get("mapping", {})
 
             from models import CampusLink
 
             for loc in location_list:
-                # Map location to campus_id if campus_map or config mapping is provided
-                campus_id = loc
+                # Map location to campus_id
+                campus_id = None
+                
+                # 1. Try explicit mapping from config
                 if location_mapping and loc in location_mapping:
                     campus_id = location_mapping[loc]
-                elif campus_map:
-                    # Try exact match
-                    campus_id = campus_map.get(loc, loc)
+                
+                # 2. Try exact name match from pre-loaded campus_map
+                if not campus_id and self._campus_map:
+                    # Case-insensitive search in campus_map (name -> id)
+                    loc_lower = loc.lower()
+                    for name, cid in self._campus_map.items():
+                        if loc_lower == name.lower():
+                            campus_id = cid
+                            break
+                            
+                # 3. Fallback to raw string (though this will fail DB constraints)
+                if not campus_id:
+                    logger.warning(f"Could not resolve campus name '{loc}' to a UUID for {self.slug}")
+                    campus_id = loc
 
                 campuses.append(
                     CampusLink(
@@ -474,6 +518,17 @@ class UniversalEngine(BaseScraper):
                     # If regex was supposed to refine a value but failed, clear it
                     val = None
                     logger.debug(f"Regex did not match for {field_name}")
+
+        if val and isinstance(val, str):
+            # Unescape common JSON escapes if found (e.g. \/ -> /)
+            if "\\/" in val:
+                val = val.replace("\\/", "/")
+            # Also handle potential unicode escapes if needed
+            if "\\u" in val:
+                try:
+                    val = val.encode("utf-16", "surrogatepass").decode("unicode-escape")
+                except:
+                    pass
 
         return val
 

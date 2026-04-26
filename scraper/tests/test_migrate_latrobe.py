@@ -108,3 +108,29 @@ async def test_latrobe_live_integration(pool):
         # So we just log whether we found any
         has_codes = any(len(c.admissions_codes) > 0 for c in course.campuses)
         logger.info(f"Extracted admissions codes: {has_codes}")
+
+@pytest.mark.asyncio
+async def test_latrobe_unescape_name(pool):
+    """Verify that UniversalEngine unescapes JSON slashes in course names."""
+    engine = UniversalEngine(pool, "latrobe")
+    
+    html = '<html><script>window.courseData = {"advertisedTitle": "Bachelor of Commerce\\/Bachelor of Biomedicine", "campuses": ["BU"], "duration": "4"};</script></html>'
+    
+    extraction_map = {
+        "name": {"regex": r'"advertisedTitle"\s*:\s*"([^"]+)"'},
+        "duration": {"regex": r'"duration"\s*:\s*"([0-9.]+)"'},
+        "location": {"regex": r'"campuses"\s*:\s*(\[[^\]]+\])'}
+    }
+    
+    config = SiteConfig(
+        id="f5b3d349-0214-480b-89bc-7b70298e722b",
+        university_id="f5b3d349-0214-480b-89bc-7b70298e722b",
+        base_url="https://www.latrobe.edu.au",
+        extraction_map=extraction_map,
+        is_active=True
+    )
+    
+    course_data = await engine.scrape_page(html, config, "https://test.edu")
+    
+    # It should be unescaped
+    assert course_data.name == "Bachelor of Commerce/Bachelor of Biomedicine"
