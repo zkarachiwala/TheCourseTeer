@@ -1,0 +1,930 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>The Courseteer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&family=Open+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&display=swap" rel="stylesheet" />
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { font-size: 16px; }
+  body { font-family: 'Open Sans', sans-serif; min-height: 100vh; }
+
+  /* Theme vars */
+  .theme-dark {
+    --bg: oklch(10% 0.012 270);
+    --bg2: oklch(14% 0.012 270);
+    --bg3: oklch(18% 0.012 270);
+    --border: oklch(25% 0.012 270);
+    --text: oklch(98% 0 0);
+    --text2: oklch(72% 0.006 270);
+    --text3: oklch(52% 0.008 270);
+    --accent: oklch(85% 0.22 135);
+    --accent-fg: oklch(12% 0.05 135);
+    --accent-soft: oklch(85% 0.22 135 / 0.12);
+    --card-bg: oklch(16% 0.012 270);
+    --card-hover: oklch(20% 0.014 270);
+    --pill-bg: oklch(20% 0.012 270);
+    --pill-active: oklch(85% 0.22 135);
+    --pill-active-text: oklch(12% 0.05 135);
+    --shadow: 0 4px 24px oklch(0% 0 0 / 0.4);
+    --shadow-lg: 0 12px 48px oklch(0% 0 0 / 0.6);
+    --hero-gradient: linear-gradient(160deg, oklch(12% 0.02 270) 0%, oklch(8% 0.015 290) 100%);
+  }
+  .theme-light {
+    --bg: oklch(98% 0.006 90);
+    --bg2: oklch(95% 0.008 90);
+    --bg3: oklch(92% 0.008 90);
+    --border: oklch(88% 0.008 90);
+    --text: oklch(12% 0.01 270);
+    --text2: oklch(45% 0.01 270);
+    --text3: oklch(65% 0.01 270);
+    --accent: oklch(58% 0.22 25);
+    --accent-fg: oklch(98% 0.005 90);
+    --accent-soft: oklch(58% 0.22 25 / 0.1);
+    --card-bg: oklch(100% 0 0);
+    --card-hover: oklch(98% 0.006 90);
+    --pill-bg: oklch(92% 0.008 90);
+    --pill-active: oklch(58% 0.22 25);
+    --pill-active-text: oklch(98% 0.005 90);
+    --shadow: 0 2px 16px oklch(12% 0.01 270 / 0.08);
+    --shadow-lg: 0 8px 40px oklch(12% 0.01 270 / 0.15);
+    --hero-gradient: linear-gradient(160deg, oklch(97% 0.008 90) 0%, oklch(94% 0.012 60) 100%);
+  }
+
+  body { background: var(--bg); color: var(--text); transition: background 0.3s, color 0.3s; }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg2); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  /* Animations */
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes slideInRight { from { opacity: 0; transform: translateX(32px); } to { opacity: 1; transform: translateX(0); } }
+  @keyframes slideInPanel { from { transform: translateX(100%); } to { transform: translateX(0); } }
+  @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+  @keyframes shimmer { from { background-position: -200% center; } to { background-position: 200% center; } }
+  @keyframes scaleIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.04); } }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useRef, useCallback, useMemo } = React;
+
+// ─── Mock Data ──────────────────────────────────────────────────────────────
+const UNIS = [
+  { id: "uom", name: "University of Melbourne", short: "UniMelb", color: "#003087" },
+  { id: "mon", name: "Monash University", short: "Monash", color: "#006DAE" },
+  { id: "rmit", name: "RMIT University", short: "RMIT", color: "#E61E2A" },
+  { id: "dea", name: "Deakin University", short: "Deakin", color: "#00A94F" },
+  { id: "lat", name: "La Trobe University", short: "La Trobe", color: "#7B2D8B" },
+  { id: "swi", name: "Swinburne University", short: "Swinburne", color: "#E4002B" },
+  { id: "vu", name: "Victoria University", short: "VU", color: "#1D3461" },
+];
+
+const COURSES_RAW = [
+  { name: "Bachelor of Science", uni: "uom", atar: 85, dur: 3, campus: "Parkville", area: "Science", desc: "Explore the natural world across biology, chemistry, physics, and earth sciences. Highly flexible with 30+ majors." },
+  { name: "Bachelor of Commerce", uni: "uom", atar: 90, dur: 3, campus: "Parkville", area: "Business", desc: "A rigorous foundation in business disciplines including finance, economics, management and marketing." },
+  { name: "Bachelor of Arts", uni: "uom", atar: 80, dur: 3, campus: "Parkville", area: "Arts", desc: "One of Australia's most flexible degrees — choose from 50+ majors across humanities, social sciences and fine arts." },
+  { name: "Bachelor of Engineering (Honours)", uni: "uom", atar: 95, dur: 4, campus: "Parkville", area: "Engineering", desc: "World-class engineering education with specialisations in software, civil, mechanical and electrical." },
+  { name: "Doctor of Medicine (MD)", uni: "uom", atar: 99, dur: 4, campus: "Parkville", area: "Medicine", desc: "Graduate-entry medical degree. Requires undergraduate degree + GAMSAT. Prepares for clinical practice." },
+  { name: "Bachelor of Laws", uni: "uom", atar: 97, dur: 4, campus: "Parkville", area: "Law", desc: "Develop sophisticated legal reasoning and analytical skills in one of Australia's leading law programs." },
+
+  { name: "Bachelor of Engineering (Honours)", uni: "mon", atar: 92, dur: 4, campus: "Clayton", area: "Engineering", desc: "Australia's largest engineering faculty. Specialisations across 10+ disciplines with strong industry partnerships.", sponsored: true },
+  { name: "Bachelor of Pharmaceutical Science", uni: "mon", atar: 88, dur: 3, campus: "Parkville", area: "Science", desc: "Study drug design, development and regulation. Strong pathway to pharmacy, research or industry roles." },
+  { name: "Bachelor of Computer Science", uni: "mon", atar: 85, dur: 3, campus: "Clayton", area: "Technology", desc: "Build expertise in algorithms, AI, data science, cybersecurity and software engineering." },
+  { name: "Bachelor of Business", uni: "mon", atar: 78, dur: 3, campus: "Caulfield", area: "Business", desc: "A comprehensive business degree with majors in accounting, finance, HR and international business." },
+  { name: "Bachelor of Laws/Commerce", uni: "mon", atar: 96, dur: 5, campus: "Clayton", area: "Law", desc: "A prestigious double degree combining Monash's top-ranked law school with a commerce education." },
+  { name: "Bachelor of Nursing", uni: "mon", atar: 72, dur: 3, campus: "Peninsula", area: "Health", desc: "Graduate ready for clinical practice. Extensive placement hours across diverse hospital and community settings." },
+
+  { name: "Bachelor of Information Technology", uni: "rmit", atar: 70, dur: 3, campus: "City", area: "Technology", desc: "Industry-focused IT degree with majors in networking, security, data analytics and software development.", sponsored: true },
+  { name: "Bachelor of Design (Communication)", uni: "rmit", atar: 75, dur: 3, campus: "City", area: "Design", desc: "Push the boundaries of visual communication with a curriculum at the intersection of art, tech and culture." },
+  { name: "Bachelor of Engineering (Aerospace)", uni: "rmit", atar: 88, dur: 4, campus: "Bundoora", area: "Engineering", desc: "One of Australia's leading aerospace programs, with ties to Boeing and the defence industry." },
+  { name: "Bachelor of Business (Marketing)", uni: "rmit", atar: 68, dur: 3, campus: "City", area: "Business", desc: "Creative and strategic marketing education grounded in real-world industry projects and practicums." },
+  { name: "Bachelor of Architecture", uni: "rmit", atar: 80, dur: 3, campus: "City", area: "Design", desc: "Internationally acclaimed architecture program known for experimental design and urban thinking." },
+
+  { name: "Bachelor of Psychological Science", uni: "dea", atar: 72, dur: 3, campus: "Burwood", area: "Science", desc: "Gain insights into human behaviour, mental health and cognitive processes. Strong pathway to postgrad psychology." },
+  { name: "Bachelor of Commerce", uni: "dea", atar: 68, dur: 3, campus: "Geelong", area: "Business", desc: "A practical, skills-focused commerce degree with majors in accounting, finance and management." },
+  { name: "Bachelor of Health Sciences", uni: "dea", atar: 65, dur: 3, campus: "Burwood", area: "Health", desc: "Broad health sciences education covering public health, nutrition, exercise and health promotion." },
+  { name: "Bachelor of Nursing (Pre-Registration)", uni: "dea", atar: 68, dur: 3, campus: "Geelong Waterfront", area: "Health", desc: "Flexible study options including cloud campus. Strong graduate employment outcomes.", sponsored: true },
+  { name: "Bachelor of Education (Primary)", uni: "dea", atar: 70, dur: 4, campus: "Burwood", area: "Education", desc: "Prepare to teach in primary schools. Blend theory with extensive supervised professional experience." },
+
+  { name: "Bachelor of Laws", uni: "lat", atar: 85, dur: 4, campus: "Bundoora", area: "Law", desc: "Practical, socially engaged legal education with a strong focus on justice, equity and community law." },
+  { name: "Bachelor of Applied Science (Food Technology)", uni: "lat", atar: 60, dur: 3, campus: "Bundoora", area: "Science", desc: "Study the science of food from farm to fork — nutrition, food safety, product development and sustainability." },
+  { name: "Bachelor of Biomedical Science", uni: "lat", atar: 78, dur: 3, campus: "Bundoora", area: "Science", desc: "Investigate the cellular and molecular basis of human disease. Strong research component from year one." },
+  { name: "Bachelor of Business", uni: "lat", atar: 62, dur: 3, campus: "City", area: "Business", desc: "Work-integrated learning model with industry mentors and real projects built into the curriculum." },
+
+  { name: "Bachelor of Engineering (Professional)", uni: "swi", atar: 78, dur: 4, campus: "Hawthorn", area: "Engineering", desc: "Industry-embedded degree with work-integrated learning. Guaranteed industry placements with 250+ partner companies." },
+  { name: "Bachelor of Computer Science", uni: "swi", atar: 72, dur: 3, campus: "Hawthorn", area: "Technology", desc: "Deeply practical CS degree. Build real products from day one, with studios replacing traditional lectures." },
+  { name: "Bachelor of Design", uni: "swi", atar: 68, dur: 3, campus: "Hawthorn", area: "Design", desc: "Studio-based learning with strong industry connections. Specialise in interaction, industrial or communication design." },
+  { name: "Bachelor of Arts and Sciences", uni: "swi", atar: 70, dur: 3, campus: "Hawthorn", area: "Arts", desc: "A unique interdisciplinary degree combining humanities and STEM thinking for the modern world." },
+
+  { name: "Bachelor of Business", uni: "vu", atar: 55, dur: 3, campus: "Footscray City", area: "Business", desc: "VU's pioneering block model means you study one unit at a time — less stress, better outcomes." },
+  { name: "Bachelor of Information Technology", uni: "vu", atar: 50, dur: 3, campus: "Footscray City", area: "Technology", desc: "Hands-on IT education with VU Block Model. Specialisations in networking, cloud and data analytics." },
+  { name: "Bachelor of Sport and Recreation Management", uni: "vu", atar: 52, dur: 3, campus: "Footscray Park", area: "Sport", desc: "Work with elite sporting clubs and community organisations. Melbourne's sports capital advantage." },
+];
+
+const FEATURED_UNI = {
+  id: "mon",
+  name: "Monash University",
+  short: "Monash",
+  color: "#006DAE",
+  tagline: "Australia's most internationally connected university",
+  highlight: "Over 100 courses · Ranked top 50 worldwide · 75,000+ students",
+  cta: "Explore all Monash courses",
+};
+
+const COURSES = COURSES_RAW.map((c, i) => ({
+  ...c,
+  id: i,
+  uniName: UNIS.find(u => u.id === c.uni)?.name ?? "",
+  uniShort: UNIS.find(u => u.id === c.uni)?.short ?? "",
+  uniColor: UNIS.find(u => u.id === c.uni)?.color ?? "#666",
+  sponsored: c.sponsored ?? false,
+}));
+
+const AREAS = [...new Set(COURSES.map(c => c.area))].sort();
+const ALL_CAMPUSES = [...new Set(COURSES.map(c => c.campus))].sort();
+
+const HERO_WORDS = ["Engineering", "Medicine", "Law", "Design", "Business", "Science", "Arts", "Nursing", "Teaching", "Technology"];
+
+// ─── Theme vars injected into body ──────────────────────────────────────────
+const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+  "theme": "light",
+  "layout": "grid",
+  "accentHue": "lime"
+}/*EDITMODE-END*/;
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+function atarColor(atar) {
+  if (!atar) return "var(--text3)";
+  if (atar >= 95) return "#ef4444";
+  if (atar >= 85) return "#f97316";
+  if (atar >= 75) return "#eab308";
+  return "#22c55e";
+}
+
+function AreaBadge({ area }) {
+  const colors = {
+    Science: "#6366f1", Business: "#0ea5e9", Engineering: "#f97316",
+    Technology: "#8b5cf6", Design: "#ec4899", Arts: "#14b8a6",
+    Medicine: "#ef4444", Law: "#a16207", Health: "#22c55e",
+    Education: "#06b6d4", Sport: "#84cc16",
+  };
+  return (
+    <span style={{
+      display: "inline-block", padding: "2px 8px", borderRadius: 99,
+      fontSize: 11, fontWeight: 600, letterSpacing: "0.03em",
+      background: (colors[area] ?? "#666") + "22",
+      color: colors[area] ?? "#666",
+    }}>{area}</span>
+  );
+}
+
+// ─── Hero cycling text ───────────────────────────────────────────────────────
+function CyclingWord() {
+  const [idx, setIdx] = useState(0);
+  const [fading, setFading] = useState(false);
+  useEffect(() => {
+    const t = setInterval(() => {
+      setFading(true);
+      setTimeout(() => { setIdx(i => (i + 1) % HERO_WORDS.length); setFading(false); }, 300);
+    }, 2000);
+    return () => clearInterval(t);
+  }, []);
+  return (
+    <span style={{
+      display: "inline-block", minWidth: 280,
+      color: "var(--accent)",
+      opacity: fading ? 0 : 1,
+      transform: fading ? "translateY(-8px)" : "translateY(0)",
+      transition: "opacity 0.3s, transform 0.3s",
+      fontStyle: "normal",
+    }}>{HERO_WORDS[idx]}</span>
+  );
+}
+
+// ─── Course Detail Panel ─────────────────────────────────────────────────────
+function DetailPanel({ course, onClose, shortlisted, onShortlist }) {
+  useEffect(() => {
+    const handler = e => e.key === "Escape" && onClose();
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [onClose]);
+
+  if (!course) return null;
+  return (
+    <>
+      <div onClick={onClose} style={{
+        position: "fixed", inset: 0, background: "oklch(0% 0 0 / 0.5)",
+        zIndex: 100, animation: "fadeIn 0.2s ease",
+        backdropFilter: "blur(4px)",
+      }} />
+      <div style={{
+        position: "fixed", top: 0, right: 0, bottom: 0,
+        width: "min(480px, 100vw)", background: "var(--bg2)",
+        borderLeft: "1px solid var(--border)", zIndex: 101,
+        animation: "slideInPanel 0.3s cubic-bezier(0.16,1,0.3,1)",
+        display: "flex", flexDirection: "column", overflow: "hidden",
+      }}>
+        {/* Header */}
+        <div style={{ padding: "24px 28px 20px", borderBottom: "1px solid var(--border)", position: "relative" }}>
+          <button onClick={onClose} style={{
+            position: "absolute", top: 20, right: 20,
+            background: "var(--bg3)", border: "none", cursor: "pointer",
+            width: 32, height: 32, borderRadius: "50%",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            color: "var(--text2)", fontSize: 18, lineHeight: 1,
+            transition: "background 0.2s",
+          }} onMouseEnter={e => e.target.style.background = "var(--border)"}
+             onMouseLeave={e => e.target.style.background = "var(--bg3)"}>
+            ×
+          </button>
+          <div style={{ marginBottom: 8 }}><AreaBadge area={course.area} /></div>
+          <h2 style={{ fontFamily: "'Manrope', sans-serif", fontSize: 26, lineHeight: 1.25, marginBottom: 6, paddingRight: 40 }}>
+            {course.name}
+          </h2>
+          <div style={{ fontSize: 14, color: "var(--text2)", fontWeight: 500 }}>{course.uniName}</div>
+        </div>
+        {/* Body */}
+        <div style={{ flex: 1, overflowY: "auto", padding: "24px 28px" }}>
+          {/* Stats */}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginBottom: 28 }}>
+            {[
+              { label: "ATAR", value: course.atar ?? "–", sub: "guaranteed entry", color: course.atar ? atarColor(course.atar) : "var(--text2)" },
+              { label: "Duration", value: `${course.dur}y`, sub: "full-time", color: "var(--accent)" },
+              { label: "Campus", value: course.campus, sub: course.uniShort, color: "var(--text)" },
+            ].map(s => (
+              <div key={s.label} style={{
+                background: "var(--bg3)", borderRadius: 12, padding: "14px 16px",
+                border: "1px solid var(--border)",
+              }}>
+                <div style={{ fontSize: 11, color: "var(--text3)", marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.06em" }}>{s.label}</div>
+                <div style={{ fontSize: 20, fontWeight: 700, color: s.color, lineHeight: 1.2 }}>{s.value}</div>
+                <div style={{ fontSize: 10, color: "var(--text3)", marginTop: 2 }}>{s.sub}</div>
+              </div>
+            ))}
+          </div>
+          {/* Description */}
+          <div style={{ marginBottom: 24 }}>
+            <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--text3)", marginBottom: 10, fontWeight: 600 }}>About this course</div>
+            <p style={{ fontSize: 15, lineHeight: 1.7, color: "var(--text2)" }}>{course.desc}</p>
+          </div>
+          {/* Uni strip */}
+          <div style={{
+            background: "var(--bg3)", border: "1px solid var(--border)",
+            borderRadius: 12, padding: "16px 20px",
+            display: "flex", alignItems: "center", gap: 14,
+          }}>
+            <div style={{
+              width: 44, height: 44, borderRadius: 10,
+              background: course.uniColor + "22",
+              border: `2px solid ${course.uniColor}44`,
+              display: "flex", alignItems: "center", justifyContent: "center",
+              fontSize: 13, fontWeight: 800, color: course.uniColor,
+            }}>{course.uniShort.slice(0, 2).toUpperCase()}</div>
+            <div>
+              <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 2 }}>{course.uniName}</div>
+              <div style={{ fontSize: 12, color: "var(--text3)" }}>{course.campus} Campus</div>
+            </div>
+          </div>
+        </div>
+        {/* Footer CTA */}
+        <div style={{ padding: "20px 28px", borderTop: "1px solid var(--border)" }}>
+          <a href="#" style={{
+            display: "block", width: "100%", textAlign: "center",
+            background: "var(--accent)", color: "var(--accent-fg)",
+            padding: "13px 0", borderRadius: 10, fontWeight: 600, fontSize: 15,
+            textDecoration: "none", transition: "opacity 0.2s",
+          }}
+          onMouseEnter={e => e.currentTarget.style.opacity = "0.85"}
+          onMouseLeave={e => e.currentTarget.style.opacity = "1"}>
+            View on university website →
+          </a>
+          <button onClick={() => onShortlist(course)} style={{
+            display: "block", width: "100%", marginTop: 10,
+            background: shortlisted ? "var(--accent-soft)" : "transparent",
+            border: `1px solid ${shortlisted ? "var(--accent)" : "var(--border)"}`,
+            color: shortlisted ? "var(--accent)" : "var(--text2)",
+            padding: "11px 0", borderRadius: 10,
+            fontWeight: 500, fontSize: 14, cursor: "pointer", transition: "all 0.2s",
+          }}>
+            {shortlisted ? "✓ Saved to shortlist" : "Save to shortlist"}
+          </button>
+        </div>
+      </div>
+    </>
+  );
+}
+
+// ─── Course Card (Grid layout) ───────────────────────────────────────────────
+function CourseCard({ course, onClick, idx, shortlisted, onShortlist }) {
+  const [hov, setHov] = useState(false);
+  return (
+    <div
+      onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)}
+      style={{
+        background: hov ? "var(--card-hover)" : "var(--card-bg)",
+        border: `1px solid ${hov ? "var(--accent)" : course.sponsored ? "oklch(85% 0.22 135 / 0.35)" : "var(--border)"}`,
+        borderRadius: 16, padding: "22px 22px 16px",
+        cursor: "pointer", transition: "all 0.2s cubic-bezier(0.34,1.56,0.64,1)",
+        transform: hov ? "translateY(-3px) scale(1.01)" : "translateY(0) scale(1)",
+        boxShadow: hov ? "var(--shadow-lg)" : course.sponsored ? "0 0 0 1px oklch(85% 0.22 135 / 0.1)" : "none",
+        animation: `fadeUp 0.4s ${idx * 0.04}s both ease`,
+        display: "flex", flexDirection: "column", gap: 10,
+        position: "relative", overflow: "hidden",
+      }}>
+      {course.sponsored && (
+        <div style={{ position: "absolute", top: 0, right: 0, background: "var(--accent)", color: "var(--accent-fg)", fontSize: 9, fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase", padding: "3px 10px", borderBottomLeftRadius: 8 }}>Sponsored</div>
+      )}
+      <div onClick={() => onClick(course)} style={{ display: "flex", flexDirection: "column", gap: 10, flex: 1 }}>
+        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 8 }}>
+          <AreaBadge area={course.area} />
+          {course.atar && (
+            <span style={{ fontSize: 12, fontWeight: 700, color: atarColor(course.atar) }}>
+              ATAR {course.atar}
+            </span>
+          )}
+        </div>
+        <h3 style={{ fontFamily: "'Manrope', sans-serif", fontSize: 18, lineHeight: 1.3, flex: 1, fontWeight: 700 }}>
+          {course.name}
+        </h3>
+        <div style={{ fontSize: 13, color: "var(--text2)", fontWeight: 500 }}>{course.uniShort}</div>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", paddingTop: 10, borderTop: "1px solid var(--border)" }}>
+          <span style={{ fontSize: 12, color: "var(--text3)" }}>📍 {course.campus}</span>
+          <span style={{ fontSize: 12, color: "var(--text3)" }}>{course.dur} yr{course.dur > 1 ? "s" : ""}</span>
+        </div>
+      </div>
+      <button onClick={e => { e.stopPropagation(); onShortlist(course); }} style={{
+        background: shortlisted ? "var(--accent-soft)" : "var(--bg3)",
+        border: `1px solid ${shortlisted ? "var(--accent)" : "var(--border)"}`,
+        color: shortlisted ? "var(--accent)" : "var(--text3)",
+        borderRadius: 8, padding: "7px 0", fontSize: 12, fontWeight: 600,
+        cursor: "pointer", transition: "all 0.2s", width: "100%", marginTop: 4,
+      }}>{shortlisted ? "✓ Shortlisted" : "+ Shortlist"}</button>
+    </div>
+  );
+}
+
+// ─── Course Row (List layout) ────────────────────────────────────────────────
+function CourseRow({ course, onClick, idx }) {
+  const [hov, setHov] = useState(false);
+  return (
+    <div onClick={() => onClick(course)}
+      onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)}
+      style={{
+        display: "grid", gridTemplateColumns: "1fr auto",
+        alignItems: "center", gap: 16,
+        padding: "16px 20px", borderRadius: 12,
+        background: hov ? "var(--card-hover)" : "transparent",
+        borderBottom: "1px solid var(--border)",
+        cursor: "pointer", transition: "background 0.15s",
+        animation: `fadeUp 0.4s ${idx * 0.03}s both ease`,
+      }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 16, minWidth: 0 }}>
+        <div style={{
+          width: 40, height: 40, borderRadius: 10, flexShrink: 0,
+          background: course.uniColor + "22",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          fontSize: 11, fontWeight: 800, color: course.uniColor,
+          border: `1.5px solid ${course.uniColor}33`,
+        }}>{course.uniShort.slice(0, 2)}</div>
+        <div style={{ minWidth: 0 }}>
+          <div style={{ fontFamily: "'Manrope', sans-serif", fontSize: 16, fontWeight: 400, lineHeight: 1.3, marginBottom: 3, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+            {course.name}
+          </div>
+          <div style={{ fontSize: 12, color: "var(--text2)", display: "flex", gap: 10, alignItems: "center" }}>
+            <span>{course.uniShort}</span>
+            <span style={{ color: "var(--border)" }}>·</span>
+            <span>{course.campus}</span>
+            <span style={{ color: "var(--border)" }}>·</span>
+            <AreaBadge area={course.area} />
+          </div>
+        </div>
+      </div>
+      <div style={{ display: "flex", alignItems: "center", gap: 20, flexShrink: 0 }}>
+        <span style={{ fontSize: 13, fontWeight: 600, color: course.atar ? atarColor(course.atar) : "var(--text3)", minWidth: 60, textAlign: "right" }}>
+          {course.atar ? `ATAR ${course.atar}` : "–"}
+        </span>
+        <span style={{ fontSize: 12, color: "var(--text3)", minWidth: 32 }}>{course.dur}y</span>
+        <span style={{ color: "var(--text3)", fontSize: 16, opacity: hov ? 1 : 0, transition: "opacity 0.15s" }}>→</span>
+      </div>
+    </div>
+  );
+}
+
+// ─── Course Table Row (Compact layout) ──────────────────────────────────────
+function CourseTableRow({ course, onClick, idx }) {
+  const [hov, setHov] = useState(false);
+  return (
+    <tr onClick={() => onClick(course)}
+      onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)}
+      style={{
+        background: hov ? "var(--card-hover)" : "transparent",
+        cursor: "pointer", transition: "background 0.15s",
+        animation: `fadeUp 0.35s ${idx * 0.025}s both ease`,
+        borderBottom: "1px solid var(--border)",
+      }}>
+      <td style={{ padding: "12px 16px 12px 8px", fontSize: 14, fontFamily: "'Manrope', sans-serif" }}>
+        {course.name}
+      </td>
+      <td style={{ padding: "12px 16px", fontSize: 12, color: "var(--text2)", whiteSpace: "nowrap" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <span style={{ width: 24, height: 24, borderRadius: 6, background: course.uniColor + "22", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 9, fontWeight: 800, color: course.uniColor, flexShrink: 0 }}>{course.uniShort.slice(0,2)}</span>
+          {course.uniShort}
+        </div>
+      </td>
+      <td style={{ padding: "12px 16px", fontSize: 12 }}><AreaBadge area={course.area} /></td>
+      <td style={{ padding: "12px 16px", fontSize: 13, fontWeight: 700, color: course.atar ? atarColor(course.atar) : "var(--text3)" }}>{course.atar ?? "–"}</td>
+      <td style={{ padding: "12px 16px", fontSize: 12, color: "var(--text3)" }}>{course.campus}</td>
+      <td style={{ padding: "12px 8px 12px 16px", fontSize: 12, color: "var(--text3)" }}>{course.dur}y</td>
+    </tr>
+  );
+}
+
+// ─── Featured Uni Banner ─────────────────────────────────────────────────────
+function FeaturedUniBanner({ isDark }) {
+  const [hov, setHov] = useState(false);
+  return (
+    <div style={{ maxWidth: 1280, margin: "0 auto", padding: "16px 24px 0" }}>
+      <div onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)}
+        style={{
+          position: "relative", overflow: "hidden", borderRadius: 16,
+          border: `1px solid ${FEATURED_UNI.color}44`,
+          background: isDark
+            ? `linear-gradient(120deg, ${FEATURED_UNI.color}18 0%, oklch(14% 0.012 270) 60%)`
+            : `linear-gradient(120deg, ${FEATURED_UNI.color}10 0%, oklch(98% 0.006 90) 60%)`,
+          padding: "18px 24px",
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+          gap: 16, flexWrap: "wrap",
+          transition: "border-color 0.2s",
+          cursor: "pointer",
+          borderColor: hov ? FEATURED_UNI.color + "88" : FEATURED_UNI.color + "44",
+        }}>
+        {/* Decorative bg circle */}
+        <div style={{ position: "absolute", right: -40, top: -40, width: 180, height: 180, borderRadius: "50%", background: FEATURED_UNI.color, opacity: 0.06, pointerEvents: "none" }} />
+        <div style={{ display: "flex", alignItems: "center", gap: 16, minWidth: 0 }}>
+          {/* Uni logo placeholder */}
+          <div style={{
+            width: 48, height: 48, borderRadius: 12, flexShrink: 0,
+            background: FEATURED_UNI.color + "22",
+            border: `2px solid ${FEATURED_UNI.color}55`,
+            display: "flex", alignItems: "center", justifyContent: "center",
+            fontSize: 14, fontWeight: 800, color: FEATURED_UNI.color,
+          }}>{FEATURED_UNI.short.slice(0, 2).toUpperCase()}</div>
+          <div>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 3 }}>
+              <span style={{ fontWeight: 700, fontSize: 15, color: "var(--text)" }}>{FEATURED_UNI.name}</span>
+              <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", padding: "2px 7px", borderRadius: 99, background: FEATURED_UNI.color + "22", color: FEATURED_UNI.color, border: `1px solid ${FEATURED_UNI.color}44` }}>Sponsored</span>
+            </div>
+            <div style={{ fontSize: 13, color: "var(--text2)" }}>{FEATURED_UNI.tagline}</div>
+            <div style={{ fontSize: 12, color: "var(--text3)", marginTop: 2 }}>{FEATURED_UNI.highlight}</div>
+          </div>
+        </div>
+        <a href="#" style={{
+          padding: "9px 18px", borderRadius: 10, flexShrink: 0,
+          background: FEATURED_UNI.color, color: "#fff",
+          fontSize: 13, fontWeight: 600, textDecoration: "none",
+          transition: "opacity 0.2s", opacity: hov ? 0.9 : 1,
+          whiteSpace: "nowrap",
+        }}>{FEATURED_UNI.cta} →</a>
+      </div>
+    </div>
+  );
+}
+
+// ─── Shortlist Drawer ─────────────────────────────────────────────────────────
+function ShortlistDrawer({ items, onRemove, onClose }) {
+  const [email, setEmail] = useState("");
+  const [submitted, setSubmitted] = useState(false);
+  useEffect(() => {
+    const handler = e => e.key === "Escape" && onClose();
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [onClose]);
+  return (
+    <>
+      <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "oklch(0% 0 0 / 0.4)", zIndex: 100, animation: "fadeIn 0.2s ease", backdropFilter: "blur(4px)" }} />
+      <div style={{
+        position: "fixed", top: 0, right: 0, bottom: 0, width: "min(420px, 100vw)",
+        background: "var(--bg2)", borderLeft: "1px solid var(--border)",
+        zIndex: 101, animation: "slideInPanel 0.3s cubic-bezier(0.16,1,0.3,1)",
+        display: "flex", flexDirection: "column",
+      }}>
+        <div style={{ padding: "24px 28px 18px", borderBottom: "1px solid var(--border)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div>
+            <h2 style={{ fontFamily: "'Manrope', sans-serif", fontSize: 20, fontWeight: 700 }}>My Shortlist</h2>
+            <div style={{ fontSize: 13, color: "var(--text3)", marginTop: 2 }}>{items.length} course{items.length !== 1 ? "s" : ""} saved</div>
+          </div>
+          <button onClick={onClose} style={{ background: "var(--bg3)", border: "none", cursor: "pointer", width: 32, height: 32, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--text2)", fontSize: 18 }}>×</button>
+        </div>
+        <div style={{ flex: 1, overflowY: "auto", padding: "16px 28px" }}>
+          {items.length === 0 && (
+            <div style={{ textAlign: "center", padding: "48px 0", color: "var(--text3)" }}>
+              <div style={{ fontSize: 36, marginBottom: 12 }}>📋</div>
+              <div style={{ fontSize: 15 }}>No courses saved yet</div>
+              <div style={{ fontSize: 13, marginTop: 6 }}>Click "Save to shortlist" on any course</div>
+            </div>
+          )}
+          {items.map((c, i) => (
+            <div key={c.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 0", borderBottom: "1px solid var(--border)", animation: `fadeUp 0.3s ${i * 0.04}s both` }}>
+              <div style={{ width: 36, height: 36, borderRadius: 8, flexShrink: 0, background: c.uniColor + "22", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 800, color: c.uniColor }}>{c.uniShort.slice(0,2)}</div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 14, fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{c.name}</div>
+                <div style={{ fontSize: 12, color: "var(--text3)" }}>{c.uniShort} · {c.campus}</div>
+              </div>
+              <button onClick={() => onRemove(c.id)} style={{ background: "none", border: "none", color: "var(--text3)", cursor: "pointer", fontSize: 18, padding: "4px", flexShrink: 0, lineHeight: 1 }}>×</button>
+            </div>
+          ))}
+        </div>
+        {/* Email capture */}
+        <div style={{ padding: "20px 28px", borderTop: "1px solid var(--border)", background: "var(--bg3)" }}>
+          {!submitted ? (
+            <>
+              <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 4 }}>Get your shortlist emailed to you</div>
+              <div style={{ fontSize: 12, color: "var(--text3)", marginBottom: 12 }}>We'll also send ATAR updates and application deadlines for your saved courses.</div>
+              <div style={{ display: "flex", gap: 8 }}>
+                <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="your@email.com"
+                  style={{ flex: 1, padding: "10px 12px", borderRadius: 8, border: "1px solid var(--border)", background: "var(--bg2)", color: "var(--text)", fontSize: 13, outline: "none" }}
+                  onFocus={e => e.target.style.borderColor = "var(--accent)"}
+                  onBlur={e => e.target.style.borderColor = "var(--border)"}
+                  onKeyDown={e => e.key === "Enter" && email && setSubmitted(true)}
+                />
+                <button onClick={() => email && setSubmitted(true)}
+                  style={{ padding: "10px 16px", borderRadius: 8, background: "var(--accent)", color: "var(--accent-fg)", border: "none", fontWeight: 600, fontSize: 13, cursor: "pointer", whiteSpace: "nowrap" }}>
+                  Send →
+                </button>
+              </div>
+              <div style={{ fontSize: 11, color: "var(--text3)", marginTop: 8 }}>No spam. Unsubscribe anytime. Universities may reach out with relevant offers.</div>
+            </>
+          ) : (
+            <div style={{ textAlign: "center", padding: "8px 0", animation: "scaleIn 0.3s ease" }}>
+              <div style={{ fontSize: 24, marginBottom: 8 }}>🎉</div>
+              <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 4 }}>Shortlist sent!</div>
+              <div style={{ fontSize: 13, color: "var(--text3)" }}>Check your inbox at {email}</div>
+            </div>
+          )}
+        </div>
+      </div>
+    </>
+  );
+}
+
+// ─── Main App ────────────────────────────────────────────────────────────────
+function App() {
+  const savedTweaks = (() => { try { return JSON.parse(localStorage.getItem("courseteer_tweaks") || "null"); } catch { return null; } })();
+  const [tweaks, setTweaksState] = useState({ ...TWEAK_DEFAULTS, ...savedTweaks });
+  const [showTweaks, setShowTweaks] = useState(false);
+  const [search, setSearch] = useState("");
+  const [selArea, setSelArea] = useState("");
+  const [selUni, setSelUni] = useState("");
+  const [selDur, setSelDur] = useState("");
+  const [atarMin, setAtarMin] = useState("");
+  const [selected, setSelected] = useState(null);
+  const [shortlist, setShortlist] = useState(() => { try { return JSON.parse(localStorage.getItem("courseteer_shortlist") || "[]"); } catch { return []; } });
+  const [showShortlist, setShowShortlist] = useState(false);
+  const [heroVisible, setHeroVisible] = useState(false);
+  const [listKey, setListKey] = useState(0);
+
+  const saveShortlist = (items) => {
+    setShortlist(items);
+    localStorage.setItem("courseteer_shortlist", JSON.stringify(items));
+  };
+  const toggleShortlist = (course) => {
+    const exists = shortlist.find(c => c.id === course.id);
+    saveShortlist(exists ? shortlist.filter(c => c.id !== course.id) : [...shortlist, course]);
+  };
+  const setTweaks = (updates) => {
+    const next = { ...tweaks, ...updates };
+    setTweaksState(next);
+    localStorage.setItem("courseteer_tweaks", JSON.stringify(next));
+    window.parent?.postMessage({ type: "__edit_mode_set_keys", edits: updates }, "*");
+  };
+
+  // Tweaks host integration
+  useEffect(() => {
+    const handler = e => {
+      if (e.data?.type === "__activate_edit_mode") setShowTweaks(true);
+      if (e.data?.type === "__deactivate_edit_mode") setShowTweaks(false);
+    };
+    window.addEventListener("message", handler);
+    window.parent?.postMessage({ type: "__edit_mode_available" }, "*");
+    return () => window.removeEventListener("message", handler);
+  }, []);
+
+  useEffect(() => { setTimeout(() => setHeroVisible(true), 50); }, []);
+
+  const filtered = useMemo(() => {
+    const results = COURSES.filter(c => {
+      if (search && !c.name.toLowerCase().includes(search.toLowerCase()) && !c.uniName.toLowerCase().includes(search.toLowerCase()) && !c.area.toLowerCase().includes(search.toLowerCase())) return false;
+      if (selArea && c.area !== selArea) return false;
+      if (selUni && c.uni !== selUni) return false;
+      if (selDur && c.dur !== parseInt(selDur)) return false;
+      if (atarMin && (c.atar == null || c.atar < parseInt(atarMin))) return false;
+      return true;
+    });
+    // Sponsored courses float to top
+    return [...results.filter(c => c.sponsored), ...results.filter(c => !c.sponsored)];
+  }, [search, selArea, selUni, selDur, atarMin]);
+
+  const handleFilter = useCallback((fn) => { fn(); setListKey(k => k + 1); }, []);
+
+  const isDark = tweaks.theme === "dark";
+  const layout = tweaks.layout;
+
+  const activeFilters = [selArea, selUni, selDur, atarMin ? `ATAR ≥ ${atarMin}` : ""].filter(Boolean);
+
+  return (
+    <div className={isDark ? "theme-dark" : "theme-light"} style={{ minHeight: "100vh", background: "var(--bg)", color: "var(--text)", transition: "background 0.3s, color 0.3s" }}>
+      {/* Header */}
+      <header style={{
+        position: "sticky", top: 0, zIndex: 50,
+        background: isDark ? "oklch(10% 0.012 270 / 0.85)" : "oklch(98% 0.006 90 / 0.85)",
+        backdropFilter: "blur(20px)",
+        borderBottom: "1px solid var(--border)",
+        transition: "all 0.3s",
+      }}>
+        <div style={{ maxWidth: 1280, margin: "0 auto", padding: "0 24px", display: "flex", alignItems: "center", justifyContent: "space-between", height: 60 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <div style={{ width: 30, height: 30, borderRadius: 8, background: "var(--accent)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <circle cx="8" cy="8" r="6" stroke="var(--accent-fg)" strokeWidth="2"/>
+                <path d="M8 4v4l3 2" stroke="var(--accent-fg)" strokeWidth="1.5" strokeLinecap="round"/>
+              </svg>
+            </div>
+            <span style={{ fontFamily: "'Manrope', sans-serif", fontSize: 20, letterSpacing: "-0.01em" }}>The Courseteer</span>
+          </div>
+          <nav style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <span style={{ fontSize: 13, color: "var(--accent)", fontWeight: 600, padding: "6px 14px", background: "var(--accent-soft)", borderRadius: 8 }}>Courses</span>
+            <button onClick={() => setShowShortlist(true)} style={{
+              background: shortlist.length > 0 ? "var(--accent-soft)" : "var(--bg3)",
+              border: `1px solid ${shortlist.length > 0 ? "var(--accent)" : "var(--border)"}`,
+              borderRadius: 8, height: 36, padding: "0 12px", cursor: "pointer",
+              display: "flex", alignItems: "center", gap: 6,
+              color: shortlist.length > 0 ? "var(--accent)" : "var(--text2)",
+              fontSize: 13, fontWeight: 600, transition: "all 0.2s",
+            }}>
+              <span>📋</span>
+              <span>Shortlist</span>
+              {shortlist.length > 0 && (
+                <span style={{ background: "var(--accent)", color: "var(--accent-fg)", borderRadius: 99, width: 18, height: 18, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700 }}>{shortlist.length}</span>
+              )}
+            </button>
+            <button onClick={() => setTweaks({ theme: isDark ? "light" : "dark" })} style={{
+              background: "var(--bg3)", border: "1px solid var(--border)",
+              borderRadius: 8, width: 36, height: 36, cursor: "pointer",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              fontSize: 16, color: "var(--text2)", transition: "all 0.2s",
+            }}>{isDark ? "☀️" : "🌙"}</button>
+          </nav>
+        </div>
+      </header>
+
+      {/* Hero */}
+      <div style={{
+        background: "var(--hero-gradient)",
+        padding: "60px 24px 52px",
+        borderBottom: "1px solid var(--border)",
+        overflow: "hidden",
+        position: "relative",
+      }}>
+        {/* BG decoration */}
+        <div style={{
+          position: "absolute", inset: 0, pointerEvents: "none", overflow: "hidden",
+        }}>
+          <div style={{
+            position: "absolute", width: 600, height: 600,
+            borderRadius: "50%", top: -200, right: -100,
+            background: "var(--accent)", opacity: isDark ? 0.04 : 0.06,
+            filter: "blur(80px)",
+          }} />
+          <div style={{
+            position: "absolute", width: 400, height: 400,
+            borderRadius: "50%", bottom: -150, left: -50,
+            background: "var(--accent)", opacity: isDark ? 0.03 : 0.04,
+            filter: "blur(60px)",
+          }} />
+        </div>
+        <div style={{ maxWidth: 1280, margin: "0 auto", position: "relative" }}>
+          <div style={{
+            opacity: heroVisible ? 1 : 0, transform: heroVisible ? "none" : "translateY(20px)",
+            transition: "all 0.7s cubic-bezier(0.22,1,0.36,1)",
+          }}>
+            <div style={{ fontSize: 12, fontWeight: 600, letterSpacing: "0.12em", color: "var(--accent)", textTransform: "uppercase", marginBottom: 16 }}>
+              Victorian Universities · Undergraduate
+            </div>
+            <h1 style={{
+              fontFamily: "'Manrope', sans-serif", fontSize: "clamp(36px, 6vw, 68px)",
+              lineHeight: 1.1, letterSpacing: "-0.02em", marginBottom: 36,
+              maxWidth: 700,
+            }}>
+              Find your path in <br />
+              <CyclingWord />
+            </h1>
+          </div>
+          {/* Search bar */}
+          <div style={{
+            display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center",
+            opacity: heroVisible ? 1 : 0,
+            transform: heroVisible ? "none" : "translateY(16px)",
+            transition: "all 0.7s 0.1s cubic-bezier(0.22,1,0.36,1)",
+          }}>
+            <div style={{ position: "relative", flex: "1 1 300px", maxWidth: 500 }}>
+              <span style={{ position: "absolute", left: 16, top: "50%", transform: "translateY(-50%)", color: "var(--text3)", fontSize: 18, pointerEvents: "none" }}>⌕</span>
+              <input
+                type="text" value={search}
+                onChange={e => { setSearch(e.target.value); setListKey(k => k + 1); }}
+                placeholder="Search courses, universities, fields…"
+                style={{
+                  width: "100%", padding: "14px 16px 14px 44px",
+                  background: isDark ? "oklch(100% 0 0 / 0.07)" : "oklch(100% 0 0 / 0.7)",
+                  border: "1px solid var(--border)", borderRadius: 14,
+                  fontSize: 15, color: "var(--text)", outline: "none",
+                  transition: "all 0.2s", backdropFilter: "blur(8px)",
+                }}
+                onFocus={e => e.target.style.borderColor = "var(--accent)"}
+                onBlur={e => e.target.style.borderColor = "var(--border)"}
+              />
+            </div>
+            {/* Quick filters */}
+            {[
+              { label: "Area", options: [["", "All Areas"], ...AREAS.map(a => [a, a])], val: selArea, setter: v => handleFilter(() => setSelArea(v)) },
+              { label: "Uni", options: [["", "All Unis"], ...UNIS.map(u => [u.id, u.short])], val: selUni, setter: v => handleFilter(() => setSelUni(v)) },
+              { label: "Duration", options: [["", "Any length"], ["3", "3 years"], ["4", "4 years"], ["5", "5 years"]], val: selDur, setter: v => handleFilter(() => setSelDur(v)) },
+            ].map(f => (
+              <select key={f.label} value={f.val} onChange={e => f.setter(e.target.value)}
+                style={{
+                  padding: "13px 36px 13px 14px", borderRadius: 12,
+                  border: `1px solid ${f.val ? "var(--accent)" : "var(--border)"}`,
+                  background: f.val ? "var(--accent-soft)" : (isDark ? "oklch(100% 0 0 / 0.06)" : "oklch(100% 0 0 / 0.7)"),
+                  color: f.val ? "var(--accent)" : "var(--text2)", fontSize: 14, outline: "none",
+                  cursor: "pointer", backdropFilter: "blur(8px)",
+                  appearance: "none",
+                  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' stroke='%23888' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E")`,
+                  backgroundRepeat: "no-repeat", backgroundPosition: "right 12px center",
+                  transition: "all 0.2s",
+                }}>
+                {f.options.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+              </select>
+            ))}
+            <div style={{ position: "relative" }}>
+              <input type="number" value={atarMin} onChange={e => handleFilter(() => setAtarMin(e.target.value))}
+                placeholder="Min ATAR" min={0} max={99.95}
+                style={{
+                  padding: "13px 14px", width: 110, borderRadius: 12,
+                  border: `1px solid ${atarMin ? "var(--accent)" : "var(--border)"}`,
+                  background: atarMin ? "var(--accent-soft)" : (isDark ? "oklch(100% 0 0 / 0.06)" : "oklch(100% 0 0 / 0.7)"),
+                  color: atarMin ? "var(--accent)" : "var(--text2)", fontSize: 14, outline: "none",
+                  backdropFilter: "blur(8px)", transition: "all 0.2s",
+                }}
+                onFocus={e => e.target.style.borderColor = "var(--accent)"}
+                onBlur={e => e.target.style.borderColor = atarMin ? "var(--accent)" : "var(--border)"}
+              />
+            </div>
+          </div>
+          {/* Active filter pills */}
+          {activeFilters.length > 0 && (
+            <div style={{ marginTop: 16, display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+              <span style={{ fontSize: 12, color: "var(--text3)" }}>Filtering by:</span>
+              {activeFilters.map(f => (
+                <span key={f} style={{
+                  padding: "4px 10px", borderRadius: 99,
+                  background: "var(--accent)", color: "var(--accent-fg)",
+                  fontSize: 12, fontWeight: 600, animation: "scaleIn 0.2s ease",
+                }}>{f}</span>
+              ))}
+              <button onClick={() => { handleFilter(() => { setSelArea(""); setSelUni(""); setSelDur(""); setAtarMin(""); setSearch(""); }); }}
+                style={{ fontSize: 12, color: "var(--text3)", background: "none", border: "none", cursor: "pointer", textDecoration: "underline", padding: "4px 6px" }}>
+                Clear all
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+
+      <FeaturedUniBanner isDark={isDark} />
+
+      {/* Layout toggle + result count */}
+      <div style={{ maxWidth: 1280, margin: "0 auto", padding: "18px 24px 0", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <span style={{ fontSize: 13, color: "var(--text3)" }}>
+          <span style={{ fontWeight: 700, color: "var(--text)" }}>{filtered.length}</span> course{filtered.length !== 1 ? "s" : ""} found
+        </span>
+        <div style={{ display: "flex", gap: 4, background: "var(--bg2)", padding: 4, borderRadius: 10, border: "1px solid var(--border)" }}>
+          {[
+            { id: "grid", icon: "⊞" },
+            { id: "list", icon: "☰" },
+            { id: "compact", icon: "≡" },
+          ].map(l => (
+            <button key={l.id} onClick={() => setTweaks({ layout: l.id })}
+              style={{
+                padding: "6px 12px", borderRadius: 7, border: "none", cursor: "pointer",
+                background: layout === l.id ? "var(--accent)" : "transparent",
+                color: layout === l.id ? "var(--accent-fg)" : "var(--text3)",
+                fontSize: 14, transition: "all 0.2s", fontWeight: 600,
+              }}>{l.icon}</button>
+          ))}
+        </div>
+      </div>
+
+      {/* Course listing */}
+      <main style={{ maxWidth: 1280, margin: "0 auto", padding: "20px 24px 80px" }} key={listKey}>
+        {filtered.length === 0 && (
+          <div style={{ textAlign: "center", padding: "80px 0", color: "var(--text3)" }}>
+            <div style={{ fontSize: 48, marginBottom: 16 }}>🔍</div>
+            <div style={{ fontSize: 18, fontFamily: "'Manrope', sans-serif", marginBottom: 8 }}>No courses found</div>
+            <div style={{ fontSize: 14 }}>Try adjusting your filters</div>
+          </div>
+        )}
+
+        {layout === "grid" && (
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 16 }}>
+            {filtered.map((c, i) => <CourseCard key={c.id} course={c} onClick={setSelected} idx={i} shortlisted={shortlist.some(s => s.id === c.id)} onShortlist={toggleShortlist} />)}
+          </div>
+        )}
+
+        {layout === "list" && (
+          <div style={{ background: "var(--card-bg)", border: "1px solid var(--border)", borderRadius: 16, overflow: "hidden" }}>
+            {filtered.map((c, i) => <CourseRow key={c.id} course={c} onClick={setSelected} idx={i} shortlisted={shortlist.some(s => s.id === c.id)} onShortlist={toggleShortlist} />)}
+          </div>
+        )}
+
+        {layout === "compact" && (
+          <div style={{ background: "var(--card-bg)", border: "1px solid var(--border)", borderRadius: 16, overflow: "hidden" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse" }}>
+              <thead>
+                <tr style={{ background: "var(--bg2)", borderBottom: "2px solid var(--border)" }}>
+                  {["Course", "University", "Field", "ATAR", "Campus", "Dur"].map(h => (
+                    <th key={h} style={{ padding: "10px 16px", textAlign: "left", fontSize: 11, fontWeight: 700, color: "var(--text3)", textTransform: "uppercase", letterSpacing: "0.06em", whiteSpace: "nowrap" }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map((c, i) => <CourseTableRow key={c.id} course={c} onClick={setSelected} idx={i} />)}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </main>
+
+      {/* Detail Panel */}
+      {selected && <DetailPanel course={selected} onClose={() => setSelected(null)} shortlisted={shortlist.some(s => s.id === selected.id)} onShortlist={toggleShortlist} />}
+      {showShortlist && <ShortlistDrawer items={shortlist} onRemove={id => saveShortlist(shortlist.filter(c => c.id !== id))} onClose={() => setShowShortlist(false)} />}}
+
+      {/* Tweaks Panel */}
+      {showTweaks && (
+        <div style={{
+          position: "fixed", bottom: 24, right: 24, zIndex: 200,
+          background: "var(--bg2)", border: "1px solid var(--border)",
+          borderRadius: 16, padding: "20px 22px", width: 260,
+          boxShadow: "var(--shadow-lg)", animation: "scaleIn 0.2s ease",
+        }}>
+          <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 16, color: "var(--text)", letterSpacing: "0.04em", textTransform: "uppercase" }}>Tweaks</div>
+
+          <div style={{ marginBottom: 16 }}>
+            <div style={{ fontSize: 11, color: "var(--text3)", marginBottom: 8, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em" }}>Theme</div>
+            <div style={{ display: "flex", gap: 8 }}>
+              {["dark", "light"].map(t => (
+                <button key={t} onClick={() => setTweaks({ theme: t })}
+                  style={{
+                    flex: 1, padding: "8px", borderRadius: 8, border: `1px solid ${tweaks.theme === t ? "var(--accent)" : "var(--border)"}`,
+                    background: tweaks.theme === t ? "var(--accent-soft)" : "transparent",
+                    color: tweaks.theme === t ? "var(--accent)" : "var(--text2)",
+                    fontSize: 13, cursor: "pointer", fontWeight: 600, transition: "all 0.2s", textTransform: "capitalize",
+                  }}>{t}</button>
+              ))}
+            </div>
+          </div>
+
+          <div style={{ marginBottom: 16 }}>
+            <div style={{ fontSize: 11, color: "var(--text3)", marginBottom: 8, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em" }}>Layout</div>
+            <div style={{ display: "flex", gap: 8, flexDirection: "column" }}>
+              {[["grid", "⊞ Card Grid"], ["list", "☰ List View"], ["compact", "≡ Compact Table"]].map(([id, label]) => (
+                <button key={id} onClick={() => setTweaks({ layout: id })}
+                  style={{
+                    padding: "8px 12px", borderRadius: 8, border: `1px solid ${tweaks.layout === id ? "var(--accent)" : "var(--border)"}`,
+                    background: tweaks.layout === id ? "var(--accent-soft)" : "transparent",
+                    color: tweaks.layout === id ? "var(--accent)" : "var(--text2)",
+                    fontSize: 13, cursor: "pointer", fontWeight: 600, textAlign: "left", transition: "all 0.2s",
+                  }}>{label}</button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+</body>
+</html>

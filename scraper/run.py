@@ -14,18 +14,14 @@ from dotenv import load_dotenv
 
 from base_scraper import BaseScraper
 from db import get_pool
-from latrobe import LaTrobeScraper
-from monash import MonashScraper
-from rmit import RmitScraper
-from swinburne import SwinburneScraper
-from unimelb import UniMelbScraper
+from universal_engine import UniversalEngine
 
 SCRAPERS: dict[str, type[BaseScraper]] = {
-    "latrobe": LaTrobeScraper,
-    "monash": MonashScraper,
-    "rmit": RmitScraper,
-    "swinburne": SwinburneScraper,
-    "unimelb": UniMelbScraper,
+    "latrobe": UniversalEngine,
+    "monash": UniversalEngine,
+    "rmit": UniversalEngine,
+    "swinburne": UniversalEngine,
+    "unimelb": UniversalEngine,
 }
 
 

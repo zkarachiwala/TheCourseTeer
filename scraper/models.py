@@ -1,4 +1,6 @@
 from dataclasses import dataclass, field
+from datetime import datetime
+from typing import Any
 
 
 @dataclass
@@ -9,6 +11,8 @@ class CampusLink:
     atar_guaranteed: int | None = None
     atar_lowest_selection_rank: int | None = None
     extraction_notes: str | None = None
+    admissions_codes: list[str] = field(default_factory=list)
+    confidence_score: int | None = None
 
 
 @dataclass
@@ -26,3 +30,21 @@ class CourseData:
     price_annual_dfee_aud: int | None = None
     csp_available: bool | None = None
     prerequisites: list[str] | None = None
+    confidence_score: int | None = None
+
+
+@dataclass
+class SiteConfig:
+    """Configuration for a university scraper."""
+
+    id: str
+    university_id: str
+    base_url: str
+    extraction_map: dict[str, Any]
+    robots_txt_status: str | None = None
+    version: int = 1
+    is_active: bool = True
+    sample_urls: list[str] = field(default_factory=list)
+    notes: str | None = None
+    last_updated: datetime | None = None
+    created_at: datetime | None = None

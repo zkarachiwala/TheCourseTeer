@@ -4,15 +4,41 @@ from psycopg.rows import dict_row
 from psycopg.types.json import Jsonb
 from psycopg_pool import AsyncConnectionPool
 
-from models import CourseData
+from models import CourseData, SiteConfig
 
 
 async def get_pool(dsn: str | None = None) -> AsyncConnectionPool:
     """Open and return an async connection pool. Reads DATABASE_URL from env if dsn omitted."""
     dsn = dsn or os.environ["DATABASE_URL"]
+    # If using Supabase, the DATABASE_URL might already contain the password.
+    # The Service Role Key is typically used in the API URL or as a header for REST,
+    # but for direct Postgres it's just the password in the connection string.
     pool = AsyncConnectionPool(dsn, open=False, kwargs={"prepare_threshold": None})
     await pool.open()
     return pool
+
+
+async def get_site_config(pool: AsyncConnectionPool, university_id: str) -> SiteConfig | None:
+    """Return the active SiteConfig for the given university."""
+    async with pool.connection() as conn:
+        async with conn.cursor(row_factory=dict_row) as cur:
+            await cur.execute(
+                "SELECT * FROM site_configs WHERE university_id = %s AND is_active = true",
+                (university_id,),
+            )
+            row = await cur.fetchone()
+    if row:
+        return SiteConfig(**row)
+    return None
+
+
+async def get_active_site_configs(pool: AsyncConnectionPool) -> list[SiteConfig]:
+    """Return all active SiteConfigs."""
+    async with pool.connection() as conn:
+        async with conn.cursor(row_factory=dict_row) as cur:
+            await cur.execute("SELECT * FROM site_configs WHERE is_active = true")
+            rows = await cur.fetchall()
+    return [SiteConfig(**row) for row in rows]
 
 
 async def get_university(pool: AsyncConnectionPool, slug: str) -> dict:

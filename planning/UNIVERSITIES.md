@@ -46,43 +46,7 @@ Spike evidence for MVP universities: see [ROBOTS_SPIKE.md](ROBOTS_SPIKE.md).
 
 ---
 
-### 3. University of Queensland
-| Field | Value |
-|---|---|
-| Homepage | https://www.uq.edu.au |
-| Course URL pattern | `/study/program.html?acad_prog=[code]` |
-| robots.txt blocks courses | No (only /study/search.html and /search/ blocked) |
-| Bot protection | None |
-| Rendering | Server-rendered HTML |
-| JSON-LD / Schema.org | Yes — `Course` type (name, description, courseCode, educationalCredentialAwarded) |
-| ATAR in static HTML | Partial — links present, amounts unconfirmed |
-| Fees in static HTML | Partial — "annual fee" present, exact amounts unconfirmed |
-| Scraper mode | `browser` |
-| Course discovery | Sitemap or query param enumeration from known course codes |
-| Notes | JSON-LD gives free identification fields. ATAR and fee amounts likely behind JS-rendered tabs — Playwright needed to confirm. Verify during implementation. |
-| Phase | `mvp` |
-
----
-
-### 4. University of Sydney
-| Field | Value |
-|---|---|
-| Homepage | https://www.sydney.edu.au |
-| Course URL pattern | `/courses/courses/uc/[course-name].html` (UG), `/courses/courses/pc/[course-name].html` (PG) |
-| robots.txt blocks courses | No (only 2011 archive, search, library assets blocked) |
-| Bot protection | None |
-| Rendering | Server-rendered HTML shell; data fields behind JS accordions |
-| JSON-LD / Schema.org | None |
-| ATAR in static HTML | No — requires JS interaction |
-| Fees in static HTML | No — requires JS interaction |
-| Scraper mode | `browser` |
-| Course discovery | Sitemap at `/sitemap.xml` |
-| Notes | Page shell is server-rendered (fast initial load) but ATAR and fee fields are in collapsed accordion panels requiring JS click interaction. Playwright must click/expand sections before extracting. |
-| Phase | `mvp` |
-
----
-
-### 5. University of Melbourne
+### 3. University of Melbourne
 | Field | Value |
 |---|---|
 | Homepage | https://www.unimelb.edu.au |
