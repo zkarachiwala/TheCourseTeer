@@ -1,0 +1,8 @@
+{
+  "track_id": "snapshot_caching_20260426",
+  "type": "infrastructure",
+  "status": "new",
+  "created_at": "2026-04-26T00:00:00Z",
+  "updated_at": "2026-04-26T00:00:00Z",
+  "description": "Implement a local HTML snapshot caching layer for the scraper to reduce network load, speed up iteration, and provide stable data for the Visual Scraper Builder UI."
+}
