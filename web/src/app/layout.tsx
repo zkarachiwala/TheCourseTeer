@@ -8,6 +8,7 @@ import { ShortlistProvider } from "@/contexts/shortlist-context";
 export const metadata: Metadata = {
   title: "The Courseteer",
   description: "Australian university course aggregator",
+  icons: { icon: '/logo-icon.png', apple: '/logo-icon.png' },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

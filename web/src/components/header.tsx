@@ -21,8 +21,9 @@ export function Header() {
         display: 'flex', alignItems: 'center',
         padding: '0 var(--px)', gap: '16px',
       }}>
-        <Link href="/" style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 800, fontSize: '18px', color: 'var(--text)', textDecoration: 'none', flexShrink: 0 }}>
-          Courseteer
+        <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none', flexShrink: 0 }}>
+          <img src="/logo-icon.png" alt="" aria-hidden="true" style={{ width: 32, height: 32, objectFit: 'contain' }} />
+          <span style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 800, fontSize: '18px', color: 'var(--text)' }}>Courseteer</span>
         </Link>
         <nav style={{ display: 'flex', gap: '4px', flex: 1, alignItems: 'center' }}>
           <NavLink href="/courses" active={pathname.startsWith('/courses')}>Courses</NavLink>
