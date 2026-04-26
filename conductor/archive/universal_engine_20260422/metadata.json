@@ -1,0 +1,8 @@
+{
+  "track_id": "universal_engine_20260422",
+  "type": "feature",
+  "status": "new",
+  "created_at": "2026-04-22T10:00:00Z",
+  "updated_at": "2026-04-22T10:00:00Z",
+  "description": "Refactor the existing 5 Victorian university scripts into a single UniversalEngine. Create a migration for a site_configs table in Supabase that stores jsonb extraction maps (CSS selectors + Text Anchors). Implement a 'Visual Anchor' logic in Python where the engine searches for text labels like 'ATAR' or 'Fees' if the primary CSS selector fails. The engine should output a 'confidence score' to Supabase for the annual audit. Note that the Latrobe scraper has not been properly validated and still needs some additional work."
+}
