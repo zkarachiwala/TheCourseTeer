@@ -26,9 +26,9 @@
     - [x] Handle JSON vs HTML extensions correctly in filenames.
 
 ## Phase 4: CLI Control & Verification
-- [ ] **Task: Add CLI flags to `run.py`**
-    - [ ] Add `--no-cache` and `--refresh` flags.
-- [ ] **Task: Final Verification**
-    - [ ] Run a test scrape for 1 university and verify local files are created.
-    - [ ] Run again and verify network is NOT hit (via logs).
-    - [ ] Verify `--refresh` flag works.
+- [x] **Task: Add CLI flags to `run.py`**
+    - [x] Add `--no-cache` and `--refresh` flags.
+- [x] **Task: Final Verification**
+    - [x] Run a test scrape for 1 university and verify local files are created.
+    - [x] Run again and verify network is NOT hit (via logs).
+    - [x] Verify `--refresh` flag works.

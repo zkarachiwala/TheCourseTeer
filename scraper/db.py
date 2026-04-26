@@ -139,17 +139,26 @@ async def upsert_course(pool: AsyncConnectionPool, course: CourseData) -> None:
                     "DELETE FROM course_campuses WHERE course_id = %s", (course_id,)
                 )
                 if course.campuses:
-                    await cur.executemany(
-                        """
-                        INSERT INTO course_campuses
-                            (course_id, campus_id, atar_guaranteed, atar_lowest_selection_rank, extraction_notes)
-                        VALUES (%s, %s, %s, %s, %s)
-                        """,
-                        [
-                            (course_id, cl.campus_id, cl.atar_guaranteed, cl.atar_lowest_selection_rank, cl.extraction_notes)
-                            for cl in course.campuses
-                        ],
-                    )
+                    # Filter out campuses with invalid UUIDs (could be raw names that failed resolution)
+                    import re
+                    uuid_regex = re.compile(r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$', re.I)
+                    valid_campuses = [
+                        cl for cl in course.campuses 
+                        if isinstance(cl.campus_id, str) and uuid_regex.match(cl.campus_id)
+                    ]
+                    
+                    if valid_campuses:
+                        await cur.executemany(
+                            """
+                            INSERT INTO course_campuses
+                                (course_id, campus_id, atar_guaranteed, atar_lowest_selection_rank, extraction_notes)
+                            VALUES (%s, %s, %s, %s, %s)
+                            """,
+                            [
+                                (course_id, cl.campus_id, cl.atar_guaranteed, cl.atar_lowest_selection_rank, cl.extraction_notes)
+                                for cl in valid_campuses
+                            ],
+                        )
 
 
 async def get_or_create_run(
