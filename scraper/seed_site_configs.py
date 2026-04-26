@@ -66,7 +66,7 @@ SITE_CONFIGS = [
         "extraction_map": {
             "name": {"selector": "h1"},
             "duration": {"anchor": "Duration", "regex": r"(\d+(?:\.\d+)?)"},
-            "atar": {"anchor": "Guaranteed ATAR", "regex": r":\s*(\d{2}(?:\.\d+)?)"},
+            "atar": {"anchor": "Guaranteed ATAR", "regex": r"(Guaranteed ATAR 2026: \d{2}(?:\.\d+)?)"},
             "fees": {"anchor": "Commonwealth Supported Place"},
             "location": {"anchor": "Campus", "regex": r"(Parkville|Southbank|Online)"},
             "admissions_codes": {"anchor": "VTAC code", "regex": r"(\d{9,10})"}
@@ -97,6 +97,36 @@ SITE_CONFIGS = [
         },
         "robots_txt_status": "allowed",
         "notes": "Swinburne uses dedicated detail divs and fee blocks."
+    },
+    {
+        "university_id": "f5b3d349-0214-480b-89bc-7b70298e722b", # La Trobe
+        "base_url": "https://www.latrobe.edu.au",
+        "extraction_map": {
+            "name": {"regex": r'"advertisedTitle"\s*:\s*"([^"]+)"'},
+            "duration": {"regex": r'"duration"\s*:\s*"([0-9.]+)"'},
+            "atar": {"regex": r'"minSelectionRankOffered"\s*:\s*"([0-9.]+)"'},
+            "location": {
+                "regex": r'"campuses"\s*:\s*(\[[^\]]+\])',
+                "mapping": {
+                    "BU": "Bundoora",
+                    "ON": "Online",
+                    "AW": "Albury-Wodonga",
+                    "BE": "Bendigo",
+                    "MC": "Melbourne City",
+                    "MI": "Mildura",
+                    "SH": "Shepparton"
+                }
+            },
+            "admissions_codes": {"regex": r'"vtacCode"\s*:\s*(\d{9,10})'},
+            "follow_urls": {"regex": r"/courses/data/202[6-7]/domestic/[a-z]+/[^'\"\s]+"}
+        },
+        "discovery_config": {
+            "method": "sitemap",
+            "url": "https://www.latrobe.edu.au/sitemap.xml",
+            "include_patterns": ["/courses/"]
+        },
+        "robots_txt_status": "allowed",
+        "notes": "La Trobe requires following detail JSON URLs to find VTAC codes."
     }
 ]
 

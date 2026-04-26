@@ -37,26 +37,26 @@
     - [x] Implement `calculate_confidence` logic
 - [x] **Task: Conductor - User Manual Verification 'Phase 2' (Protocol in workflow.md)**
 
-## Phase 3: Refactoring & Migration
-- [x] **Task: Migrate UniMelb to UniversalEngine**
+## Phase 3: Refactoring & Migration [checkpoint: a38d0df]
+- [x] **Task: Migrate UniMelb to UniversalEngine** [33414a1]
     - [x] Write integration test for UniMelb using `UniversalEngine`
     - [x] Ensure data parity with legacy script (including VTAC codes)
-- [x] **Task: Migrate Monash to UniversalEngine**
+- [x] **Task: Migrate Monash to UniversalEngine** [98132e4]
     - [x] Write integration test for Monash
     - [x] Verify results, confidence scores, and VTAC codes
-- [x] **Task: Migrate RMIT to UniversalEngine**
+- [x] **Task: Migrate RMIT to UniversalEngine** [4f21d37]
     - [x] Write integration test for RMIT
-- [x] **Task: Migrate Swinburne to UniversalEngine**
+- [x] **Task: Migrate Swinburne to UniversalEngine** [c921e42]
     - [x] Write integration test for Swinburne
-- [ ] **Task: Conductor - User Manual Verification 'Phase 3' (Protocol in workflow.md)**
+- [x] **Task: Conductor - User Manual Verification 'Phase 3' (Protocol in workflow.md)**
 
 ## Phase 4: La Trobe Fix & Final Validation
-- [ ] **Task: Fix and Validate La Trobe**
-    - [ ] Identify and fix issues in La Trobe's extraction logic
-    - [ ] Ensure VTAC codes are correctly mapped for La Trobe
-    - [ ] Migrate to `UniversalEngine` and verify with integration tests
-- [ ] **Task: Final Integration & Cleanup**
-    - [ ] Run full test suite for all 5 Victorian universities
-    - [ ] Delete legacy scripts (`unimelb.py`, `monash.py`, etc.) after confirmed parity
-    - [ ] Update `scraper/run.py` to use `UniversalEngine` exclusively
-- [ ] **Task: Conductor - User Manual Verification 'Phase 4' (Protocol in workflow.md)**
+- [x] **Task: Fix and Validate La Trobe**
+    - [x] Identify and fix issues in La Trobe's extraction logic
+    - [x] Ensure VTAC codes are correctly mapped for La Trobe
+    - [x] Migrate to `UniversalEngine` and verify with integration tests
+- [x] **Task: Final Integration & Cleanup**
+    - [x] Run full test suite for all 5 Victorian universities
+    - [x] Delete legacy scripts (`unimelb.py`, `monash.py`, etc.) after confirmed parity
+    - [x] Update `scraper/run.py` to use `UniversalEngine` exclusively
+- [x] **Task: Conductor - User Manual Verification 'Phase 4' (Protocol in workflow.md)**

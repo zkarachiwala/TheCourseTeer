@@ -1,17 +1,16 @@
+import json
 import logging
 import re
-import json
+import urllib.robotparser
 from typing import Any
 
 from bs4 import BeautifulSoup
 from psycopg_pool import AsyncConnectionPool
 
-from db import get_site_config
-from models import SiteConfig, CourseData
-
 from base_scraper import BaseScraper
+from db import get_campus_map, get_site_config
 from http_client import make_client
-from db import get_site_config, get_campus_map
+from models import CourseData, SiteConfig
 
 logger = logging.getLogger(__name__)
 
@@ -73,6 +72,10 @@ class UniversalEngine(BaseScraper):
         self._campus_map: dict[str, str] | None = None
 
     async def _ensure_config(self):
+        from db import get_university
+        if not self._university:
+            self._university = await get_university(self.pool, self.slug)
+        
         if not self._config:
             self._config = await get_site_config(self.pool, self.university_id)
             if not self._config:
@@ -83,7 +86,7 @@ class UniversalEngine(BaseScraper):
         await self._ensure_config()
         disc_cfg = self._config.extraction_map.get("discovery_config", {})
         method = disc_cfg.get("method")
-        
+
         urls = []
         if method == "sitemap":
             sitemap_url = disc_cfg.get("url")
@@ -92,7 +95,6 @@ class UniversalEngine(BaseScraper):
                 resp = await client.get(sitemap_url)
                 resp.raise_for_status()
                 # Basic sitemap parsing
-                import re
                 found = re.findall(r"<loc>(https://[^<]+)</loc>", resp.text)
                 for url in found:
                     if not include_patterns or any(p in url for p in include_patterns):
@@ -100,32 +102,42 @@ class UniversalEngine(BaseScraper):
         elif method == "listing":
             # Implementation for listing pages if needed
             pass
-            
+
         return list(set(urls))
 
-    async def scrape_url(self, rp: urllib.robotparser.RobotFileParser, url: str) -> CourseData | None:
+    async def scrape_url(
+        self, rp: urllib.robotparser.RobotFileParser, url: str
+    ) -> CourseData | None:
         await self._ensure_config()
         self.check_robots(rp, url)
-        
+
         async with make_client() as client:
             resp = await client.get(url)
             if resp.status_code != 200:
                 logger.warning(f"Failed to fetch {url}: {resp.status_code}")
                 return None
-            
+
             async def fetch_sub(sub_url: str) -> str:
                 # Re-use client for sub-requests
                 sub_resp = await client.get(sub_url)
                 sub_resp.raise_for_status()
                 return sub_resp.text
 
-            return await self.scrape_page(resp.text, self._config, url, campus_map=self._campus_map, fetch_fn=fetch_sub)
+            return await self.scrape_page(
+                resp.text,
+                self._config,
+                url,
+                campus_map=self._campus_map,
+                fetch_fn=fetch_sub,
+            )
 
     async def get_config(self, university_id: str) -> SiteConfig:
         """Fetch the active configuration for the given university."""
         config = await get_site_config(self.pool, university_id)
         if not config:
-            raise ValueError(f"No active SiteConfig found for university_id: {university_id}")
+            raise ValueError(
+                f"No active SiteConfig found for university_id: {university_id}"
+            )
         return config
 
     def find_by_anchor(self, soup: BeautifulSoup, anchor_text: str) -> str | None:
@@ -136,7 +148,7 @@ class UniversalEngine(BaseScraper):
         """
         # Find all text nodes containing the anchor text
         labels = soup.find_all(string=lambda s: s and anchor_text.lower() in s.lower())
-        
+
         for label_node in labels:
             # 1. Check if the label node itself contains the value (e.g., "Duration: 3 years")
             full_text = label_node.strip()
@@ -145,17 +157,19 @@ class UniversalEngine(BaseScraper):
             # - "available", "yes", "no"
             # - a colon or dash separating the label and value (e.g. "Campus: Parkville")
             is_val = (
-                any(c.isdigit() for c in full_text) or
-                any(k in full_text.lower() for k in ["available", "yes", "no"]) or
-                (':' in full_text and len(full_text.split(':', 1)[1].strip()) > 0) or
-                ('-' in full_text and len(full_text.split('-', 1)[1].strip()) > 0)
+                any(c.isdigit() for c in full_text)
+                or any(k in full_text.lower() for k in ["available", "yes", "no"])
+                or (":" in full_text and len(full_text.split(":", 1)[1].strip()) > 0)
+                or ("-" in full_text and len(full_text.split("-", 1)[1].strip()) > 0)
             )
             if is_val:
-                logger.debug(f"Found value in same node as anchor '{anchor_text}': {full_text}")
+                logger.debug(
+                    f"Found value in same node as anchor '{anchor_text}': {full_text}"
+                )
                 return full_text
 
             # 2. Otherwise, look for the next non-empty string that isn't the label itself
-            if hasattr(label_node, 'parent'):
+            if hasattr(label_node, "parent"):
                 curr = label_node.parent
             else:
                 curr = label_node
@@ -167,10 +181,12 @@ class UniversalEngine(BaseScraper):
                 text = next_text.strip()
                 # Check if this text is not just the label or a minor variation
                 if text and anchor_text.lower() not in text.lower():
-                    logger.debug(f"Found value in subsequent node for anchor '{anchor_text}': {text}")
+                    logger.debug(
+                        f"Found value in subsequent node for anchor '{anchor_text}': {text}"
+                    )
                     return text
                 curr = next_text
-                
+
         return None
 
     def calculate_confidence(self, field_results: dict[str, str]) -> int:
@@ -184,27 +200,34 @@ class UniversalEngine(BaseScraper):
             return 100
         return 70
 
-    async def scrape_page(self, html: str, config: SiteConfig, url: str, campus_map: dict[str, str] | None = None, fetch_fn: Any | None = None) -> CourseData:
+    async def scrape_page(
+        self,
+        html: str,
+        config: SiteConfig,
+        url: str,
+        campus_map: dict[str, str] | None = None,
+        fetch_fn: Any | None = None,
+    ) -> CourseData:
         """Scrape a course page using the provided configuration."""
         soup = BeautifulSoup(html, "lxml")
         field_results = {}
 
         # 1. Extract Name
         name_cfg = config.extraction_map.get("name", {})
-        name = self._extract_field(soup, name_cfg, html)
+        name = self._extract_field(soup, name_cfg, html, field_name="name")
         if name:
             field_results["name"] = name
 
         # 2. Extract Duration
         dur_cfg = config.extraction_map.get("duration", {})
-        duration_str = self._extract_field(soup, dur_cfg, html)
+        duration_str = self._extract_field(soup, dur_cfg, html, field_name="duration")
         duration = self._parse_duration(duration_str)
         if duration:
             field_results["duration"] = str(duration)
 
         # 3. Extract ATAR
         atar_cfg = config.extraction_map.get("atar", {})
-        atar_str = self._extract_field(soup, atar_cfg, html)
+        atar_str = self._extract_field(soup, atar_cfg, html, field_name="atar")
         atar_guaranteed, atar_rank = self._parse_atar(atar_str)
         if atar_guaranteed or atar_rank:
             field_results["atar"] = atar_str
@@ -216,14 +239,20 @@ class UniversalEngine(BaseScraper):
         if anchor:
             anchor_val = self.find_by_anchor(soup, anchor)
             if anchor_val:
-                csp_available = any(k in anchor_val.lower() for k in ["commonwealth", "csp", "supported", "$"])
+                csp_available = any(
+                    k in anchor_val.lower()
+                    for k in ["commonwealth", "csp", "supported", "$"]
+                )
                 field_results["fees"] = anchor_val
-        
+
         if not csp_available:
-            fees_str = self._extract_field(soup, fees_cfg, html)
+            fees_str = self._extract_field(soup, fees_cfg, html, field_name="fees")
             if fees_str:
                 field_results["fees"] = fees_str
-                csp_available = any(k in fees_str.lower() for k in ["commonwealth", "csp", "supported", "$"])
+                csp_available = any(
+                    k in fees_str.lower()
+                    for k in ["commonwealth", "csp", "supported", "$"]
+                )
                 if not csp_available and "FeeDomesticCSP" in fees_cfg.get("regex", ""):
                     csp_available = True
 
@@ -235,23 +264,26 @@ class UniversalEngine(BaseScraper):
 
         # 6. Location / Campuses
         loc_cfg = config.extraction_map.get("location", {})
-        location_raw = self._extract_field(soup, loc_cfg, html)
-        
+        location_raw = self._extract_field(soup, loc_cfg, html, field_name="location")
+
         campuses = []
         if location_raw:
             # Parse multiple locations if present (comma-separated or JSON list)
             location_list = []
-            if location_raw.startswith('[') and location_raw.endswith(']'):
+            if location_raw.startswith("[") and location_raw.endswith("]"):
                 try:
                     location_list = json.loads(location_raw)
                 except:
                     location_list = [location_raw]
             else:
-                location_list = [loc.strip() for loc in location_raw.split(',') if loc.strip()]
+                location_list = [
+                    loc.strip() for loc in location_raw.split(",") if loc.strip()
+                ]
 
             location_mapping = loc_cfg.get("mapping", {})
 
             from models import CampusLink
+
             for loc in location_list:
                 # Map location to campus_id if campus_map or config mapping is provided
                 campus_id = loc
@@ -261,13 +293,15 @@ class UniversalEngine(BaseScraper):
                     # Try exact match
                     campus_id = campus_map.get(loc, loc)
 
-                campuses.append(CampusLink(
-                    campus_id=campus_id,
-                    atar_guaranteed=atar_guaranteed,
-                    atar_lowest_selection_rank=atar_rank,
-                    admissions_codes=list(adm_codes),
-                    confidence_score=70
-                ))
+                campuses.append(
+                    CampusLink(
+                        campus_id=campus_id,
+                        atar_guaranteed=atar_guaranteed,
+                        atar_lowest_selection_rank=atar_rank,
+                        admissions_codes=list(adm_codes),
+                        confidence_score=70,
+                    )
+                )
 
         # 7. Follow URLs (e.g. for La Trobe detail JSONs)
         follow_cfg = config.extraction_map.get("follow_urls")
@@ -276,15 +310,23 @@ class UniversalEngine(BaseScraper):
             if regex:
                 # Find all matching URLs in the HTML
                 matches = re.findall(regex, html)
+                logger.debug(f"found {len(matches)} potential follow URLs with regex '{regex}'")
                 for sub_url in matches:
-                    if not sub_url.startswith('http'):
-                        sub_url = config.base_url.rstrip('/') + '/' + sub_url.lstrip('/')
-                    
+                    if not sub_url.startswith("http"):
+                        sub_url = (
+                            config.base_url.rstrip("/") + "/" + sub_url.lstrip("/")
+                        )
+
+                    logger.debug(f"following URL: {sub_url}")
                     try:
                         sub_html = await fetch_fn(sub_url)
+                        logger.debug(f"fetched sub_html, length={len(sub_html)}")
                         # Extract more data from the sub-page
                         # For La Trobe, we want VTAC codes from the detail JSON
-                        sub_adm_codes = self.extract_admissions_codes(BeautifulSoup(sub_html, "lxml"), adm_cfg)
+                        sub_adm_codes = self.extract_admissions_codes(
+                            BeautifulSoup(sub_html, "lxml"), adm_cfg
+                        )
+                        logger.debug(f"extracted {len(sub_adm_codes)} admissions codes from sub-page")
                         if sub_adm_codes:
                             # Heuristic: try to match sub_url to a campus
                             # La Trobe URLs have campus code in them, e.g. /domestic/bu/
@@ -293,15 +335,19 @@ class UniversalEngine(BaseScraper):
                                 if f"/{campus.campus_id.lower()}/" in sub_url.lower():
                                     matched_campus = campus
                                     break
-                            
+
                             if matched_campus:
                                 matched_campus.admissions_codes.extend(sub_adm_codes)
-                                matched_campus.admissions_codes = sorted(list(set(matched_campus.admissions_codes)))
+                                matched_campus.admissions_codes = sorted(
+                                    list(set(matched_campus.admissions_codes))
+                                )
                             else:
                                 # If no specific campus match, add to all
                                 for campus in campuses:
                                     campus.admissions_codes.extend(sub_adm_codes)
-                                    campus.admissions_codes = sorted(list(set(campus.admissions_codes)))
+                                    campus.admissions_codes = sorted(
+                                        list(set(campus.admissions_codes))
+                                    )
                     except Exception as e:
                         logger.error(f"Failed to fetch followed URL {sub_url}: {e}")
 
@@ -320,14 +366,19 @@ class UniversalEngine(BaseScraper):
             degree_type="UG",
             duration_years=duration,
             csp_available=csp_available,
-            confidence_score=confidence
+            confidence_score=confidence,
         )
 
-    def _extract_field(self, soup: BeautifulSoup, field_cfg: dict, full_html: str | None = None) -> str | None:
+    def _extract_field(
+        self,
+        soup: BeautifulSoup,
+        field_cfg: dict,
+        full_html: str | None = None,
+        field_name: str | None = None,
+    ) -> str | None:
         """Helper to extract a field based on selector, attr, anchor, or regex."""
-        import json
         val = None
-        
+
         # 1. Try JSON-LD first if specified
         json_ld_path = field_cfg.get("json_ld")
         if json_ld_path:
@@ -335,10 +386,11 @@ class UniversalEngine(BaseScraper):
             for script in scripts:
                 try:
                     content = script.string or script.text
-                    if not content: continue
+                    if not content:
+                        continue
                     data = json.loads(content)
                     objs = data if isinstance(data, list) else [data]
-                    
+
                     keys = json_ld_path.split(".")
                     for obj in objs:
                         curr = obj
@@ -346,7 +398,7 @@ class UniversalEngine(BaseScraper):
                             keys_to_use = keys[1:]
                         else:
                             keys_to_use = keys
-                            
+
                         for k in keys_to_use:
                             if isinstance(curr, dict) and k in curr:
                                 curr = curr[k]
@@ -356,7 +408,8 @@ class UniversalEngine(BaseScraper):
                         if curr:
                             val = str(curr)
                             break
-                    if val: break
+                    if val:
+                        break
                 except (json.JSONDecodeError, TypeError):
                     continue
 
@@ -369,7 +422,10 @@ class UniversalEngine(BaseScraper):
                     rows = soup.select(selector)
                     for row in rows:
                         cells = row.find_all(["th", "td"])
-                        if len(cells) >= 2 and key_text.lower() in cells[0].get_text(strip=True).lower():
+                        if (
+                            len(cells) >= 2
+                            and key_text.lower() in cells[0].get_text(strip=True).lower()
+                        ):
                             val = cells[1].get_text(" ", strip=True)
                             break
                 else:
@@ -377,10 +433,10 @@ class UniversalEngine(BaseScraper):
                     if elem:
                         attr = field_cfg.get("attr")
                         val = elem.get(attr) if attr else elem.get_text(strip=True)
-                
+
                 if val:
                     logger.debug(f"Selector '{selector}' (key={key_text}) found: {val}")
-        
+
         # 3. Fallback to anchor
         if not val:
             anchor = field_cfg.get("anchor")
@@ -391,25 +447,40 @@ class UniversalEngine(BaseScraper):
         regex = field_cfg.get("regex")
         if regex:
             # If we don't have a value yet, try running regex on the full HTML
+            # BUT if we have an anchor value, we apply regex to THAT to refine it
             target_text = val if val else full_html
             if target_text:
-                logger.debug(f"Applying regex '{regex}' to text length {len(target_text)}")
+                logger.debug(
+                    f"Applying regex '{regex}' to text length {len(target_text)}"
+                )
                 m = re.search(regex, target_text, re.IGNORECASE)
                 if m:
                     try:
+                        # Prefer captured group if available (e.g. just the name, 
+                        # or the specific part of ATAR string if the regex defined it)
                         val = m.group(1)
+                        logger.debug(f"Regex match result (group 1) for {field_name}: {val}")
                     except IndexError:
-                        val = m.group(0)
-                    logger.debug(f"Regex match result: {val}")
+                        # No capture group, use group(0) OR full context for certain fields
+                        if field_name in ["atar", "duration", "fees"]:
+                            # Return the full target_text to keep context for _parse methods
+                            # like 'Guaranteed' vs 'Lowest'
+                            val = target_text
+                            logger.debug(f"Regex matched, returning full context for {field_name}")
+                        else:
+                            val = m.group(0)
+                            logger.debug(f"Regex match result (group 0) for {field_name}: {val}")
                 elif val:
                     # If regex was supposed to refine a value but failed, clear it
                     val = None
-                    logger.debug("Regex did not match")
-                
+                    logger.debug(f"Regex did not match for {field_name}")
+
         return val
 
     def _parse_duration(self, text: str | None) -> float | None:
-        if not text: return None
+        if not text:
+            return None
+        logger.debug(f"_parse_duration: text length={len(text)}")
         m = re.search(r"(\d+(?:\.\d+)?)", text)
         return float(m.group(1)) if m else None
 
@@ -417,16 +488,18 @@ class UniversalEngine(BaseScraper):
         """
         Return (atar_guaranteed, atar_lowest_selection_rank) from text.
         """
-        if not text: return None, None
-        
+        if not text:
+            return None, None
+
         guaranteed = None
         rank = None
-        
+
         # Look for numbers, but filter out years (e.g. 2024, 2025, 2026)
         # ATARs are always <= 99.95
         m = re.findall(r"(\d{2,4}(?:\.\d+)?)", text)
-        if not m: return None, None
-        
+        if not m:
+            return None, None
+
         vals = []
         for n in m:
             val = float(n)
@@ -434,21 +507,26 @@ class UniversalEngine(BaseScraper):
             if 1900 <= val <= 2100:
                 continue
             vals.append(int(val))
-            
-        if not vals: return None, None
-        
+
+        if not vals:
+            return None, None
+
         lower_text = text.lower()
-        if "guarantee" in lower_text:
+        logger.debug(f"_parse_atar: text='{text}', vals={vals}, lower_text='{lower_text}'")
+        if any(k in lower_text for k in ["guarantee", "guaranteed", "minimum", "aspire"]):
             guaranteed = vals[0]
-            if len(vals) > 1: rank = vals[1]
-        elif "selection rank" in lower_text or "rank" in lower_text:
+            if len(vals) > 1:
+                rank = vals[1]
+        elif any(k in lower_text for k in ["selection rank", "rank", "lowest", "minselectionrankoffered"]):
             rank = vals[0]
-            if len(vals) > 1: guaranteed = vals[1]
+            if len(vals) > 1:
+                guaranteed = vals[1]
         else:
             # Default to selection rank if no keywords
             rank = vals[0]
-            if len(vals) > 1: guaranteed = vals[1]
-            
+            if len(vals) > 1:
+                guaranteed = vals[1]
+
         return guaranteed, rank
 
     def extract_admissions_codes(self, soup: BeautifulSoup, config: dict) -> list[str]:
@@ -456,7 +534,7 @@ class UniversalEngine(BaseScraper):
         results = set()
         anchor = config.get("anchor")
         regex = config.get("regex")
-        
+
         if anchor:
             label_text = self.find_by_anchor(soup, anchor)
             if label_text:
@@ -465,10 +543,10 @@ class UniversalEngine(BaseScraper):
                     results.update(matches)
                 else:
                     results.add(label_text)
-        
+
         if not results and regex:
             text = soup.get_text(" ")
             matches = re.findall(regex, text)
             results.update(matches)
-            
+
         return sorted(list(results))
