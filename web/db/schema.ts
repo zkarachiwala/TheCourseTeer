@@ -82,3 +82,11 @@ export const atarIssues = pgTable("atar_issues", {
   index("atar_issues_university_id").on(t.universityId),
   index("atar_issues_run_id").on(t.runId),
 ]);
+
+export const leads = pgTable("leads", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  email: text("email").notNull(),
+  courseIds: uuid("course_ids").array().notNull().default([]),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+

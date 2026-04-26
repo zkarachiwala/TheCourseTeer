@@ -1,3 +1,61 @@
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&family=Open+Sans:wght@300;400;500;600&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+:root {
+  --bg: oklch(98% 0.006 90);
+  --bg2: oklch(95% 0.008 90);
+  --bg3: oklch(92% 0.008 90);
+  --border: oklch(88% 0.008 90);
+  --text: oklch(12% 0.01 270);
+  --text2: oklch(45% 0.01 270);
+  --text3: oklch(65% 0.01 270);
+  --accent: oklch(58% 0.22 25);
+  --accent-fg: oklch(98% 0.005 90);
+  --accent-soft: oklch(58% 0.22 25 / 0.1);
+  --card-bg: oklch(100% 0 0);
+  --card-hover: oklch(98% 0.006 90);
+  --shadow: 0 2px 16px oklch(12% 0.01 270 / 0.08);
+  --shadow-lg: 0 8px 40px oklch(12% 0.01 270 / 0.15);
+  --radius-card: 16px;
+  --radius-btn: 8px;
+  --radius-pill: 99px;
+  --header-h: 60px;
+  --max-w: 1280px;
+  --px: 24px;
+  font-family: 'Open Sans', sans-serif;
+}
+
+.dark {
+  --bg: oklch(10% 0.012 270);
+  --bg2: oklch(14% 0.012 270);
+  --bg3: oklch(18% 0.012 270);
+  --border: oklch(25% 0.012 270);
+  --text: oklch(98% 0 0);
+  --text2: oklch(72% 0.006 270);
+  --text3: oklch(52% 0.008 270);
+  --accent: oklch(85% 0.22 135);
+  --accent-fg: oklch(12% 0.05 135);
+  --accent-soft: oklch(85% 0.22 135 / 0.12);
+  --card-bg: oklch(16% 0.012 270);
+  --card-hover: oklch(20% 0.014 270);
+  --shadow: 0 4px 24px oklch(0% 0 0 / 0.4);
+  --shadow-lg: 0 12px 48px oklch(0% 0 0 / 0.6);
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.8); }
+  to   { opacity: 1; transform: scale(1); }
+}
