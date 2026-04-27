@@ -2,7 +2,7 @@
 
 ## Phase 1: Setup and Configuration
 - [x] Task: Create Azure Static Web App configuration (`staticwebapp.config.json`) in the `/web` directory to handle routes, authentication, and fallback for Next.js. 39ff370
-- [ ] Task: Configure Authentication settings within `staticwebapp.config.json` for Entra ID (`aad`) and GitHub.
+- [x] Task: Configure Authentication settings within `staticwebapp.config.json` for Entra ID (`aad`) and GitHub. 6bfc430
 - [ ] Task: Define GitHub Actions workflow file (`.github/workflows/azure-static-web-apps.yml`) for continuous deployment to Azure.
 - [ ] Task: Document required environment variables (Supabase URL/Keys) for injection into Azure/GitHub Actions secrets.
 - [ ] Task: Conductor - User Manual Verification 'Phase 1: Setup and Configuration' (Protocol in workflow.md)
