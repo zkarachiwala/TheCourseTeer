@@ -1,7 +1,7 @@
 # Implementation Plan: Azure Deployment for The Courseteer Web App
 
 ## Phase 1: Setup and Configuration
-- [ ] Task: Create Azure Static Web App configuration (`staticwebapp.config.json`) in the `/web` directory to handle routes, authentication, and fallback for Next.js.
+- [x] Task: Create Azure Static Web App configuration (`staticwebapp.config.json`) in the `/web` directory to handle routes, authentication, and fallback for Next.js. 39ff370
 - [ ] Task: Configure Authentication settings within `staticwebapp.config.json` for Entra ID (`aad`) and GitHub.
 - [ ] Task: Define GitHub Actions workflow file (`.github/workflows/azure-static-web-apps.yml`) for continuous deployment to Azure.
 - [ ] Task: Document required environment variables (Supabase URL/Keys) for injection into Azure/GitHub Actions secrets.
