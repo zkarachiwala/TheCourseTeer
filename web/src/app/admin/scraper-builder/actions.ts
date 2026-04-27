@@ -5,6 +5,10 @@ import { scraperConfigs, universities } from '@/../db/schema'
 import { eq, and } from 'drizzle-orm'
 import { v4 as uuidv4 } from 'uuid'
 import { revalidatePath } from 'next/cache'
+import { exec } from 'child_process'
+import { promisify } from 'util'
+
+const execPromise = promisify(exec)
 
 export async function saveScraperConfig(data: {
   universityOrigin: string;
