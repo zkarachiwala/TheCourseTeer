@@ -1,8 +1,4 @@
 {
-  "navigationFallback": {
-    "rewrite": "/index.html",
-    "exclude": ["/api/*", "/_next/*", "/public/*", "/*.{png,jpg,jpeg,gif,svg,ico,css,js}"]
-  },
   "auth": {
     "identityProviders": {
       "azureActiveDirectory": {
