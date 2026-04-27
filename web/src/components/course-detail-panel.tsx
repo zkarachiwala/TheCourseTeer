@@ -1,7 +1,7 @@
 'use client'
 import { useEffect } from 'react'
 import { CourseCardData } from './course-card'
-import { getArea, atarColor, AREAS } from '@/lib/area-map'
+import { getArea, atarColor, degreeLabel, AREAS } from '@/lib/area-map'
 
 interface Props { course: CourseCardData; onClose: () => void }
 
@@ -33,8 +33,8 @@ export function CourseDetailPanel({ course, onClose }: Props) {
         <div style={{ flex: 1, overflowY: 'auto', padding: '24px' }}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
             <Stat label="ATAR" value={course.atarGuaranteed != null ? String(course.atarGuaranteed) : 'N/A'} valueColor={course.atarGuaranteed != null ? atarColor(course.atarGuaranteed) : undefined} />
-            <Stat label="Duration" value={course.durationYears != null ? `${course.durationYears} years` : 'N/A'} />
-            <Stat label="Type" value={course.degreeType ?? 'N/A'} />
+            <Stat label="Duration" value={course.durationYears != null ? `${course.durationYears} ${course.durationYears === 1 ? 'year' : 'years'}` : 'N/A'} />
+            <Stat label="Type" value={degreeLabel(course.degreeType) || 'N/A'} />
             <Stat label="Campus" value={course.campusName ?? 'N/A'} />
           </div>
         </div>

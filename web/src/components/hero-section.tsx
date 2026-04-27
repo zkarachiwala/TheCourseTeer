@@ -1,21 +1,24 @@
 'use client'
-import { useEffect, useState } from 'react'
-import { AREAS } from '@/lib/area-map'
+import { useEffect, useRef, useState } from 'react'
+import { AREAS, AreaKey } from '@/lib/area-map'
 
 const CYCLING_WORDS = ['Engineering', 'Medicine', 'Business', 'Law', 'Design', 'Science', 'Education']
 
+const SORTED_AREAS = Object.entries(AREAS).sort(([, a], [, b]) => a.label.localeCompare(b.label)) as [AreaKey, { label: string; color: string }][]
+
 interface HeroSectionProps {
   search: string; onSearchChange: (v: string) => void
-  area: string; onAreaChange: (v: string) => void
-  university: string; onUniversityChange: (v: string) => void
-  duration: string; onDurationChange: (v: string) => void
+  selectedAreas: string[]; onAreaToggle: (a: string) => void
+  selectedUnis: string[]; onUniToggle: (s: string) => void
+  selectedDurations: string[]; onDurationToggle: (d: string) => void
+  availableDurations: number[]
   minAtar: string; onMinAtarChange: (v: string) => void
   activeFilters: string[]; onClearAll: () => void
   universities: { slug: string; name: string }[]
 }
 
 export function HeroSection(props: HeroSectionProps) {
-  const { search, onSearchChange, area, onAreaChange, university, onUniversityChange, duration, onDurationChange, minAtar, onMinAtarChange, activeFilters, onClearAll, universities } = props
+  const { search, onSearchChange, selectedAreas, onAreaToggle, selectedUnis, onUniToggle, selectedDurations, onDurationToggle, availableDurations, minAtar, onMinAtarChange, activeFilters, onClearAll, universities } = props
   const [wordIdx, setWordIdx] = useState(0)
   const [visible, setVisible] = useState(true)
 
@@ -27,10 +30,13 @@ export function HeroSection(props: HeroSectionProps) {
     return () => clearInterval(t)
   }, [])
 
+  const sortedUnis = [...universities].sort((a, b) => a.name.localeCompare(b.name))
+  const sortedDurations = [...availableDurations].sort((a, b) => a - b)
+
   return (
     <section style={{ background: 'linear-gradient(135deg, var(--bg2) 0%, var(--bg) 100%)', padding: '64px var(--px) 40px', textAlign: 'center' }}>
       <p style={{ fontSize: '12px', fontWeight: 600, color: 'var(--accent)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '16px' }}>
-        Victorian Universities · Undergraduate
+        Victorian Universities
       </p>
       <h1 style={{ fontFamily: 'Manrope, sans-serif', fontSize: 'clamp(28px, 5vw, 52px)', fontWeight: 300, color: 'var(--text)', lineHeight: 1.2, marginBottom: '32px' }}>
         Find your degree in{' '}
@@ -50,20 +56,40 @@ export function HeroSection(props: HeroSectionProps) {
         </svg>
       </div>
 
+      {/* Area toggle pills */}
+      <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', flexWrap: 'wrap', marginBottom: '16px', maxWidth: '760px', margin: '0 auto 16px' }}>
+        {SORTED_AREAS.map(([key, { label, color }]) => {
+          const active = selectedAreas.includes(key)
+          return (
+            <button key={key} onClick={() => onAreaToggle(key)} style={{ padding: '6px 14px', borderRadius: 'var(--radius-pill)', border: `1.5px solid ${active ? color : 'var(--border)'}`, background: active ? color : 'var(--card-bg)', color: active ? '#fff' : 'var(--text2)', fontSize: '13px', fontWeight: active ? 600 : 400, cursor: 'pointer', transition: 'all 0.15s' }}>
+              {label}
+            </button>
+          )
+        })}
+      </div>
+
+      {/* Secondary filters */}
       <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', flexWrap: 'wrap', marginBottom: '16px' }}>
-        <FilterSelect value={area} onChange={onAreaChange} placeholder="All Areas">
-          {Object.entries(AREAS).map(([k, { label }]) => <option key={k} value={k}>{label}</option>)}
-        </FilterSelect>
-        <FilterSelect value={university} onChange={onUniversityChange} placeholder="All Universities">
-          {universities.map(u => <option key={u.slug} value={u.slug}>{u.name}</option>)}
-        </FilterSelect>
-        <FilterSelect value={duration} onChange={onDurationChange} placeholder="Any Duration">
-          <option value="3">3 years</option>
-          <option value="4">4 years</option>
-          <option value="5">5 years</option>
-        </FilterSelect>
+        <UniMultiSelect universities={sortedUnis} selected={selectedUnis} onToggle={onUniToggle} />
+
+        {/* Duration toggle pills */}
+        {sortedDurations.length > 0 && (
+          <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+            {sortedDurations.map(d => {
+              const val = String(d)
+              const active = selectedDurations.includes(val)
+              return (
+                <button key={val} onClick={() => onDurationToggle(val)} style={{ padding: '8px 12px', borderRadius: 'var(--radius-pill)', border: `1.5px solid ${active ? 'var(--accent)' : 'var(--border)'}`, background: active ? 'var(--accent)' : 'var(--card-bg)', color: active ? 'var(--accent-fg)' : 'var(--text2)', fontSize: '13px', fontWeight: active ? 600 : 400, cursor: 'pointer', transition: 'all 0.15s', whiteSpace: 'nowrap' }}>
+                  {d === 1 ? '1 yr' : `${d} yrs`}
+                </button>
+              )
+            })}
+          </div>
+        )}
+
         <input type="number" placeholder="Min ATAR" value={minAtar} onChange={e => onMinAtarChange(e.target.value)}
-          min={0} max={99.95} step={0.05} style={{ ...selectStyle, width: '110px' }} />
+          min={0} max={99.95} step={0.05}
+          style={{ padding: '8px 14px', borderRadius: 'var(--radius-pill)', border: '1.5px solid var(--border)', background: 'var(--card-bg)', color: 'var(--text)', fontSize: '13px', outline: 'none', width: '110px' }} />
       </div>
 
       {activeFilters.length > 0 && (
@@ -80,13 +106,42 @@ export function HeroSection(props: HeroSectionProps) {
   )
 }
 
-const selectStyle: React.CSSProperties = { padding: '10px 16px', borderRadius: 'var(--radius-pill)', border: '1.5px solid var(--border)', background: 'var(--card-bg)', color: 'var(--text)', fontSize: '14px', cursor: 'pointer', outline: 'none' }
+function UniMultiSelect({ universities, selected, onToggle }: { universities: { slug: string; name: string }[]; selected: string[]; onToggle: (s: string) => void }) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
 
-function FilterSelect({ value, onChange, placeholder, children }: { value: string; onChange: (v: string) => void; placeholder: string; children: React.ReactNode }) {
+  useEffect(() => {
+    if (!open) return
+    const handler = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false) }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [open])
+
+  const label = selected.length === 0 ? 'All Universities' : selected.length === 1
+    ? (universities.find(u => u.slug === selected[0])?.name ?? '1 selected')
+    : `${selected.length} universities`
+
   return (
-    <select value={value} onChange={e => onChange(e.target.value)} style={selectStyle}>
-      <option value="">{placeholder}</option>
-      {children}
-    </select>
+    <div ref={ref} style={{ position: 'relative' }}>
+      <button onClick={() => setOpen(v => !v)} style={{ padding: '8px 14px', borderRadius: 'var(--radius-pill)', border: `1.5px solid ${selected.length > 0 ? 'var(--accent)' : 'var(--border)'}`, background: selected.length > 0 ? 'var(--accent-soft)' : 'var(--card-bg)', color: selected.length > 0 ? 'var(--accent)' : 'var(--text2)', fontSize: '13px', fontWeight: selected.length > 0 ? 600 : 400, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', whiteSpace: 'nowrap' }}>
+        {label}
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s', flexShrink: 0 }}>
+          <path d="M6 9l6 6 6-6" />
+        </svg>
+      </button>
+      {open && (
+        <div style={{ position: 'absolute', top: 'calc(100% + 6px)', left: '50%', transform: 'translateX(-50%)', background: 'var(--card-bg)', border: '1px solid var(--border)', borderRadius: '12px', boxShadow: 'var(--shadow-lg)', zIndex: 200, minWidth: '220px', overflow: 'hidden' }}>
+          {universities.map(u => {
+            const checked = selected.includes(u.slug)
+            return (
+              <label key={u.slug} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '9px 14px', cursor: 'pointer', background: checked ? 'var(--accent-soft)' : 'transparent', fontSize: '13px', color: checked ? 'var(--accent)' : 'var(--text)', fontWeight: checked ? 600 : 400 }}>
+                <input type="checkbox" checked={checked} onChange={() => onToggle(u.slug)} style={{ accentColor: 'var(--accent)', width: 14, height: 14, flexShrink: 0 }} />
+                {u.name}
+              </label>
+            )
+          })}
+        </div>
+      )}
+    </div>
   )
 }

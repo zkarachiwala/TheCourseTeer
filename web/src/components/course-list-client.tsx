@@ -5,7 +5,7 @@ import { CourseCard, CourseCardData } from './course-card'
 import { CourseRow } from './course-row'
 import { CourseDetailPanel } from './course-detail-panel'
 import { FeaturedUniBanner, FeaturedUniConfig } from './featured-uni-banner'
-import { getArea } from '@/lib/area-map'
+import { getArea, getAreasFromName, AREAS, AreaKey } from '@/lib/area-map'
 import { useShortlist } from '@/contexts/shortlist-context'
 
 type Layout = 'grid' | 'list' | 'compact'
@@ -20,40 +20,54 @@ export function CourseListClient({ courses, universities, featuredUni }: Props) 
   const [layout, setLayout] = useState<Layout>('grid')
   const [selected, setSelected] = useState<CourseCardData | null>(null)
   const [search, setSearch] = useState('')
-  const [area, setArea] = useState('')
-  const [university, setUniversity] = useState('')
-  const [duration, setDuration] = useState('')
+  const [selectedAreas, setSelectedAreas] = useState<string[]>([])
+  const [selectedUnis, setSelectedUnis] = useState<string[]>([])
+  const [selectedDurations, setSelectedDurations] = useState<string[]>([])
   const [minAtar, setMinAtar] = useState('')
 
   const { isShortlisted, toggle } = useShortlist()
 
+  const toggleArea = useCallback((a: string) => setSelectedAreas(prev => prev.includes(a) ? prev.filter(x => x !== a) : [...prev, a]), [])
+  const toggleUni = useCallback((s: string) => setSelectedUnis(prev => prev.includes(s) ? prev.filter(x => x !== s) : [...prev, s]), [])
+  const toggleDuration = useCallback((d: string) => setSelectedDurations(prev => prev.includes(d) ? prev.filter(x => x !== d) : [...prev, d]), [])
+
+  const availableDurations = useMemo(() => {
+    const seen = new Set<number>()
+    courses.forEach(c => { if (c.durationYears != null) seen.add(c.durationYears) })
+    return Array.from(seen).sort((a, b) => a - b)
+  }, [courses])
+
   const filtered = useMemo(() => courses.filter(c => {
     if (search) { const q = search.toLowerCase(); if (!c.name.toLowerCase().includes(q) && !c.universityName.toLowerCase().includes(q)) return false }
-    if (area && getArea(c.faculty) !== area) return false
-    if (university && c.universitySlug !== university) return false
-    if (duration && c.durationYears !== Number(duration)) return false
+    if (selectedAreas.length > 0) {
+      const courseAreas = [getArea(c.faculty), ...getAreasFromName(c.name)].filter(Boolean) as string[]
+      if (!selectedAreas.some(a => courseAreas.includes(a))) return false
+    }
+    if (selectedUnis.length > 0 && !selectedUnis.includes(c.universitySlug)) return false
+    if (selectedDurations.length > 0 && (c.durationYears == null || !selectedDurations.includes(String(c.durationYears)))) return false
     if (minAtar && (c.atarGuaranteed == null || c.atarGuaranteed < Number(minAtar))) return false
     return true
-  }), [courses, search, area, university, duration, minAtar])
+  }), [courses, search, selectedAreas, selectedUnis, selectedDurations, minAtar])
 
   const activeFilters = [
-    area && `Area: ${area}`,
-    university && `Uni: ${university}`,
-    duration && `${duration}yr`,
+    ...selectedAreas.map(a => AREAS[a as AreaKey]?.label).filter(Boolean),
+    ...selectedUnis.map(s => universities.find(u => u.slug === s)?.name ?? s),
+    ...selectedDurations.map(d => `${d} yr`),
     minAtar && `ATAR ≥ ${minAtar}`,
     search && `"${search}"`,
   ].filter(Boolean) as string[]
 
-  const clearAll = useCallback(() => { setSearch(''); setArea(''); setUniversity(''); setDuration(''); setMinAtar('') }, [])
+  const clearAll = useCallback(() => { setSearch(''); setSelectedAreas([]); setSelectedUnis([]); setSelectedDurations([]); setMinAtar('') }, [])
   const closePanel = useCallback(() => setSelected(null), [])
 
   return (
     <>
       <HeroSection
         search={search} onSearchChange={setSearch}
-        area={area} onAreaChange={setArea}
-        university={university} onUniversityChange={setUniversity}
-        duration={duration} onDurationChange={setDuration}
+        selectedAreas={selectedAreas} onAreaToggle={toggleArea}
+        selectedUnis={selectedUnis} onUniToggle={toggleUni}
+        selectedDurations={selectedDurations} onDurationToggle={toggleDuration}
+        availableDurations={availableDurations}
         minAtar={minAtar} onMinAtarChange={setMinAtar}
         activeFilters={activeFilters} onClearAll={clearAll}
         universities={universities}
@@ -80,7 +94,8 @@ export function CourseListClient({ courses, universities, featuredUni }: Props) 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px' }}>
             {filtered.map(c => (
               <CourseCard key={c.id} course={c} onClick={() => setSelected(c)} selected={selected?.id === c.id}
-                onShortlist={() => toggle(c)} shortlisted={isShortlisted(c.id)} />
+                onShortlist={() => toggle(c)} shortlisted={isShortlisted(c.id)}
+                onAreaClick={toggleArea} onUniClick={toggleUni} />
             ))}
           </div>
         )}
@@ -105,7 +120,7 @@ export function CourseListClient({ courses, universities, featuredUni }: Props) 
                   <td style={{ padding: '12px 16px', fontSize: '13px', color: 'var(--text2)' }}>{c.universityName}</td>
                   <td style={{ padding: '12px 16px', fontSize: '13px', fontWeight: 700, color: 'var(--text2)' }}>{c.atarGuaranteed ?? '—'}</td>
                   <td style={{ padding: '12px 16px', fontSize: '13px', color: 'var(--text2)' }}>{c.campusName ?? '—'}</td>
-                  <td style={{ padding: '12px 16px', fontSize: '13px', color: 'var(--text2)' }}>{c.durationYears != null ? `${c.durationYears}yr` : '—'}</td>
+                  <td style={{ padding: '12px 16px', fontSize: '13px', color: 'var(--text2)' }}>{c.durationYears != null ? `${c.durationYears} ${c.durationYears === 1 ? 'year' : 'years'}` : '—'}</td>
                 </tr>
               ))}
             </tbody>
