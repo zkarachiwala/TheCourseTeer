@@ -13,8 +13,16 @@
   },
   "routes": [
     {
-      "route": "/login",
+      "route": "/login/github",
       "redirect": "/.auth/login/github"
+    },
+    {
+      "route": "/login/microsoft",
+      "redirect": "/.auth/login/aad"
+    },
+    {
+      "route": "/login",
+      "redirect": "/login/github"
     },
     {
       "route": "/logout",

@@ -14,15 +14,23 @@ export function SecurityBanner() {
           <span className="text-lg">🛡️</span>
           <p>
             <span className="font-bold">ReadOnly / Demo Mode:</span> You are viewing public course data. 
-            Sign in with GitHub to access protected features and admin tools.
+            Sign in to access protected features and admin tools.
           </p>
         </div>
-        <Link
-          href="/login"
-          className="rounded-md bg-amber-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-amber-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-600 transition-colors"
-        >
-          Sign in with GitHub
-        </Link>
+        <div className="flex gap-2">
+          <Link
+            href="/login/github"
+            className="rounded-md bg-amber-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-amber-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-600 transition-colors"
+          >
+            GitHub Sign In
+          </Link>
+          <Link
+            href="/login/microsoft"
+            className="rounded-md bg-white dark:bg-amber-900 px-3 py-1.5 text-xs font-semibold text-amber-900 dark:text-amber-100 border border-amber-300 dark:border-amber-800 shadow-sm hover:bg-amber-100 dark:hover:bg-amber-800 transition-colors"
+          >
+            Microsoft Sign In
+          </Link>
+        </div>
       </div>
     </div>
   )

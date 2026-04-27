@@ -129,25 +129,44 @@ export function UserMenu() {
               Sign out
             </Link>
           ) : (
-            <Link
-              href="/login"
-              role="menuitem"
-              onClick={() => setOpen(false)}
-              style={{
-                display: 'flex', alignItems: 'center', gap: '10px',
-                width: '100%', padding: '8px 12px 10px',
-                background: 'transparent', border: 'none', cursor: 'pointer',
-                fontSize: '13px', color: 'var(--text2)', textAlign: 'left',
-                textDecoration: 'none'
-              }}
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
-                <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
-                <polyline points="10 17 15 12 10 7" />
-                <line x1="15" y1="12" x2="3" y2="12" />
-              </svg>
-              Sign in
-            </Link>
+            <>
+              <Link
+                href="/login/github"
+                role="menuitem"
+                onClick={() => setOpen(false)}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: '10px',
+                  width: '100%', padding: '8px 12px',
+                  background: 'transparent', border: 'none', cursor: 'pointer',
+                  fontSize: '13px', color: 'var(--text2)', textAlign: 'left',
+                  textDecoration: 'none'
+                }}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                  <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22" />
+                </svg>
+                Sign in with GitHub
+              </Link>
+              <Link
+                href="/login/microsoft"
+                role="menuitem"
+                onClick={() => setOpen(false)}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: '10px',
+                  width: '100%', padding: '8px 12px 10px',
+                  background: 'transparent', border: 'none', cursor: 'pointer',
+                  fontSize: '13px', color: 'var(--text2)', textAlign: 'left',
+                  textDecoration: 'none'
+                }}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                  <line x1="12" y1="3" x2="12" y2="21" />
+                  <line x1="3" y1="12" x2="21" y2="12" />
+                </svg>
+                Sign in with Microsoft
+              </Link>
+            </>
           )}
         </div>
       )}
