@@ -13,8 +13,14 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'URL parameter is required' }, { status: 400 })
   }
 
+  let urlObj: URL
   try {
-    const urlObj = new URL(targetUrl)
+    urlObj = new URL(targetUrl)
+  } catch (e) {
+    return NextResponse.json({ error: 'Invalid URL' }, { status: 400 })
+  }
+
+  try {
     let body: string
     let contentType = 'text/html'
     let status = 200
