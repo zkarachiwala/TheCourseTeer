@@ -1,0 +1,13 @@
+User-agent: GPTBot
+Disallow: /
+
+User-agent: CCBot
+Disallow: /
+
+User-agent: ChatGPT-User
+Disallow: /
+
+User-agent: *
+Disallow: /api/
+Disallow: /.auth/
+Crawl-delay: 10

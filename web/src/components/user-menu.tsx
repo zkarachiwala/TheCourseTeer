@@ -1,6 +1,8 @@
 'use client'
 import { useEffect, useRef, useState } from 'react'
 import { useTheme } from 'next-themes'
+import { useAuth } from '@/contexts/auth-context'
+import Link from 'next/link'
 
 const MODES = [
   { value: 'system', label: 'System', icon: '💻' },
@@ -10,6 +12,7 @@ const MODES = [
 
 export function UserMenu() {
   const { theme, setTheme } = useTheme()
+  const { user, loading } = useAuth()
   const [open, setOpen] = useState(false)
   const [mounted, setMounted] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
@@ -68,6 +71,13 @@ export function UserMenu() {
             overflow: 'hidden',
           }}
         >
+          {!loading && user && (
+            <div style={{ padding: '12px', borderBottom: '1px solid var(--border)' }}>
+              <p style={{ fontSize: '13px', fontWeight: 600, margin: 0, color: 'var(--text)' }}>{user.userDetails}</p>
+              <p style={{ fontSize: '11px', color: 'var(--text3)', margin: '2px 0 0' }}>{user.identityProvider}</p>
+            </div>
+          )}
+
           <div style={{ padding: '8px 12px 4px', fontSize: '11px', fontWeight: 600, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
             Display
           </div>
@@ -98,23 +108,47 @@ export function UserMenu() {
 
           <div style={{ height: 1, background: 'var(--border)', margin: '4px 0' }} />
 
-          <button
-            role="menuitem"
-            onClick={() => setOpen(false)}
-            style={{
-              display: 'flex', alignItems: 'center', gap: '10px',
-              width: '100%', padding: '8px 12px 10px',
-              background: 'transparent', border: 'none', cursor: 'pointer',
-              fontSize: '13px', color: 'var(--text2)', textAlign: 'left',
-            }}
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
-              <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
-              <polyline points="10 17 15 12 10 7" />
-              <line x1="15" y1="12" x2="3" y2="12" />
-            </svg>
-            Sign in
-          </button>
+          {!loading && user ? (
+            <Link
+              href="/logout"
+              role="menuitem"
+              onClick={() => setOpen(false)}
+              style={{
+                display: 'flex', alignItems: 'center', gap: '10px',
+                width: '100%', padding: '8px 12px 10px',
+                background: 'transparent', border: 'none', cursor: 'pointer',
+                fontSize: '13px', color: 'var(--text2)', textAlign: 'left',
+                textDecoration: 'none'
+              }}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                <polyline points="16 17 21 12 16 7" />
+                <line x1="21" y1="12" x2="9" y2="12" />
+              </svg>
+              Sign out
+            </Link>
+          ) : (
+            <Link
+              href="/login"
+              role="menuitem"
+              onClick={() => setOpen(false)}
+              style={{
+                display: 'flex', alignItems: 'center', gap: '10px',
+                width: '100%', padding: '8px 12px 10px',
+                background: 'transparent', border: 'none', cursor: 'pointer',
+                fontSize: '13px', color: 'var(--text2)', textAlign: 'left',
+                textDecoration: 'none'
+              }}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
+                <polyline points="10 17 15 12 10 7" />
+                <line x1="15" y1="12" x2="3" y2="12" />
+              </svg>
+              Sign in
+            </Link>
+          )}
         </div>
       )}
     </div>

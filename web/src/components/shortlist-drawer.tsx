@@ -12,17 +12,26 @@ export function ShortlistDrawer({ courses, onClose, onRemove }: Props) {
   const [email, setEmail] = useState('')
   const [sent, setSent] = useState(false)
   const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   async function handleSend() {
     if (!email || courses.length === 0) return
     setBusy(true)
+    setError(null)
     try {
-      await fetch('/api/shortlist', {
+      const res = await fetch('/api/shortlist', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, courseIds: courses.map(c => c.id) }),
       })
+      if (res.status === 401) {
+        setError('Please sign in to send your shortlist.')
+        return
+      }
+      if (!res.ok) throw new Error('Failed to send')
       setSent(true)
+    } catch (e) {
+      setError('Something went wrong. Please try again later.')
     } finally {
       setBusy(false)
     }
@@ -57,13 +66,16 @@ export function ShortlistDrawer({ courses, onClose, onRemove }: Props) {
         </div>
 
         <div style={{ padding: '16px', borderTop: '1px solid var(--border)' }}>
+          {error && (
+            <p style={{ fontSize: '12px', color: 'var(--error, #ef4444)', marginBottom: '8px', textAlign: 'center' }}>{error}</p>
+          )}
           {sent ? (
             <p style={{ textAlign: 'center', color: 'var(--accent)', fontWeight: 600, fontSize: '14px' }}>✓ Shortlist sent to {email}</p>
           ) : (
             <div style={{ display: 'flex', gap: '8px' }}>
               <input
                 type="email" placeholder="your@email.com" value={email}
-                onChange={e => setEmail(e.target.value)}
+                onChange={e => { setEmail(e.target.value); setError(null); }}
                 style={{ flex: 1, padding: '10px 14px', borderRadius: 'var(--radius-btn)', border: '1.5px solid var(--border)', background: 'var(--card-bg)', color: 'var(--text)', fontSize: '14px', outline: 'none' }}
               />
               <button onClick={handleSend} disabled={busy || courses.length === 0}
