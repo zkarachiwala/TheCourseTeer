@@ -9,5 +9,5 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
-- [~] **Track: Deploy the Next.js front-end web application of The Courseteer to Azure Static Web Apps.**
+- [x] **Track: Deploy the Next.js front-end web application of The Courseteer to Azure Static Web Apps.**
   *Link: [./tracks/azure_deployment_20260427/](./tracks/azure_deployment_20260427/)*
