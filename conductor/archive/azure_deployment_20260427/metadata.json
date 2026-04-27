@@ -1,0 +1,8 @@
+{
+  "track_id": "azure_deployment_20260427",
+  "type": "chore",
+  "status": "new",
+  "created_at": "2026-04-27T00:00:00Z",
+  "updated_at": "2026-04-27T00:00:00Z",
+  "description": "Deploy the Next.js front-end web application of The Courseteer to Azure Static Web Apps."
+}
