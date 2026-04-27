@@ -1,0 +1,14 @@
+{
+  "navigationFallback": {
+    "rewrite": "/index.html",
+    "exclude": ["/api/*", "/_next/*", "/public/*", "/*.{png,jpg,jpeg,gif,svg,ico,css,js}"]
+  },
+  "routes": [
+    {
+      "route": "/_next/*",
+      "headers": {
+        "cache-control": "public, max-age=31536000, immutable"
+      }
+    }
+  ]
+}
