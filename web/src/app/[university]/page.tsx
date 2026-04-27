@@ -1,7 +1,7 @@
 export const dynamic = 'force-dynamic'
 
-import { db } from '../../db'
-import { courses, universities, courseCampuses, campuses } from '../../db/schema'
+import { db } from '../../../db'
+import { courses, universities, courseCampuses, campuses } from '../../../db/schema'
 import { eq, asc } from 'drizzle-orm'
 import { CourseListClient } from '@/components/course-list-client'
 import type { CourseCardData } from '@/components/course-card'
