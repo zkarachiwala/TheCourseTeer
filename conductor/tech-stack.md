@@ -9,6 +9,8 @@
 - **PostgreSQL:** Primary database (Supabase in production).
 - **Drizzle ORM:** Managing database operations and schema integration.
 - **Next.js Server Actions:** Handling selector saving and database updates.
+- **Azure Static Web Apps:** Hosting platform for the web application.
+- **Authentication:** Microsoft Entra ID and GitHub (via Azure Static Web Apps built-in auth).
 
 **Scraper Engine:**
 - **Python 3.12+:** Core language for the scraper backend.
