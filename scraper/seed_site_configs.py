@@ -112,20 +112,32 @@ SITE_CONFIGS = [
         "university_id": "f5b3d349-0214-480b-89bc-7b70298e722b", # La Trobe
         "base_url": "https://www.latrobe.edu.au",
         "extraction_map": {
-            "name": {"regex": r'"advertisedTitle"\s*:\s*"([^"]+)"'},
-            "duration": {"regex": r'"duration"\s*:\s*"([0-9.]+)"'},
-            "atar": {"regex": r'"minSelectionRankOffered"\s*:\s*"([0-9.]+)"'},
+            "name": {
+                "selector": "h1.ds-course-header__title", 
+                "regex": r'"advertisedTitle"\s*:\s*"?([^",}]+)"?'
+            },
+            "duration": {
+                "anchor": "Duration", 
+                "regex": r'("duration"\s*:\s*"?([0-9.]+)"?|Duration.*?\b(\d+(?:\.\d+)?)\s*years?)'
+            },
+            "atar": {
+                "anchor": "Lowest selection rank", 
+                "regex": r"(Lowest selection rank.*?(\d{2}(?:\.\d+)?))"
+            },
             "location": {
                 "regex": r'"campuses"\s*:\s*(\[[^\]]+\])',
                 "mapping": {
-                    "BU": "Bundoora",
-                    "ON": "Online",
-                    "AW": "Albury-Wodonga",
-                    "BE": "Bendigo",
-                    "MC": "Melbourne City",
-                    "MI": "c88c2ce5-b368-41ea-8874-fdf9031f9cd7", # Wait, I need the real UUIDs from my previous step
-                    "Mildura": "cae2929f-5cda-4100-a542-85ae4ea327fb",
-                    "Shepparton": "c97655c5-37de-4aaa-89da-923f264a1741"
+                    "BU": "8841ca47-be65-4697-a49b-ed738259a315", # Bundoora
+                    "ON": "fa65309e-488e-4278-bc13-5e720e8a8b3d", # Online
+                    "AW": "074cbaa0-68fd-47fb-906e-6b99ed5fdcf0", # Albury-Wodonga
+                    "WO": "074cbaa0-68fd-47fb-906e-6b99ed5fdcf0", # Wodonga -> Albury-Wodonga
+                    "BE": "37a8e2ca-1643-48a5-85b1-6b91cc0bc15a", # Bendigo
+                    "MC": "b53c0416-8f3e-4a91-869d-f53d300cd8db", # Melbourne City
+                    "MI": "cae2929f-5cda-4100-a542-85ae4ea327fb", # Mildura
+                    "SH": "c97655c5-37de-4aaa-89da-923f264a1741", # Shepparton
+                    "SY": "b53c0416-8f3e-4a91-869d-f53d300cd8db", # Sydney -> Melbourne City
+                    "OT": "fa65309e-488e-4278-bc13-5e720e8a8b3d", # Other -> Online fallback
+                    "CI": "b53c0416-8f3e-4a91-869d-f53d300cd8db", # City -> Melbourne City
                 }
             },
             "admissions_codes": {"regex": r'"vtacCode"\s*:\s*(\d{9,10})'},
@@ -137,7 +149,7 @@ SITE_CONFIGS = [
             "include_patterns": ["/courses/"]
         },
         "robots_txt_status": "allowed",
-        "notes": "La Trobe requires following detail JSON URLs to find VTAC codes."
+        "notes": "La Trobe discovery updated to prioritize main course pages for ATAR extraction. Uses follow_urls to find VTAC codes."
     }
 ]
 

@@ -153,6 +153,10 @@ async def upsert_course(pool: AsyncConnectionPool, course: CourseData) -> None:
                             INSERT INTO course_campuses
                                 (course_id, campus_id, atar_guaranteed, atar_lowest_selection_rank, extraction_notes)
                             VALUES (%s, %s, %s, %s, %s)
+                            ON CONFLICT (course_id, campus_id) DO UPDATE SET
+                                atar_guaranteed = EXCLUDED.atar_guaranteed,
+                                atar_lowest_selection_rank = EXCLUDED.atar_lowest_selection_rank,
+                                extraction_notes = EXCLUDED.extraction_notes
                             """,
                             [
                                 (course_id, cl.campus_id, cl.atar_guaranteed, cl.atar_lowest_selection_rank, cl.extraction_notes)

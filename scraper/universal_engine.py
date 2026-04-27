@@ -8,7 +8,7 @@ from bs4 import BeautifulSoup
 from psycopg_pool import AsyncConnectionPool
 
 from base_scraper import BaseScraper
-from db import get_campus_map, get_site_config
+from db import get_campus_map, get_site_config, log_atar_issue
 from http_client import make_client
 from models import CourseData, SiteConfig
 
@@ -241,13 +241,49 @@ class UniversalEngine(BaseScraper):
         # 1. Extract Name
         name_cfg = config.extraction_map.get("name", {})
         name = self._extract_field(soup, name_cfg, html, field_name="name")
+        
+        # Fallback: try to get name from awardTitle or advertisedTitle if regex was too specific
+        if not name or name == "Unknown" or len(name) < 3:
+            for key in ["awardTitle", "advertisedTitle", "award_title"]:
+                m = re.search(f'"{key}"\\s*:\\s*"?([^",}}]+)"?', html)
+                if m:
+                    name = m.group(1).strip()
+                    break
+        
+        # Another fallback: h1 tag
+        if not name or name == "Unknown" or len(name) < 3:
+            h1 = soup.select_one("h1")
+            if h1:
+                name = h1.get_text(strip=True)
+        
+        # Last resort fallback: from URL slug
+        if not name or name == "Unknown" or len(name) < 3:
+            name = url.split("/")[-1].replace("-", " ").title()
+            
         if name:
             field_results["name"] = name
 
         # 2. Extract Duration
         dur_cfg = config.extraction_map.get("duration", {})
         duration_str = self._extract_field(soup, dur_cfg, html, field_name="duration")
+        
+        # Fallback: try to find duration in full HTML if selector/regex failed
+        if not duration_str:
+            m = re.search(r'"duration"\s*:\s*"?([^",}]+)"?', html)
+            if m:
+                duration_str = m.group(1)
+
         duration = self._parse_duration(duration_str)
+        
+        # Fallback: try to infer from credit points (360 CP = 3 years, 240 CP = 2 years, etc.)
+        if not duration:
+            m = re.search(r'"totalCreditPoints"\s*:\s*(\d+)', html)
+            if m:
+                cp = int(m.group(1))
+                if cp > 0:
+                    duration = cp / 120.0
+                    logger.debug(f"Inferred duration {duration} from {cp} credit points")
+
         if duration:
             field_results["duration"] = str(duration)
 
@@ -257,6 +293,17 @@ class UniversalEngine(BaseScraper):
         atar_guaranteed, atar_rank = self._parse_atar(atar_str)
         if atar_guaranteed or atar_rank:
             field_results["atar"] = atar_str
+
+        # DISCARD NON-COURSE PAGES (e.g. info pages, contact pages, study areas)
+        # If it doesn't have credit points AND doesn't have a duration, it's probably not a course
+        if not duration and '"totalCreditPoints":0' in html.replace(" ", ""):
+            logger.warning(f"Discarding potential non-course page: {url}")
+            return None
+        
+        # If the name is a known study area or major name from the sitemap
+        if any(k in name.lower() for k in ["contact us", "how to apply", "timetables", "director and staff"]):
+             logger.warning(f"Discarding information page: {name} from {url}")
+             return None
 
         # 4. Extract Fees
         fees_cfg = config.extraction_map.get("fees", {})
@@ -401,9 +448,31 @@ class UniversalEngine(BaseScraper):
 
         confidence = self.calculate_confidence(field_results)
 
+        # FINAL DATA QUALITY CHECKS
+        if not name or name == "Unknown" or len(name) < 3:
+            logger.warning(f"Discarding result with invalid name '{name}' from {url}")
+            return None
+
+        # Record ATAR issue if missing for UG courses
+        if not atar_guaranteed and not atar_rank:
+            try:
+                # We need self._run_id from base_scraper
+                if hasattr(self, "_run_id") and self._run_id:
+                    await log_atar_issue(
+                        self.pool,
+                        config.university_id,
+                        self._run_id,
+                        name,
+                        url,
+                        "missing_atar",
+                        "No ATAR found via primary selectors or anchors"
+                    )
+            except Exception as e:
+                logger.error(f"Failed to record ATAR issue: {e}")
+
         return CourseData(
             university_id=config.university_id,
-            name=name or "Unknown",
+            name=name,
             source_url=url,
             faculty=_infer_faculty(name) if name else None,
             campuses=campuses,
@@ -521,14 +590,34 @@ class UniversalEngine(BaseScraper):
 
         if val and isinstance(val, str):
             # Unescape common JSON escapes if found (e.g. \/ -> /)
-            if "\\/" in val:
-                val = val.replace("\\/", "/")
-            # Also handle potential unicode escapes if needed
-            if "\\u" in val:
-                try:
-                    val = val.encode("utf-16", "surrogatepass").decode("unicode-escape")
-                except:
-                    pass
+            # We do a case-insensitive check for common escapes
+            if "\\" in val:
+                # Handle common JSON string escapes
+                escapes = {
+                    "\\/": "/",
+                    "\\\"": "\"",
+                    "\\\\": "\\",
+                    "\\b": "\b",
+                    "\\f": "\f",
+                    "\\n": "\n",
+                    "\\r": "\r",
+                    "\\t": "\t"
+                }
+                for esc, sub in escapes.items():
+                    if esc in val:
+                        val = val.replace(esc, sub)
+                
+                # Also handle potential unicode escapes if needed
+                if "\\u" in val:
+                    try:
+                        # Use codecs for more robust unicode unescaping
+                        import codecs
+                        val = codecs.decode(val, 'unicode_escape')
+                    except Exception as e:
+                        logger.warning(f"Failed to unescape unicode in {field_name}: {e}")
+
+            # Final cleanup: strip any trailing quotes that might have been caught by flexible regex
+            val = val.strip().strip('"').strip("'").strip()
 
         return val
 
