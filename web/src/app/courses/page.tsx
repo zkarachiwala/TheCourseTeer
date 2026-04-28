@@ -27,9 +27,10 @@ export default async function CoursesPage() {
     ORDER BY c.name ASC, u.name ASC, cc.atar_guaranteed DESC NULLS LAST
   `)
 
-  const formattedCourses = distinctRows.rows.map((row: any) => ({
+  const formattedCourses = distinctRows.map((row: any) => ({
     ...row,
     durationYears: row.durationYears != null ? Number(row.durationYears) : null,
+    atarGuaranteed: row.atarGuaranteed != null ? Number(row.atarGuaranteed) : null,
   }))
 
   const uniList = await db
