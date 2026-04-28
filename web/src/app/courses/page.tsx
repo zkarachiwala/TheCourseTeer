@@ -1,13 +1,13 @@
 export const dynamic = 'force-dynamic'
 
 import { db } from '../../../db'
-import { courses, universities, courseCampuses, campuses } from '../../../db/schema'
-import { eq, asc, desc, sql } from 'drizzle-orm'
+import { universities } from '../../../db/schema'
+import { asc, sql } from 'drizzle-orm'
 import { CourseListClient } from '@/components/course-list-client'
 
 export default async function CoursesPage() {
-  // Use a raw subquery or distinct on to get the best campus for each course at the DB level
-  // Drizzle's DISTINCT ON is best achieved via sql template for complex join priorities
+  // Use DISTINCT ON to get exactly one row per course (picking the campus with the highest ATAR)
+  // This is much faster than fetching all campus rows and deduplicating in Node.
   const distinctRows = await db.execute(sql`
     SELECT DISTINCT ON (c.name, u.name)
       c.id,
@@ -27,9 +27,12 @@ export default async function CoursesPage() {
     ORDER BY c.name ASC, u.name ASC, cc.atar_guaranteed DESC NULLS LAST
   `)
 
-  const formattedCourses = distinctRows.rows.map((row: any) => ({
+  // postgres-js returns a RowList which is an array of rows. 
+  // We map directly over it and ensure numeric types are correctly handled.
+  const formattedCourses = distinctRows.map((row: any) => ({
     ...row,
     durationYears: row.durationYears != null ? Number(row.durationYears) : null,
+    atarGuaranteed: row.atarGuaranteed != null ? Number(row.atarGuaranteed) : null,
   }))
 
   const uniList = await db
