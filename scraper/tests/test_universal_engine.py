@@ -95,6 +95,7 @@ def test_parse_atar(pool):
     assert r == 80
 
 def test_infer_degree_type(pool):
+    """Note: In practice, PG courses are filtered out earlier by _is_valid_course if filter is UG."""
     engine = UniversalEngine(pool)
     assert engine._infer_degree_type("Bachelor of Arts") == "UG"
     assert engine._infer_degree_type("Diploma in Business") == "UG"
@@ -108,7 +109,10 @@ def test_is_valid_course(pool):
     # Valid
     assert engine._is_valid_course("Bachelor of Commerce", "http://test.com") is True
     assert engine._is_valid_course("Diploma of Arts", "http://test.com") is True
-    assert engine._is_valid_course("Master of Science", "http://test.com") is True
+    
+    # Invalid (Postgraduate - default filter is UG)
+    assert engine._is_valid_course("Master of Science", "http://test.com") is False
+    assert engine._is_valid_course("Juris Doctor", "http://test.com") is False
     
     # Invalid (Hubs / Unknown)
     assert engine._is_valid_course("Health", "http://test.com/h") is False

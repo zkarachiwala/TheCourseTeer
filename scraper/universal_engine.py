@@ -1,5 +1,6 @@
 import json
 import logging
+import os
 import re
 import urllib.robotparser
 from typing import Any
@@ -87,6 +88,16 @@ class UniversalEngine(BaseScraper):
             return False
             
         name_lower = name.lower()
+
+        # Undergraduate filter
+        filter_level = os.getenv("COURSE_LEVEL_FILTER", "UG")
+        if filter_level == "UG":
+            pg_keywords = ["master", "doctor", "juris doctor", "graduate certificate", "graduate diploma", "postgraduate"]
+            if any(k in name_lower for k in pg_keywords):
+                # Exception: "Doctor of Medicine" is technically a graduate degree but often treated as a target.
+                # However, following the "undergraduate only" mandate strictly:
+                logger.debug(f"Discarding postgraduate course: {name}")
+                return False
         
         # Valid prefixes for degrees
         valid_prefixes = [

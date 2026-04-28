@@ -20,7 +20,7 @@ RULES:
 - For "atar_guaranteed" or "atar_lowest_selection_rank", return ONLY a number (e.g. 85.5).
 - For "price_annual_csp_aud" or "price_annual_dfee_aud", return ONLY a number representing the total cost.
 - For "csp_available", return ONLY "Yes" or "No".
-- For "degree_type", return ONLY "UG" or "PG".
+- For "degree_type", return ONLY "UG". This application strictly processes undergraduate courses.
 - For "prerequisites", return a JSON array of subject names.
 - For all other fields, clean the text and return it.
 

@@ -8,6 +8,7 @@ Usage:
 """
 import argparse
 import asyncio
+import os
 import sys
 
 from dotenv import load_dotenv
@@ -28,6 +29,9 @@ SCRAPERS: dict[str, type[BaseScraper]] = {
 async def main(universities: list[str], force: bool, use_cache: bool = True, refresh: bool = False, limit: int = 0) -> None:
     load_dotenv()
     pool = await get_pool()
+    
+    filter_level = os.getenv("COURSE_LEVEL_FILTER", "UG")
+    print(f"Course level filter: {filter_level}")
 
     targets = {k: v for k, v in SCRAPERS.items() if k in universities}
     if not targets:

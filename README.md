@@ -1,39 +1,28 @@
 # The Courseteer
 
-An Australian university course aggregator and search engine. Aggregates undergraduate and postgraduate course data from all Australian universities into a unified, searchable interface.
+An Australian undergraduate course aggregator and search engine. Aggregates undergraduate course data from all Australian universities into a unified, searchable interface.
 
 ## Local Development
 
-**Prerequisites:** Docker Desktop
+**Prerequisites:** [dbmate](https://github.com/amacneil/dbmate)
 
-```bash
-cp .env.example .env
-scripts\up.bat        # Windows
-bash scripts/up.sh    # bash/Mac
-```
+1. **Environment Setup:**
+   ```bash
+   cp .env.example .env
+   # Update DATABASE_URL in .env with your Supabase connection string.
+   # Ensure sslmode=require is present.
+   ```
 
-- Postgres 17 on `localhost:5432`
-- Adminer (DB browser) on `http://localhost:8080` — select **PostgreSQL**, server `db`, credentials from your `.env`
+2. **Database:**
+   This project strictly uses **Supabase** for its database. For both local development and production, you must point `DATABASE_URL` to your Supabase instance.
+   - Recommended: Use the Transaction Pooler (port 6543).
 
-| Action | Windows | bash/Mac |
-|---|---|---|
-| Start services | `scripts\up.bat` | `bash scripts/up.sh` |
-| Stop services | `scripts\down.bat` | `bash scripts/down.sh` |
-| Open psql shell | `scripts\psql.bat` | `bash scripts/psql.sh` |
-| Tail logs | `scripts\logs.bat` | `bash scripts/logs.sh` |
-
-**Production:** swap `DATABASE_URL` in `.env` for the Supabase connection string (change `sslmode=disable` to `sslmode=require`). No other changes needed.
-
-### Running migrations
-
-Install dbmate once: `winget install dbmate` (Windows) or `brew install dbmate` (Mac).
-
-```bash
-scripts\migrate.bat        # Windows
-bash scripts/migrate.sh    # bash/Mac
-```
-
-Migrations live in `db/migrations/`. dbmate tracks applied migrations automatically and reads `DATABASE_URL` from `.env`.
+3. **Running migrations:**
+   ```bash
+   scripts\migrate.bat        # Windows
+   bash scripts/migrate.sh    # bash/Mac
+   ```
+   Migrations live in `db/migrations/`. dbmate tracks applied migrations automatically and reads `DATABASE_URL` from `.env`.
 
 ---
 
@@ -42,7 +31,6 @@ Migrations live in `db/migrations/`. dbmate tracks applied migrations automatica
 - Collects course data (name, faculty, campus, ATAR, fees, prerequisites, duration) from Australian university websites
 - Uses an AI-adaptive scraper that self-heals when university websites change layout
 - Provides a fast, filterable search interface for students comparing courses across universities
-- Tracks UG-to-Masters course pathways
 
 ## Tech stack
 
