@@ -50,7 +50,7 @@ class BaseScraper(ABC):
         self.use_cache = True
         self.force_refresh = False
 
-    async def run(self, force: bool = False) -> int:
+    async def run(self, force: bool = False, limit: int = 0) -> int:
         """Run the scraper with queue-based resume support. Returns count of upserted courses."""
         self._university = await get_university(self.pool, self.slug)
         university_id = self.university_id
@@ -72,6 +72,8 @@ class BaseScraper(ABC):
                 print(f"  {self.slug}: {len(urls)} URLs discovered (run #{scrape_run['run_number']})")
 
             pending = await get_pending_urls(self.pool, university_id, MAX_ATTEMPTS)
+            if limit > 0:
+                pending = pending[:limit]
             print(f"  {self.slug}: {len(pending)} pending URLs")
 
             pairs = await self._process_batch(rp, pending)
@@ -79,14 +81,17 @@ class BaseScraper(ABC):
             completed = 0
             for url, result in pairs:
                 if isinstance(result, PermissionError):
+                    print(f"  [ERROR] Robots.txt blocked: {url}")
                     raise result
                 elif isinstance(result, Exception):
+                    print(f"  [ERROR] Failed to scrape {url}: {result}")
                     await mark_url_failed(self.pool, university_id, url, str(result), MAX_ATTEMPTS)
                 elif result is not None:
                     await upsert_course(self.pool, result)
                     await mark_url_complete(self.pool, university_id, url, run_id)
                     completed += 1
                 else:
+                    # UniversalEngine already prints discard reason
                     await mark_url_complete(self.pool, university_id, url, run_id)
 
             await complete_run(self.pool, run_id)

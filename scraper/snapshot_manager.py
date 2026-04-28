@@ -35,9 +35,8 @@ class SnapshotManager:
         """Save content to the local snapshot directory."""
         path = self._get_path(university_id, url, ext)
         
-        # Save metadata along with it (or inside it)
-        # For simplicity, we'll save metadata in a companion .json file
-        meta_path = path.with_suffix(".json" if ext != "json" else ".meta.json")
+        # Save metadata in a companion .meta.json file to avoid collisions
+        meta_path = path.parent / f"{path.stem}.meta.json"
         metadata = {
             "url": url,
             "timestamp": datetime.now().isoformat(),

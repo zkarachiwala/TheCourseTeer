@@ -21,6 +21,22 @@ UNI_MAP = {
     "swinburne": "fa7b5854-a3bd-4572-aff6-d43cf6249581",
 }
 
+# La Trobe Campus Codes to seed into external_code column
+LATROBE_CAMPUS_CODES = [
+    ("8841ca47-be65-4697-a49b-ed738259a315", "BU"), # Bundoora
+    ("37a8e2ca-1643-48a5-85b1-6b91cc0bc15a", "BE"), # Bendigo
+    ("074cbaa0-68fd-47fb-906e-6b99ed5fdcf0", "AW"), # Albury-Wodonga
+    ("c97655c5-37de-4aaa-89da-923f264a1741", "SH"), # Shepparton
+    ("cae2929f-5cda-4100-a542-85ae4ea327fb", "MI"), # Mildura
+    ("b53c0416-8f3e-4a91-869d-f53d300cd8db", "MC"), # Melbourne City
+    ("fa65309e-488e-4278-bc13-5e720e8a8b3d", "ON"), # Online
+    # Fallback/Additional codes (multiple codes can map to same campus in seed script)
+    ("074cbaa0-68fd-47fb-906e-6b99ed5fdcf0", "WO"), # Wodonga
+    ("b53c0416-8f3e-4a91-869d-f53d300cd8db", "CI"), # City
+    ("b53c0416-8f3e-4a91-869d-f53d300cd8db", "SY"), # Sydney
+    ("fa65309e-488e-4278-bc13-5e720e8a8b3d", "OT"), # Other
+]
+
 SITE_CONFIGS = [
     {
         "university_id": UNI_MAP["rmit"],
@@ -112,21 +128,31 @@ SITE_CONFIGS = [
         "university_id": "f5b3d349-0214-480b-89bc-7b70298e722b", # La Trobe
         "base_url": "https://www.latrobe.edu.au",
         "extraction_map": {
-            "name": {"regex": r'"advertisedTitle"\s*:\s*"([^"]+)"'},
-            "duration": {"regex": r'"duration"\s*:\s*"([0-9.]+)"'},
-            "atar": {"regex": r'"minSelectionRankOffered"\s*:\s*"([0-9.]+)"'},
+            "cleanup_regexes": [
+                r'"(similar|related)Courses"\s*:\s*\[.*?\]',
+                r'"(similar|related)Courses"\s*:\s*\{.*?\}'
+            ],
+            "discard_meta": [
+                {"name": "Related.Area.of.Study", "content": "Areas of study"},
+                {"name": "Related.Area.of.Study", "content": "Dentistry"},
+                {"name": "Related.Area.of.Study", "content": "Public health"}
+            ],
+            "name": {
+                "selector": "h1.ds-course-header__title", 
+                "regex": r'"advertisedTitle"\s*:\s*"([^"]+)"'
+            },
+            "duration": {
+                "anchor": "Duration", 
+                "regex": r'"duration"\s*:\s*"(\d+(?:\.\d+)?)\s*years?"'
+            },
+            "atar": {
+                "anchor": "Lowest selection rank", 
+                "regex": r"(Lowest selection rank.*?(\d{2}(?:\.\d+)?))",
+                "json_regex": r'"allAtars"\s*:\s*({.*?}),\s*"ugRseAtarPrereqReqmt"',
+                "json_path": "latest_key"
+            },
             "location": {
-                "regex": r'"campuses"\s*:\s*(\[[^\]]+\])',
-                "mapping": {
-                    "BU": "Bundoora",
-                    "ON": "Online",
-                    "AW": "Albury-Wodonga",
-                    "BE": "Bendigo",
-                    "MC": "Melbourne City",
-                    "MI": "c88c2ce5-b368-41ea-8874-fdf9031f9cd7", # Wait, I need the real UUIDs from my previous step
-                    "Mildura": "cae2929f-5cda-4100-a542-85ae4ea327fb",
-                    "Shepparton": "c97655c5-37de-4aaa-89da-923f264a1741"
-                }
+                "regex": r'"campuses"\s*:\s*(\[[^\]]+\])'
             },
             "admissions_codes": {"regex": r'"vtacCode"\s*:\s*(\d{9,10})'},
             "follow_urls": {"regex": r"/courses/data/202[6-7]/domestic/[a-z]+/[^'\"\s]+"}
@@ -137,13 +163,14 @@ SITE_CONFIGS = [
             "include_patterns": ["/courses/"]
         },
         "robots_txt_status": "allowed",
-        "notes": "La Trobe requires following detail JSON URLs to find VTAC codes."
+        "notes": "La Trobe config: Generic cleanup of related courses, and JSON-based ATAR extraction."
     }
 ]
 
 async def seed():
     async with await psycopg.AsyncConnection.connect(DATABASE_URL) as conn:
         async with conn.cursor() as cur:
+            # Seed Site Configs
             for config in SITE_CONFIGS:
                 # Merge discovery_config into extraction_map for storage
                 full_map = config["extraction_map"].copy()
