@@ -8,7 +8,7 @@ from bs4 import BeautifulSoup
 from psycopg_pool import AsyncConnectionPool
 
 from base_scraper import BaseScraper
-from db import get_campus_map, get_site_config, log_atar_issue
+from db import get_campus_map, get_faculties, get_site_config, log_atar_issue
 from http_client import make_client
 from models import CourseData, SiteConfig
 
@@ -321,6 +321,9 @@ class UniversalEngine(BaseScraper):
         if not name or name == "Unknown" or len(name) < 3:
             name = url.split("/")[-1].replace("-", " ").title()
             
+        if not name or not self._is_valid_course(name, url):
+            return None
+
         if name:
             field_results["name"] = name
 
@@ -547,6 +550,9 @@ class UniversalEngine(BaseScraper):
                     )
             except Exception as e:
                 logger.error(f"Failed to record ATAR issue: {e}")
+
+        faculty = self._infer_faculty(name)
+        degree_type = self._infer_degree_type(name)
 
         return CourseData(
             university_id=config.university_id,
