@@ -8,7 +8,7 @@ from bs4 import BeautifulSoup
 from psycopg_pool import AsyncConnectionPool
 
 from base_scraper import BaseScraper
-from db import get_campus_map, get_site_config, log_atar_issue, get_faculties
+from db import get_campus_map, get_site_config, log_atar_issue
 from http_client import make_client
 from models import CourseData, SiteConfig
 
@@ -301,43 +301,49 @@ class UniversalEngine(BaseScraper):
 
         # 1. Extract Name
         name_cfg = config.extraction_map.get("name", {})
-        name = self._extract_field(soup, name_cfg, clean_html, field_name="name")
+        name = self._extract_field(soup, name_cfg, html, field_name="name")
         
-        # Generic Name Fallbacks
-        if not name or name == "Unknown" or len(name) <= 3:
+        # Fallback: try to get name from awardTitle or advertisedTitle if regex was too specific
+        if not name or name == "Unknown" or len(name) < 3:
+            for key in ["awardTitle", "advertisedTitle", "award_title"]:
+                m = re.search(f'"{key}"\\s*:\\s*"?([^",}}]+)"?', html)
+                if m:
+                    name = m.group(1).strip()
+                    break
+        
+        # Another fallback: h1 tag
+        if not name or name == "Unknown" or len(name) < 3:
             h1 = soup.select_one("h1")
             if h1:
                 name = h1.get_text(strip=True)
+        
+        # Last resort fallback: from URL slug
+        if not name or name == "Unknown" or len(name) < 3:
+            name = url.split("/")[-1].replace("-", " ").title()
             
-            if not name or len(name) <= 3:
-                name = url.rstrip("/").split("/")[-1].replace("-", " ").title()
-
-        # STRICT VALIDATION: Is this actually a course?
-        if not self._is_valid_course(name, url):
-            return None
-
         if name:
             field_results["name"] = name
 
         # 2. Extract Duration
         dur_cfg = config.extraction_map.get("duration", {})
-        duration_str = self._extract_field(soup, dur_cfg, clean_html, field_name="duration")
+        duration_str = self._extract_field(soup, dur_cfg, html, field_name="duration")
+        
+        # Fallback: try to find duration in full HTML if selector/regex failed
+        if not duration_str:
+            m = re.search(r'"duration"\s*:\s*"?([^",}]+)"?', html)
+            if m:
+                duration_str = m.group(1)
+
         duration = self._parse_duration(duration_str)
         
-        # Generic Fallback & Priority: Infer from credit points
-        # For La Trobe and others, CP is THE definitive data source for duration.
-        # 120 CP = 1 year. 600 CP = 5 years.
-        m_cp = re.search(r'"totalCreditPoints"\s*:\s*(\d+)', clean_html)
-        if m_cp:
-            cp = int(m_cp.group(1))
-            if cp > 0:
-                inferred = cp / 120.0
-                if 0.5 <= inferred <= 10.0:
-                    # CRITICAL: If we have an inferred duration, it takes precedence 
-                    # over noisy HTML regex matches, especially for double degrees.
-                    if not duration or inferred > duration or (duration <= 1.0 and inferred > 1.0):
-                        duration = inferred
-                        logger.debug(f"Prioritizing inferred duration {duration} from {cp} credit points for {name}")
+        # Fallback: try to infer from credit points (360 CP = 3 years, 240 CP = 2 years, etc.)
+        if not duration:
+            m = re.search(r'"totalCreditPoints"\s*:\s*(\d+)', html)
+            if m:
+                cp = int(m.group(1))
+                if cp > 0:
+                    duration = cp / 120.0
+                    logger.debug(f"Inferred duration {duration} from {cp} credit points")
 
         if duration:
             field_results["duration"] = str(duration)
@@ -349,6 +355,17 @@ class UniversalEngine(BaseScraper):
 
         # Generic JSON Fallback (e.g. for La Trobe allAtars)
         atar_json_map = self._extract_json_map(clean_html, atar_cfg)
+
+        # DISCARD NON-COURSE PAGES (e.g. info pages, contact pages, study areas)
+        # If it doesn't have credit points AND doesn't have a duration, it's probably not a course
+        if not duration and '"totalCreditPoints":0' in html.replace(" ", ""):
+            logger.warning(f"Discarding potential non-course page: {url}")
+            return None
+        
+        # If the name is a known study area or major name from the sitemap
+        if any(k in name.lower() for k in ["contact us", "how to apply", "timetables", "director and staff"]):
+             logger.warning(f"Discarding information page: {name} from {url}")
+             return None
 
         # 4. Extract Fees
         fees_cfg = config.extraction_map.get("fees", {})
@@ -509,19 +526,27 @@ class UniversalEngine(BaseScraper):
 
         confidence = self.calculate_confidence(field_results)
 
-        # FINAL QUALITY CHECKS
-        if not name or name == "Unknown" or len(name) <= 3:
+        # FINAL DATA QUALITY CHECKS
+        if not name or name == "Unknown" or len(name) < 3:
+            logger.warning(f"Discarding result with invalid name '{name}' from {url}")
             return None
 
-        # DISCARD NON-COURSE PAGES
-        if not duration and '"totalCreditPoints":0' in clean_html.replace(" ", ""):
-            return None
-        
-        # DB-driven faculty mapping
-        faculty = self._infer_faculty(name)
-        degree_type = self._infer_degree_type(name)
-
-        print(f"  [DEBUG] Upserting {degree_type}: {name} (Duration: {duration})")
+        # Record ATAR issue if missing for UG courses
+        if not atar_guaranteed and not atar_rank:
+            try:
+                # We need self._run_id from base_scraper
+                if hasattr(self, "_run_id") and self._run_id:
+                    await log_atar_issue(
+                        self.pool,
+                        config.university_id,
+                        self._run_id,
+                        name,
+                        url,
+                        "missing_atar",
+                        "No ATAR found via primary selectors or anchors"
+                    )
+            except Exception as e:
+                logger.error(f"Failed to record ATAR issue: {e}")
 
         return CourseData(
             university_id=config.university_id,
@@ -580,13 +605,35 @@ class UniversalEngine(BaseScraper):
                         val = m.group(0)
 
         if val and isinstance(val, str):
-            if "\\/" in val:
-                val = val.replace("\\/", "/")
-            if "\\u" in val:
-                try:
-                    val = val.encode("utf-16", "surrogatepass").decode("unicode-escape")
-                except:
-                    pass
+            # Unescape common JSON escapes if found (e.g. \/ -> /)
+            # We do a case-insensitive check for common escapes
+            if "\\" in val:
+                # Handle common JSON string escapes
+                escapes = {
+                    "\\/": "/",
+                    "\\\"": "\"",
+                    "\\\\": "\\",
+                    "\\b": "\b",
+                    "\\f": "\f",
+                    "\\n": "\n",
+                    "\\r": "\r",
+                    "\\t": "\t"
+                }
+                for esc, sub in escapes.items():
+                    if esc in val:
+                        val = val.replace(esc, sub)
+                
+                # Also handle potential unicode escapes if needed
+                if "\\u" in val:
+                    try:
+                        # Use codecs for more robust unicode unescaping
+                        import codecs
+                        val = codecs.decode(val, 'unicode_escape')
+                    except Exception as e:
+                        logger.warning(f"Failed to unescape unicode in {field_name}: {e}")
+
+            # Final cleanup: strip any trailing quotes that might have been caught by flexible regex
+            val = val.strip().strip('"').strip("'").strip()
 
         return val
 
