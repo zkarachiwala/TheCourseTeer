@@ -23,6 +23,15 @@ export const campuses = pgTable("campuses", {
   isOnline: boolean("is_online").default(false),
 });
 
+export const campusAliases = pgTable("campus_aliases", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  campusId: uuid("campus_id").notNull().references(() => campuses.id, { onDelete: "cascade" }),
+  aliasCode: text("alias_code").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+}, (t) => [
+  index("idx_campus_aliases_code").on(t.aliasCode),
+]);
+
 export const courses = pgTable("courses", {
   id: uuid("id").primaryKey(),
   universityId: uuid("university_id").notNull().references(() => universities.id),

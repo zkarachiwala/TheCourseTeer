@@ -25,7 +25,7 @@ SCRAPERS: dict[str, type[BaseScraper]] = {
 }
 
 
-async def main(universities: list[str], force: bool, use_cache: bool = True, refresh: bool = False) -> None:
+async def main(universities: list[str], force: bool, use_cache: bool = True, refresh: bool = False, limit: int = 0) -> None:
     load_dotenv()
     pool = await get_pool()
 
@@ -41,7 +41,7 @@ async def main(universities: list[str], force: bool, use_cache: bool = True, ref
         scraper.use_cache = use_cache
         scraper.force_refresh = refresh
         try:
-            count = await scraper.run(force=force)
+            count = await scraper.run(force=force, limit=limit)
             print(f"  {slug}: {count} courses upserted")
         except PermissionError as e:
             print(f"  {slug}: skipped — {e}")
@@ -77,8 +77,17 @@ if __name__ == "__main__":
         action="store_true",
         help="Force refresh cached snapshots (bypass existing cache).",
     )
+    parser.add_argument(
+        "--limit",
+        type=int,
+        default=0,
+        help="Limit number of URLs to process (0 for no limit).",
+    )
     args = parser.parse_args()
 
     universities = args.universities or list(SCRAPERS)
     loop_factory = asyncio.SelectorEventLoop if sys.platform == "win32" else None
-    asyncio.run(main(universities, args.force, args.use_cache, args.refresh), loop_factory=loop_factory)
+    asyncio.run(
+        main(universities, args.force, args.use_cache, args.refresh, args.limit),
+        loop_factory=loop_factory,
+    )

@@ -81,18 +81,43 @@ async def update_university_status(
 
 
 
-async def get_campus_map(
-    pool: AsyncConnectionPool, university_id: str
-) -> dict[str, str]:
-    """Return {campus_name: campus_uuid} for the given university."""
+async def get_faculties(pool: AsyncConnectionPool) -> list[tuple[str, list[str]]]:
+    """Return all faculty names and their associated keywords."""
     async with pool.connection() as conn:
         async with conn.cursor() as cur:
+            await cur.execute("SELECT name, keywords FROM faculties ORDER BY name")
+            rows = await cur.fetchall()
+            return [(row[0], row[1]) for row in rows]
+
+
+async def get_campus_map(
+    pool: AsyncConnectionPool, university_id: str
+) -> tuple[dict[str, str], dict[str, str]]:
+    """Return ({name: id}, {alias_code: id}) for a university."""
+    async with pool.connection() as conn:
+        async with conn.cursor() as cur:
+            # Get names
             await cur.execute(
                 "SELECT name, id FROM campuses WHERE university_id = %s",
                 (university_id,),
             )
             rows = await cur.fetchall()
-    return {row[0]: str(row[1]) for row in rows}
+            name_map = {row[0].lower(): str(row[1]) for row in rows}
+
+            # Get all aliases from the dedicated table
+            await cur.execute(
+                """
+                SELECT a.alias_code, a.campus_id 
+                FROM campus_aliases a
+                JOIN campuses c ON a.campus_id = c.id
+                WHERE c.university_id = %s
+                """,
+                (university_id,),
+            )
+            alias_rows = await cur.fetchall()
+            code_map = {row[0].lower(): str(row[1]) for row in alias_rows}
+
+            return name_map, code_map
 
 
 
@@ -114,10 +139,10 @@ async def upsert_course(pool: AsyncConnectionPool, course: CourseData) -> None:
                         faculty              = EXCLUDED.faculty,
                         degree_type          = EXCLUDED.degree_type,
                         duration_years       = EXCLUDED.duration_years,
-                        price_annual_csp_aud = EXCLUDED.price_annual_csp_aud,
-                        price_annual_dfee_aud= EXCLUDED.price_annual_dfee_aud,
-                        csp_available        = EXCLUDED.csp_available,
-                        prerequisites        = EXCLUDED.prerequisites,
+                        price_annual_csp_aud = COALESCE(EXCLUDED.price_annual_csp_aud, courses.price_annual_csp_aud),
+                        price_annual_dfee_aud= COALESCE(EXCLUDED.price_annual_dfee_aud, courses.price_annual_dfee_aud),
+                        csp_available        = COALESCE(EXCLUDED.csp_available, courses.csp_available),
+                        prerequisites        = COALESCE(EXCLUDED.prerequisites, courses.prerequisites),
                         updated_at           = now()
                     RETURNING id
                     """,

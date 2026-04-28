@@ -21,6 +21,22 @@ UNI_MAP = {
     "swinburne": "fa7b5854-a3bd-4572-aff6-d43cf6249581",
 }
 
+# La Trobe Campus Codes to seed into external_code column
+LATROBE_CAMPUS_CODES = [
+    ("8841ca47-be65-4697-a49b-ed738259a315", "BU"), # Bundoora
+    ("37a8e2ca-1643-48a5-85b1-6b91cc0bc15a", "BE"), # Bendigo
+    ("074cbaa0-68fd-47fb-906e-6b99ed5fdcf0", "AW"), # Albury-Wodonga
+    ("c97655c5-37de-4aaa-89da-923f264a1741", "SH"), # Shepparton
+    ("cae2929f-5cda-4100-a542-85ae4ea327fb", "MI"), # Mildura
+    ("b53c0416-8f3e-4a91-869d-f53d300cd8db", "MC"), # Melbourne City
+    ("fa65309e-488e-4278-bc13-5e720e8a8b3d", "ON"), # Online
+    # Fallback/Additional codes (multiple codes can map to same campus in seed script)
+    ("074cbaa0-68fd-47fb-906e-6b99ed5fdcf0", "WO"), # Wodonga
+    ("b53c0416-8f3e-4a91-869d-f53d300cd8db", "CI"), # City
+    ("b53c0416-8f3e-4a91-869d-f53d300cd8db", "SY"), # Sydney
+    ("fa65309e-488e-4278-bc13-5e720e8a8b3d", "OT"), # Other
+]
+
 SITE_CONFIGS = [
     {
         "university_id": UNI_MAP["rmit"],
@@ -156,6 +172,7 @@ SITE_CONFIGS = [
 async def seed():
     async with await psycopg.AsyncConnection.connect(DATABASE_URL) as conn:
         async with conn.cursor() as cur:
+            # Seed Site Configs
             for config in SITE_CONFIGS:
                 # Merge discovery_config into extraction_map for storage
                 full_map = config["extraction_map"].copy()

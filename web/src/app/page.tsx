@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { BrowseCoursesButton } from "@/components/browse-courses-button";
 
 export default function Home() {
   return (
@@ -10,12 +10,7 @@ export default function Home() {
       <p className="text-xs text-gray-400 dark:text-gray-500">
         * All Australian universities coming soon
       </p>
-      <Link
-        href="/courses"
-        className="rounded bg-gray-900 px-5 py-2 text-sm font-medium text-white hover:bg-gray-700 dark:bg-gray-100 dark:text-gray-900 dark:hover:bg-gray-300"
-      >
-        Browse courses
-      </Link>
+      <BrowseCoursesButton />
     </div>
   );
 }

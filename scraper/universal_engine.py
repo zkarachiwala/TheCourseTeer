@@ -14,51 +14,6 @@ from models import CourseData, SiteConfig
 
 logger = logging.getLogger(__name__)
 
-_FACULTY_KEYWORDS: list[tuple[str, list[str]]] = [
-    ("Faculty of Engineering", [
-        "engineering", "electrical", "civil", "mechanical", "chemical",
-        "aerospace", "biomedical", "mechatronics", "materials",
-    ]),
-    ("Faculty of Information Technology", [
-        "information technology", "computer science", "computing", "data science",
-        "cybersecurity", "artificial intelligence", "software",
-    ]),
-    ("Faculty of Business and Economics", [
-        "business", "commerce", "economics", "accounting", "finance",
-        "marketing", "management", "actuarial",
-    ]),
-    ("Faculty of Law", ["laws", "legal studies", "legal"]),
-    ("Faculty of Medicine and Health Sciences", [
-        "medicine", "medical", "nursing", "pharmacy", "physiotherapy",
-        "nutrition", "dietetics", "paramedicine", "occupational therapy",
-        "speech pathology", "radiation therapy", "dentistry", "biomedicine",
-        "health sciences",
-    ]),
-    ("Faculty of Science", [
-        "science", "biology", "chemistry", "physics", "mathematics",
-        "statistics", "genetics", "microbiology", "neuroscience",
-        "environmental science",
-    ]),
-    ("Faculty of Arts and Humanities", [
-        "arts", "humanities", "history", "philosophy", "languages",
-        "literature", "creative writing", "criminology", "politics",
-        "sociology", "communications", "journalism", "psychology",
-    ]),
-    ("Faculty of Education", ["education", "teaching"]),
-    ("Faculty of Art, Design and Architecture", [
-        "design", "architecture", "fine art", "fashion", "interior design",
-        "industrial design", "music", "film", "animation", "media arts",
-    ]),
-]
-
-
-def _infer_faculty(course_name: str) -> str | None:
-    name_lower = course_name.lower()
-    for faculty, keywords in _FACULTY_KEYWORDS:
-        if any(kw in name_lower for kw in keywords):
-            return faculty
-    return None
-
 
 class UniversalEngine(BaseScraper):
     """
@@ -69,7 +24,9 @@ class UniversalEngine(BaseScraper):
     def __init__(self, pool: AsyncConnectionPool, university_slug: str = ""):
         super().__init__(pool, university_slug)
         self._config: SiteConfig | None = None
-        self._campus_map: dict[str, str] | None = None
+        self._campus_name_map: dict[str, str] | None = None
+        self._campus_code_map: dict[str, str] | None = None
+        self._faculties: list[tuple[str, list[str]]] | None = None
 
     async def _ensure_config(self):
         from db import get_university
@@ -80,7 +37,74 @@ class UniversalEngine(BaseScraper):
             self._config = await get_site_config(self.pool, self.university_id)
             if not self._config:
                 raise ValueError(f"No active SiteConfig for {self.slug}")
-            self._campus_map = await get_campus_map(self.pool, self.university_id)
+            self._campus_name_map, self._campus_code_map = await get_campus_map(self.pool, self.university_id)
+            self._faculties = await get_faculties(self.pool)
+
+    def _infer_faculty(self, name: str) -> str | None:
+        if not self._faculties or not name:
+            return None
+        name_lower = name.lower()
+        for faculty, keywords in self._faculties:
+            if any(kw.lower() in name_lower for kw in keywords):
+                return faculty
+        return None
+
+    def _infer_degree_type(self, name: str) -> str:
+        name_lower = name.lower()
+        if any(k in name_lower for k in ["master", "doctor", "graduate certificate", "graduate diploma", "postgraduate", "juris doctor"]):
+            return "PG"
+        return "UG"
+
+    def _should_discard_by_meta(self, soup: BeautifulSoup, config: SiteConfig) -> bool:
+        """Check if page should be discarded based on meta tags in config."""
+        discard_cfg = config.extraction_map.get("discard_meta")
+        if not discard_cfg:
+            return False
+            
+        # discard_cfg is a list of dicts: {"name": "...", "content": "..."}
+        if not isinstance(discard_cfg, list):
+            discard_cfg = [discard_cfg]
+            
+        for rule in discard_cfg:
+            name = rule.get("name")
+            content = rule.get("content")
+            
+            meta = soup.find("meta", {"name": name})
+            if meta:
+                meta_content = meta.get("content")
+                if content is None: # Just check for presence
+                    return True
+                if meta_content == content:
+                    return True
+        return False
+
+    def _is_valid_course(self, name: str, url: str) -> bool:
+        """
+        Strict validation: real degrees start with specific academic titles.
+        Discards hub pages, majors, and study areas.
+        """
+        if not name or name.lower() == "unknown" or len(name) <= 3:
+            return False
+            
+        name_lower = name.lower()
+        
+        # Valid prefixes for degrees
+        valid_prefixes = [
+            "bachelor", "diploma", "associate degree", "undergraduate certificate", 
+            "advanced diploma", "master", "doctor", "graduate certificate", 
+            "graduate diploma", "juris doctor", "honours"
+        ]
+        
+        # Check if it starts with any valid prefix
+        if any(name_lower.startswith(p) for p in valid_prefixes):
+            return True
+            
+        # Exception: if it clearly contains "degree" in the name
+        if " degree" in name_lower or " course" in name_lower:
+            return True
+
+        logger.warning(f"Discarding potential non-course page: '{name}' from {url}")
+        return False
 
     async def discover_urls(self, rp: urllib.robotparser.RobotFileParser) -> list[str]:
         await self._ensure_config()
@@ -112,12 +136,13 @@ class UniversalEngine(BaseScraper):
         self.check_robots(rp, url)
 
         html = None
+        # 1. Primary Fetch: HTML Page (Main target for ATAR/Duration)
         if self.use_cache:
             html = self.snapshots.load(
-                self.university_id, url, force_refresh=self.force_refresh
+                self.university_id, url, ext="html", force_refresh=self.force_refresh
             )
             if html:
-                logger.info(f"Using cached snapshot for {url}")
+                logger.info(f"Using cached HTML snapshot for {url}")
 
         if not html:
             async with make_client() as client:
@@ -127,7 +152,8 @@ class UniversalEngine(BaseScraper):
                     return None
                 html = resp.text
                 if self.use_cache:
-                    self.snapshots.save(self.university_id, url, html)
+                    # Explicitly save as HTML
+                    self.snapshots.save(self.university_id, url, html, ext="html")
 
         async def fetch_sub(sub_url: str) -> str:
             # Determine extension (json or html)
@@ -140,7 +166,6 @@ class UniversalEngine(BaseScraper):
                 if cached:
                     return cached
 
-            # Re-use client or make new one? For simplicity make new for now
             async with make_client() as client:
                 sub_resp = await client.get(sub_url)
                 sub_resp.raise_for_status()
@@ -153,7 +178,8 @@ class UniversalEngine(BaseScraper):
             html,
             self._config,
             url,
-            campus_map=self._campus_map,
+            campus_map=self._campus_name_map,
+            code_map=self._campus_code_map,
             fetch_fn=fetch_sub,
         )
 
@@ -166,6 +192,48 @@ class UniversalEngine(BaseScraper):
             )
         return config
 
+    def _preprocess_html(self, html: str, config: SiteConfig) -> str:
+        """Apply generic cleanup regexes to the raw HTML before parsing."""
+        cleanup_regexes = config.extraction_map.get("cleanup_regexes", [])
+        if not cleanup_regexes:
+            return html
+        
+        cleaned = html
+        for regex in cleanup_regexes:
+            try:
+                cleaned = re.sub(regex, '', cleaned, flags=re.DOTALL)
+            except Exception as e:
+                logger.error(f"Cleanup regex failure: {e}")
+        return cleaned
+
+    def _extract_json_map(self, html: str, field_cfg: dict) -> dict:
+        """Generic logic to extract a JSON block from text based on a regex."""
+        json_regex = field_cfg.get("json_regex")
+        if not json_regex:
+            return {}
+        
+        m = re.search(json_regex, html, re.DOTALL)
+        if m:
+            try:
+                data = json.loads(m.group(1))
+                # If it's a nested structure (like La Trobe's year-based map),
+                # allow the config to specify a 'json_path'
+                json_path = field_cfg.get("json_path")
+                if json_path and isinstance(data, dict):
+                    if json_path == "latest_key":
+                        # Specialized: get the most recent year/key
+                        keys = sorted(data.keys(), reverse=True)
+                        if keys:
+                            data = data[keys[0]]
+                    else:
+                        # Standard path like "data.atars"
+                        for k in json_path.split("."):
+                            data = data.get(k, {})
+                return data if isinstance(data, dict) else {}
+            except Exception as e:
+                logger.error(f"Generic JSON extraction failure: {e}")
+        return {}
+
     def find_by_anchor(self, soup: BeautifulSoup, anchor_text: str) -> str | None:
         """
         Locate data based on a nearby text label (e.g., "ATAR").
@@ -176,12 +244,9 @@ class UniversalEngine(BaseScraper):
         labels = soup.find_all(string=lambda s: s and anchor_text.lower() in s.lower())
 
         for label_node in labels:
-            # 1. Check if the label node itself contains the value (e.g., "Duration: 3 years")
             full_text = label_node.strip()
             # Heuristic: it's a value if it contains:
-            # - numbers
-            # - "available", "yes", "no"
-            # - a colon or dash separating the label and value (e.g. "Campus: Parkville")
+            # - numbers, "available", "yes", "no", or separators
             is_val = (
                 any(c.isdigit() for c in full_text)
                 or any(k in full_text.lower() for k in ["available", "yes", "no"])
@@ -189,12 +254,8 @@ class UniversalEngine(BaseScraper):
                 or ("-" in full_text and len(full_text.split("-", 1)[1].strip()) > 0)
             )
             if is_val:
-                logger.debug(
-                    f"Found value in same node as anchor '{anchor_text}': {full_text}"
-                )
                 return full_text
 
-            # 2. Otherwise, look for the next non-empty string that isn't the label itself
             if hasattr(label_node, "parent"):
                 curr = label_node.parent
             else:
@@ -205,23 +266,13 @@ class UniversalEngine(BaseScraper):
                 if not next_text:
                     break
                 text = next_text.strip()
-                # Check if this text is not just the label or a minor variation
                 if text and anchor_text.lower() not in text.lower():
-                    logger.debug(
-                        f"Found value in subsequent node for anchor '{anchor_text}': {text}"
-                    )
                     return text
                 curr = next_text
 
         return None
 
     def calculate_confidence(self, field_results: dict[str, str]) -> int:
-        """
-        Calculate an overall confidence score for the scraped data.
-        - 100: All fields matched via primary selectors.
-        - 70: Some fields matched via anchors/regex.
-        - 30: Default values or failures present.
-        """
         if field_results.get("name") and len(field_results) > 2:
             return 100
         return 70
@@ -232,10 +283,20 @@ class UniversalEngine(BaseScraper):
         config: SiteConfig,
         url: str,
         campus_map: dict[str, str] | None = None,
+        code_map: dict[str, str] | None = None,
         fetch_fn: Any | None = None,
-    ) -> CourseData:
+    ) -> CourseData | None:
         """Scrape a course page using the provided configuration."""
-        soup = BeautifulSoup(html, "lxml")
+        
+        # 0. Pre-process HTML (e.g. remove noise)
+        clean_html = self._preprocess_html(html, config)
+        soup = BeautifulSoup(clean_html, "lxml")
+        
+        # 0.1 Meta-tag Discard Logic
+        if self._should_discard_by_meta(soup, config):
+            logger.info(f"Discarding hub/category page by meta tag: {url}")
+            return None
+
         field_results = {}
 
         # 1. Extract Name
@@ -289,10 +350,11 @@ class UniversalEngine(BaseScraper):
 
         # 3. Extract ATAR
         atar_cfg = config.extraction_map.get("atar", {})
-        atar_str = self._extract_field(soup, atar_cfg, html, field_name="atar")
+        atar_str = self._extract_field(soup, atar_cfg, clean_html, field_name="atar")
         atar_guaranteed, atar_rank = self._parse_atar(atar_str)
-        if atar_guaranteed or atar_rank:
-            field_results["atar"] = atar_str
+
+        # Generic JSON Fallback (e.g. for La Trobe allAtars)
+        atar_json_map = self._extract_json_map(clean_html, atar_cfg)
 
         # DISCARD NON-COURSE PAGES (e.g. info pages, contact pages, study areas)
         # If it doesn't have credit points AND doesn't have a duration, it's probably not a course
@@ -307,41 +369,25 @@ class UniversalEngine(BaseScraper):
 
         # 4. Extract Fees
         fees_cfg = config.extraction_map.get("fees", {})
-        anchor = fees_cfg.get("anchor")
+        fees_str = self._extract_field(soup, fees_cfg, clean_html, field_name="fees")
         csp_available = False
-        if anchor:
-            anchor_val = self.find_by_anchor(soup, anchor)
-            if anchor_val:
-                csp_available = any(
-                    k in anchor_val.lower()
-                    for k in ["commonwealth", "csp", "supported", "$"]
-                )
-                field_results["fees"] = anchor_val
-
-        if not csp_available:
-            fees_str = self._extract_field(soup, fees_cfg, html, field_name="fees")
-            if fees_str:
-                field_results["fees"] = fees_str
-                csp_available = any(
-                    k in fees_str.lower()
-                    for k in ["commonwealth", "csp", "supported", "$"]
-                )
-                if not csp_available and "FeeDomesticCSP" in fees_cfg.get("regex", ""):
-                    csp_available = True
+        if fees_str:
+            field_results["fees"] = fees_str
+            csp_available = any(
+                k in fees_str.lower()
+                for k in ["commonwealth", "csp", "supported", "$"]
+            )
 
         # 5. Admissions Codes
         adm_cfg = config.extraction_map.get("admissions_codes", {})
         adm_codes = self.extract_admissions_codes(soup, adm_cfg)
-        if adm_codes:
-            field_results["admissions_codes"] = ",".join(adm_codes)
 
         # 6. Location / Campuses
         loc_cfg = config.extraction_map.get("location", {})
-        location_raw = self._extract_field(soup, loc_cfg, html, field_name="location")
+        location_raw = self._extract_field(soup, loc_cfg, clean_html, field_name="location")
 
         campuses = []
         if location_raw:
-            # Parse multiple locations if present (comma-separated or JSON list)
             location_list = []
             if location_raw.startswith("[") and location_raw.endswith("]"):
                 try:
@@ -349,9 +395,7 @@ class UniversalEngine(BaseScraper):
                 except:
                     location_list = [location_raw]
             else:
-                # Common separators: comma, semicolon, or "and"
                 raw_list = re.split(r",|;| and ", location_raw, flags=re.IGNORECASE)
-                # Clean each location - remove parentheticals like [Full-time] or (Parkville)
                 location_list = []
                 for loc in raw_list:
                     cleaned = re.sub(r"\[[^\]]+\]|\([^\)]+\)", "", loc).strip()
@@ -363,88 +407,122 @@ class UniversalEngine(BaseScraper):
             from models import CampusLink
 
             for loc in location_list:
-                # Map location to campus_id
                 campus_id = None
-                
-                # 1. Try explicit mapping from config
                 if location_mapping and loc in location_mapping:
                     campus_id = location_mapping[loc]
                 
-                # 2. Try exact name match from pre-loaded campus_map
-                if not campus_id and self._campus_map:
-                    # Case-insensitive search in campus_map (name -> id)
+                if not campus_id and campus_map:
                     loc_lower = loc.lower()
-                    for name, cid in self._campus_map.items():
-                        if loc_lower == name.lower():
-                            campus_id = cid
-                            break
+                    if loc_lower in campus_map:
+                        campus_id = campus_map[loc_lower]
                             
-                # 3. Fallback to raw string (though this will fail DB constraints)
+                if not campus_id and code_map:
+                    loc_lower = loc.lower()
+                    if loc_lower in code_map:
+                        campus_id = code_map[loc_lower]
+
                 if not campus_id:
-                    logger.warning(f"Could not resolve campus name '{loc}' to a UUID for {self.slug}")
                     campus_id = loc
+
+                # Determine ATAR for THIS specific campus
+                this_atar_guaranteed = atar_guaranteed
+                this_atar_rank = atar_rank
+                
+                if atar_json_map and code_map:
+                    codes_for_this_campus = [c.upper() for c, cid in code_map.items() if cid == campus_id]
+                    for c in codes_for_this_campus:
+                        if c in atar_json_map:
+                            val = atar_json_map[c].get("minSelectionRankOffered")
+                            if val and val not in ["N/A", "N/P", "NP", "RC"]:
+                                try:
+                                    this_atar_rank = int(float(val))
+                                except:
+                                    pass
+                            
+                            g_val = atar_json_map[c].get("aspireMinimumATAR")
+                            if g_val and g_val not in ["N/A", "N/P", "NP", "RC"]:
+                                try:
+                                    this_atar_guaranteed = int(float(g_val))
+                                except:
+                                    pass
+                            break
 
                 campuses.append(
                     CampusLink(
                         campus_id=campus_id,
-                        atar_guaranteed=atar_guaranteed,
-                        atar_lowest_selection_rank=atar_rank,
-                        admissions_codes=list(adm_codes),
+                        atar_guaranteed=this_atar_guaranteed,
+                        atar_lowest_selection_rank=this_atar_rank,
+                        admissions_codes=[], 
                         confidence_score=70,
                     )
                 )
 
-        # 7. Follow URLs (e.g. for La Trobe detail JSONs)
+        # 7. Follow URLs (e.g. for detail JSONs)
         follow_cfg = config.extraction_map.get("follow_urls")
         if follow_cfg and fetch_fn:
             regex = follow_cfg.get("regex")
             if regex:
-                # Find all matching URLs in the HTML
-                matches = re.findall(regex, html)
-                logger.debug(f"found {len(matches)} potential follow URLs with regex '{regex}'")
+                matches = re.findall(regex, clean_html)
                 for sub_url in matches:
                     if not sub_url.startswith("http"):
-                        sub_url = (
-                            config.base_url.rstrip("/") + "/" + sub_url.lstrip("/")
-                        )
+                        sub_url = config.base_url.rstrip("/") + "/" + sub_url.lstrip("/")
 
-                    logger.debug(f"following URL: {sub_url}")
                     try:
-                        sub_html = await fetch_fn(sub_url)
-                        logger.debug(f"fetched sub_html, length={len(sub_html)}")
-                        # Extract more data from the sub-page
-                        # For La Trobe, we want VTAC codes from the detail JSON
+                        sub_content = await fetch_fn(sub_url)
+                        # Generic sub-content extraction
                         sub_adm_codes = self.extract_admissions_codes(
-                            BeautifulSoup(sub_html, "lxml"), adm_cfg
+                            BeautifulSoup(sub_content, "lxml"), adm_cfg
                         )
-                        logger.debug(f"extracted {len(sub_adm_codes)} admissions codes from sub-page")
-                        if sub_adm_codes:
-                            # Heuristic: try to match sub_url to a campus
-                            # La Trobe URLs have campus code in them, e.g. /domestic/bu/
+                        
+                        # Generic duration/cp extraction from sub-content
+                        sub_duration = None
+                        m_sub_dur = re.search(r'"duration"\s*:\s*"?([^",}]+)"?', sub_content)
+                        if m_sub_dur:
+                            sub_duration = self._parse_duration(m_sub_dur.group(1))
+                        
+                        # PRIORITY: totalCreditPoints from JSON is extremely reliable
+                        m_sub_cp = re.search(r'"totalCreditPoints"\s*:\s*(\d+)', sub_content)
+                        if m_sub_cp:
+                            cp = int(m_sub_cp.group(1))
+                            if cp > 0:
+                                inferred = cp / 120.0
+                                # If JSON duration says 5.0 and HTML said 1.0, 5.0 wins.
+                                if not sub_duration or (0.5 <= inferred <= 10.0 and inferred > sub_duration):
+                                    sub_duration = inferred
+
+                        if sub_adm_codes or sub_duration:
                             matched_campus = None
                             for campus in campuses:
-                                if f"/{campus.campus_id.lower()}/" in sub_url.lower():
-                                    matched_campus = campus
-                                    break
+                                if code_map:
+                                    target_codes = [c for c, cid in code_map.items() if cid == campus.campus_id]
+                                    if any(f"/{tc}/" in sub_url.lower() for tc in target_codes):
+                                        matched_campus = campus
+                                        break
 
                             if matched_campus:
-                                matched_campus.admissions_codes.extend(sub_adm_codes)
-                                matched_campus.admissions_codes = sorted(
-                                    list(set(matched_campus.admissions_codes))
-                                )
+                                if sub_adm_codes:
+                                    matched_campus.admissions_codes.extend(sub_adm_codes)
+                                    matched_campus.admissions_codes = sorted(list(set(matched_campus.admissions_codes)))
+                                if sub_duration:
+                                    # Update global duration if sub-duration is superior
+                                    if not duration or (0.5 <= sub_duration <= 10.0 and sub_duration > duration):
+                                        duration = sub_duration
                             else:
-                                # If no specific campus match, add to all
                                 for campus in campuses:
-                                    campus.admissions_codes.extend(sub_adm_codes)
-                                    campus.admissions_codes = sorted(
-                                        list(set(campus.admissions_codes))
-                                    )
+                                    if sub_adm_codes:
+                                        campus.admissions_codes.extend(sub_adm_codes)
+                                        campus.admissions_codes = sorted(list(set(campus.admissions_codes)))
+                                if sub_duration:
+                                    if not duration or (0.5 <= sub_duration <= 10.0 and sub_duration > duration):
+                                        duration = sub_duration
                     except Exception as e:
                         logger.error(f"Failed to fetch followed URL {sub_url}: {e}")
 
         if adm_codes or any(c.admissions_codes for c in campuses):
-            # Just for field_results tracking
             field_results["admissions_codes"] = "found"
+
+        if duration:
+            field_results["duration"] = str(duration)
 
         confidence = self.calculate_confidence(field_results)
 
@@ -474,9 +552,9 @@ class UniversalEngine(BaseScraper):
             university_id=config.university_id,
             name=name,
             source_url=url,
-            faculty=_infer_faculty(name) if name else None,
+            faculty=faculty,
             campuses=campuses,
-            degree_type="UG",
+            degree_type=degree_type,
             duration_years=duration,
             csp_available=csp_available,
             confidence_score=confidence,
@@ -486,107 +564,45 @@ class UniversalEngine(BaseScraper):
         self,
         soup: BeautifulSoup,
         field_cfg: dict,
-        full_html: str | None = None,
+        full_text: str | None = None,
         field_name: str | None = None,
     ) -> str | None:
-        """Helper to extract a field based on selector, attr, anchor, or regex."""
         val = None
 
-        # 1. Try JSON-LD first if specified
-        json_ld_path = field_cfg.get("json_ld")
-        if json_ld_path:
-            scripts = soup.find_all("script", type="application/ld+json")
-            for script in scripts:
-                try:
-                    content = script.string or script.text
-                    if not content:
-                        continue
-                    data = json.loads(content)
-                    objs = data if isinstance(data, list) else [data]
-
-                    keys = json_ld_path.split(".")
-                    for obj in objs:
-                        curr = obj
-                        if keys[0].lower() == str(curr.get("@type", "")).lower():
-                            keys_to_use = keys[1:]
-                        else:
-                            keys_to_use = keys
-
-                        for k in keys_to_use:
-                            if isinstance(curr, dict) and k in curr:
-                                curr = curr[k]
-                            else:
-                                curr = None
-                                break
-                        if curr:
-                            val = str(curr)
-                            break
-                    if val:
+        # 1. Selector
+        selector = field_cfg.get("selector")
+        if selector:
+            key_text = field_cfg.get("key")
+            if key_text:
+                rows = soup.select(selector)
+                for row in rows:
+                    cells = row.find_all(["th", "td"])
+                    if len(cells) >= 2 and key_text.lower() in cells[0].get_text(strip=True).lower():
+                        val = cells[1].get_text(" ", strip=True)
                         break
-                except (json.JSONDecodeError, TypeError):
-                    continue
+            else:
+                elem = soup.select_one(selector)
+                if elem:
+                    attr = field_cfg.get("attr")
+                    val = elem.get(attr) if attr else elem.get_text(strip=True)
 
-        # 2. Try selector
-        if not val:
-            selector = field_cfg.get("selector")
-            if selector:
-                key_text = field_cfg.get("key")
-                if key_text:
-                    rows = soup.select(selector)
-                    for row in rows:
-                        cells = row.find_all(["th", "td"])
-                        if (
-                            len(cells) >= 2
-                            and key_text.lower() in cells[0].get_text(strip=True).lower()
-                        ):
-                            val = cells[1].get_text(" ", strip=True)
-                            break
-                else:
-                    elem = soup.select_one(selector)
-                    if elem:
-                        attr = field_cfg.get("attr")
-                        val = elem.get(attr) if attr else elem.get_text(strip=True)
-
-                if val:
-                    logger.debug(f"Selector '{selector}' (key={key_text}) found: {val}")
-
-        # 3. Fallback to anchor
+        # 2. Anchor
         if not val:
             anchor = field_cfg.get("anchor")
             if anchor:
                 val = self.find_by_anchor(soup, anchor)
                 
-        # 4. Apply regex if provided
+        # 3. Regex
         regex = field_cfg.get("regex")
         if regex:
-            # If we don't have a value yet, try running regex on the full HTML
-            # BUT if we have an anchor value, we apply regex to THAT to refine it
-            target_text = val if val else full_html
+            target_text = val if val else full_text
             if target_text:
-                logger.debug(
-                    f"Applying regex '{regex}' to text length {len(target_text)}"
-                )
                 m = re.search(regex, target_text, re.IGNORECASE)
                 if m:
                     try:
-                        # Prefer captured group if available (e.g. just the name, 
-                        # or the specific part of ATAR string if the regex defined it)
                         val = m.group(1)
-                        logger.debug(f"Regex match result (group 1) for {field_name}: {val}")
                     except IndexError:
-                        # No capture group, use group(0) OR full context for certain fields
-                        if field_name in ["atar", "duration", "fees"]:
-                            # Return the full target_text to keep context for _parse methods
-                            # like 'Guaranteed' vs 'Lowest'
-                            val = target_text
-                            logger.debug(f"Regex matched, returning full context for {field_name}")
-                        else:
-                            val = m.group(0)
-                            logger.debug(f"Regex match result (group 0) for {field_name}: {val}")
-                elif val:
-                    # If regex was supposed to refine a value but failed, clear it
-                    val = None
-                    logger.debug(f"Regex did not match for {field_name}")
+                        val = m.group(0)
 
         if val and isinstance(val, str):
             # Unescape common JSON escapes if found (e.g. \/ -> /)
@@ -624,73 +640,76 @@ class UniversalEngine(BaseScraper):
     def _parse_duration(self, text: str | None) -> float | None:
         if not text:
             return None
-        logger.debug(f"_parse_duration: text length={len(text)}")
-        m = re.search(r"(\d+(?:\.\d+)?)", text)
-        return float(m.group(1)) if m else None
+        
+        # LOOK FOR CONTEXT: number followed by year/month/wk keywords
+        # This prevents picking up AQF levels (like 'Level 9') or random numbers.
+        m = re.search(r"(\d+(?:\.\d+)?)\s*(year|yr|month|mon|week|wk)", text, re.IGNORECASE)
+        if m:
+            val = float(m.group(1))
+            unit = m.group(2).lower()
+            
+            if "month" in unit or "mon" in unit:
+                val = val / 12.0
+            elif "week" in unit or "wk" in unit:
+                val = val / 52.0
+                
+            # SANITY CHECK: Durations are usually between 0.2 and 10 years.
+            if 0.2 <= val <= 10.0:
+                return val
+        
+        # Fallback for plain numbers ONLY if they are very small (typical for years)
+        m_plain = re.match(r"^\s*(\d+(?:\.\d+)?)\s*$", text)
+        if m_plain:
+            val = float(m_plain.group(1))
+            if 0.5 <= val <= 8.0:
+                return val
+                
+        return None
 
     def _parse_atar(self, text: str | None) -> tuple[int | None, int | None]:
-        """
-        Return (atar_guaranteed, atar_lowest_selection_rank) from text.
-        """
         if not text:
             return None, None
-
+        
+        # Look for numbers while keeping track of their context
+        # ATARs are almost always 30.00 to 99.95
+        matches = list(re.finditer(r"(\d{2}(?:\.\d+)?)", text))
+        if not matches:
+            return None, None
+            
         guaranteed = None
         rank = None
-
-        # Look for numbers, but filter out years (e.g. 2024, 2025, 2026)
-        # ATARs are always <= 99.95
-        m = re.findall(r"(\d{2,4}(?:\.\d+)?)", text)
-        if not m:
-            return None, None
-
-        vals = []
-        for n in m:
-            val = float(n)
-            # If it's a 4-digit integer starting with 20, it's likely a year
-            if 1900 <= val <= 2100:
+        
+        for m in matches:
+            val_str = m.group(1)
+            val = int(float(val_str))
+            
+            # Filter out years and invalid ranks
+            if not (30 <= val <= 100):
                 continue
-            vals.append(int(val))
-
-        if not vals:
-            return None, None
-
-        lower_text = text.lower()
-        logger.debug(f"_parse_atar: text='{text}', vals={vals}, lower_text='{lower_text}'")
-        if any(k in lower_text for k in ["guarantee", "guaranteed", "minimum", "aspire"]):
-            guaranteed = vals[0]
-            if len(vals) > 1:
-                rank = vals[1]
-        elif any(k in lower_text for k in ["selection rank", "rank", "lowest", "minselectionrankoffered"]):
-            rank = vals[0]
-            if len(vals) > 1:
-                guaranteed = vals[1]
-        else:
-            # Default to selection rank if no keywords
-            rank = vals[0]
-            if len(vals) > 1:
-                guaranteed = vals[1]
-
+                
+            # Check context: 30 chars before the match
+            start = max(0, m.start() - 30)
+            context = text[start:m.start()].lower()
+            
+            if any(k in context for k in ["guarantee", "minimum", "aspire"]):
+                if guaranteed is None: guaranteed = val
+            elif any(k in context for k in ["rank", "lowest", "offered"]):
+                if rank is None: rank = val
+            else:
+                # No clear keyword, assign to the first empty slot (prefer rank)
+                if rank is None: rank = val
+                elif guaranteed is None: guaranteed = val
+        
         return guaranteed, rank
 
     def extract_admissions_codes(self, soup: BeautifulSoup, config: dict) -> list[str]:
-        """Extract admissions codes (VTAC, UAC, etc.) based on anchor or regex."""
         results = set()
         anchor = config.get("anchor")
         regex = config.get("regex")
-
         if anchor:
             label_text = self.find_by_anchor(soup, anchor)
-            if label_text:
-                if regex:
-                    matches = re.findall(regex, label_text)
-                    results.update(matches)
-                else:
-                    results.add(label_text)
-
+            if label_text and regex:
+                results.update(re.findall(regex, label_text))
         if not results and regex:
-            text = soup.get_text(" ")
-            matches = re.findall(regex, text)
-            results.update(matches)
-
+            results.update(re.findall(regex, soup.get_text(" ")))
         return sorted(list(results))
