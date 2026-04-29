@@ -1,8 +1,0 @@
-{
-  "id": "latrobe_scraper_fixes_20260428",
-  "name": "Fix La Trobe Scraper Issues",
-  "description": "Address double major escape characters, missing ATARs, and missing durations in La Trobe University scraping.",
-  "status": "in_progress",
-  "created_at": "2026-04-28",
-  "updated_at": "2026-04-28"
-}
