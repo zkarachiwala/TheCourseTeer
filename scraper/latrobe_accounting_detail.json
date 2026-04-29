@@ -1,0 +1,1338 @@
+
+
+
+
+<!doctype html>
+<html class="" lang="en-AU">
+<head>
+
+
+<script data-cfasync="false">
+(function() {
+    var requirePrehiding = true;
+    
+    
+    if (requirePrehiding) {
+        console.debug('show prehiding.');
+        // prehiding snippet for Adobe Target with asynchronous Launch deployment
+        (function(g,b,d,f){(function(a,c,d){if(a){var e=b.createElement("style");e.id=c;e.innerHTML=d;a.appendChild(e)}})(b.getElementsByTagName("head")[0],"at-body-style",d);setTimeout(function(){var a=b.getElementsByTagName("head")[0];if(a){var c=b.getElementById("at-body-style");c&&a.removeChild(c)}},f)})(window,document,"body {opacity: 0 !important}",3E3);
+    } else {
+        console.debug('No need to show prehiding.');
+    }
+})();
+</script>
+
+<!-- START:ADOBE_LAUNCH_SCRIPT_TAG --->
+
+<script src="https://assets.adobedtm.com/launch-EN1a149531c790462ba2045950e23a51d1.min.js" async defer></script>
+
+<!-- END:ADOBE_LAUNCH_SCRIPT_TAG --->
+
+<!--<script src="https://www.latrobe.edu.au/_media/la-trobe-api/v5/adobe-launch/head-scripts/www.latrobe.edu.au.js" async defer></script>-->
+
+<!--<script data-cfasync="false">-->
+<!--document.write('<script src="' + 'https://www.latrobe.edu.au/_media/la-trobe-api/v5/adobe-launch/head-scripts/' + location.hostname + '.js' + '" async defer><\/script>');-->
+<!--</script>-->
+
+
+
+<meta charset="utf-8">
+<meta http-equiv="x-ua-compatible" content="ie=edge">
+
+<title>Page not found, La Trobe University</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+
+<!-- Corporate - asset summary text //-->
+
+<!-- Section summary //-->
+
+<!-- sort order //-->
+
+<!-- asset creation date //-->
+
+<!-- La Trobe //-->
+
+<!-- LTU //-->
+<meta name="description" content="error, 404, page not found" />
+<meta name="keywords" content="" />
+<meta name="audience" content="staff, students, community" />
+<meta name="author" content="La Trobe University" />
+<meta name="assetcreated" content="13 February 2008" />
+
+<!-- La Trobe Design System - metadata schema //-->
+
+<!-- Static //-->
+
+<!-- LTU //-->
+<meta name="description" content="error, 404, page not found" />
+<meta name="short-description" content="" />
+<meta name="keywords" content="" />
+<meta name="audience" content="staff, students, community" />
+<meta name="author" content="La Trobe University" />
+<meta name="assetcreated" content="13 February 2008" />
+
+<!-- Legacy //-->
+<meta name="layout" content="" />
+
+<!-- Analytics //-->
+<meta name="pageType" content="" />
+<meta name="campaign" content="" />
+<meta name="interest" content="" />
+<meta name="discipline" content="" />
+<meta name="school" content="" />
+<meta name="featured" content="" />
+
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site" content="@latrobe" />
+<meta property="og:url" content="https://www.latrobe.edu.au/page-not-found" />
+<meta property="og:title" content="Page not found" />
+<meta property="og:description" content="error, 404, page not found" />
+<meta property="og:image" content="https://www.latrobe.edu.au/_media/la-trobe-api/v5/img/latrobe-logo-og.png" />
+
+<link rel="canonical" href="https://www.latrobe.edu.au/page-not-found" />
+<script>document.documentElement.className += ' js';</script>
+
+<link href="https://www.latrobe.edu.au/__data/assets/git_bridge/0004/1094422/_ltu-components/dist/css/ds-ltu.css?h=422fbb2" rel="stylesheet" media="screen" />
+
+
+<link rel="stylesheet" type="text/css" href="//latr-search.funnelback.squiz.cloud/s/resources-global/css/funnelback.autocompletion.css" />
+
+<link href="https://www.latrobe.edu.au/__data/assets/git_bridge/0004/1094422/_ltu-components/dist/css/ltu-legacy.css?h=422fbb2" rel="stylesheet" media="screen" />
+
+
+<script src="https://code.jquery.com/jquery-3.6.3.min.js" integrity="sha256-pvPw+upLPUjgMXY0G+8O0xUf+/Im1MZjXxxgOcBQBXU=" crossorigin="anonymous"></script>
+
+<link rel="apple-touch-icon" sizes="57x57" href="/apple-touch-icon-57x57.png">
+<link rel="apple-touch-icon" sizes="60x60" href="/apple-touch-icon-60x60.png">
+<link rel="apple-touch-icon" sizes="72x72" href="/apple-touch-icon-72x72.png">
+<link rel="apple-touch-icon" sizes="76x76" href="/apple-touch-icon-76x76.png">
+<link rel="apple-touch-icon" sizes="114x114" href="/apple-touch-icon-114x114.png">
+<link rel="apple-touch-icon" sizes="120x120" href="/apple-touch-icon-120x120.png">
+<link rel="apple-touch-icon" sizes="144x144" href="/apple-touch-icon-144x144.png">
+<link rel="apple-touch-icon" sizes="152x152" href="/apple-touch-icon-152x152.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon-180x180.png">
+<link rel="icon" type="image/png" href="/favicon-32x32.png" sizes="32x32">
+<link rel="icon" type="image/png" href="/favicon-194x194.png" sizes="194x194">
+<link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96">
+<link rel="icon" type="image/png" href="/android-chrome-192x192.png" sizes="192x192">
+<link rel="icon" type="image/png" href="/favicon-16x16.png" sizes="16x16">
+<link rel="manifest" href="/manifest.json">
+<meta name="msapplication-TileColor" content="#ffffff">
+<meta name="msapplication-TileImage" content="/mstile-144x144.png">
+<meta name="theme-color" content="#ffffff">
+
+
+<script data-cfasync="false" defer src="https://www.latrobe.edu.au/ds/latrobe-design-system/visual-identity-assets/js/visual-identity-shims.js?v=0.1.6"></script>
+<link rel="stylesheet" type="text/css" href="https://www.latrobe.edu.au/ds/latrobe-design-system/visual-identity-assets/visual-identity.min.css?v=0.1.31" />
+
+<script defer data-cfasync="false">
+    if ( window.location.pathname.includes('/build/') || window.location.pathname.includes('/international') ) {
+        const intSiteHeadElement = document.getElementsByTagName('head')[0];
+                
+        const intCSSLink = document.createElement('link');
+        intCSSLink.rel = 'stylesheet';
+        intCSSLink.type = 'text/css';
+        intCSSLink.href = '/__data/assets/css_file_folder/0011/1577072/international.min.css';
+        intSiteHeadElement.appendChild(intCSSLink);
+    }
+</script>
+
+<script defer data-cfasync="false">
+    if ( window.location.pathname.includes('/net-zero') || window.location.pathname.includes('/sustainability/net-zero-carbon') || window.location.pathname.includes('/cmp/south-asia-roadshow') || window.location.pathname.includes('/cmp/vietnam-ai-analytics') || window.location.pathname.includes('/industry-and-community/la-trobe-industry/catalyst') || window.location.pathname.includes('/career-practitioner-hub') ) {
+        const intSiteHeadElement = document.getElementsByTagName('head')[0];
+                
+        const intCSSLink = document.createElement('link');
+        intCSSLink.rel = 'stylesheet';
+        intCSSLink.type = 'text/css';
+        intCSSLink.href = '/__data/assets/css_file_folder/0011/1577072/international.min.css';
+        intSiteHeadElement.appendChild(intCSSLink);
+    }
+</script>
+
+<script defer data-cfasync="false">
+    if ( window.location.pathname.includes('/about/vision') || window.location.pathname.includes('/industry-and-community/la-trobe-industry/workforce/international-talent') || window.location.pathname.includes('/choose') || window.location.pathname.includes('/cmp/dom') || window.location.pathname.includes('/cmp/intl') || window.location.pathname.includes('/industry-and-community/la-trobe-industry/catalyst') || window.location.pathname.includes('/career-practitioner-hub') || window.location.pathname.includes('/globalsecurity') || window.location.pathname.includes('/courses/health') || window.location.pathname == '/contact' || window.location.pathname.includes('/alumni') || window.location.pathname.includes('/about/at-a-glance/plans') || window.location.pathname.includes('/study/expo-lead') || window.location.pathname.includes('/about/ai') ) {
+        const aboutSiteHeadElement = document.getElementsByTagName('head')[0];
+                
+        const intCSSLink = document.createElement('link');
+        intCSSLink.rel = 'stylesheet';
+        intCSSLink.type = 'text/css';
+        intCSSLink.href = 'https://www.latrobe.edu.au/ds/latrobe-design-system/international-site-assets/international.min.css?v=0.1.2325';
+        
+        const philanthropyCSSLink = document.createElement('link');
+        philanthropyCSSLink.rel = 'stylesheet';
+        philanthropyCSSLink.type = 'text/css';
+        philanthropyCSSLink.href = 'https://www.latrobe.edu.au/__data/assets/css_file_folder/0003/1658136/philanthropy.min.css?v=0.1.53';
+        
+        // This page requires both sets of CSS files
+        aboutSiteHeadElement.appendChild(intCSSLink);
+        aboutSiteHeadElement.appendChild(philanthropyCSSLink);
+    }
+</script>
+
+
+
+
+<!--
+  Running Squiz Matrix
+  Developed by Squiz - http://www.squiz.net
+  Squiz, Squiz Matrix, MySource, MySource Matrix and Squiz.net are registered Trademarks of Squiz Pty Ltd
+  Page generated: 29 April 2026 23:59:40
+-->
+
+
+</head>
+
+<body class="vi">
+<!-- AssetId: 13256; Rendered time: Apr 29, 2026 11:59 pm; -->
+
+<!-- Google Tag Manager -->
+<noscript><iframe src="//www.googletagmanager.com/ns.html?id=GTM-PK7MLW"
+height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+'//www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+})(window,document,'script','dataLayer','GTM-PK7MLW');</script>
+<!-- End Google Tag Manager -->
+
+<!--noindex-->
+<a id="skip" class="ds-btn-primary" href="#content">Skip to content</a>
+<header id="header">
+    <p id="gdpr"><span>This website <a href="/statements/privacy">uses cookies</a> to ensure you get a better experience.</span> <button id="gdpr-button">Allow Cookies</button></p>
+    
+    <div class="header-top">
+        <div id="logo">
+            
+            <a href="/"><img src="/_media/la-trobe-api/v5/img/logo-white.svg" alt="La Trobe University" height="80" width="239" /></a>        </div>
+        <a id="hamburger" class="hamburger" href="#nav-container">MENU</a>
+        <!--<nav class="nav-utility">-->
+<!--    <ul>-->
+<!--        <li class=""><a href="/students">La Trobe Students</a></li>-->
+<!--        <li class=""><a href="/staff">Staff</a></li>-->
+<!--        <li class=""><a href="/alumni">Alumni</a></li>-->
+<!--       <li class=""> <a href="/library">Library</a></li>-->
+<!--        <li class=""><a href="/news">News</a></li>-->
+<!--        <li class=""><a href="/giving">Donate</a></li>-->
+<!--        <li class="mobile"><a href="/contact">Contacts</a></li>-->
+        
+<!--    </ul>-->
+<!--</nav>-->
+
+<nav class="nav-utility">
+    <ul>
+        <li><a href="/students">Students</a></li><li><a href="/staff">Staff</a></li><li><a href="/alumni">Alumni</a></li><li><a href="/library">Library</a></li><li><a href="/news">News</a></li><li class=""><a href="/giving">Donate</a></li><li class="mobile"><a href="/contact">Contacts</a></li>
+    </ul>
+</nav>    </div>
+    <nav id="nav-universes" class="nav-universes" role="navigation">
+        <!--ESI Start - menu for 6271-->
+        <ul class="nav-universes-list"><li class="nav-universe a1"><input class="mm-trigger" id="mm-259531" type="radio" title="Study with us" value="Study with us" name="mega-menu" aria-expanded="false" /><label for="mm-259531">Study with us</label><div class="mega-menu-item"><div>
+    <ul>
+        <li><span class="mm2-heading">Browse by study level</span>
+            <ul class="mm2">
+              <li><a href="https://www.latrobe.edu.au/study/undergrad">Your first degree (Undergraduate)</a></li>
+            <li><a href="https://www.latrobe.edu.au/study/postgrad">Postgraduate degrees</a></li>
+            <li><a href="https://www.latrobe.edu.au/research/graduate-research">Graduate research degrees</a></li>
+            <li><a href="https://www.latrobe.edu.au/study/online">Online courses</a></li>
+            <li><a href="https://www.latrobe.edu.au/short-courses">Short courses</a></li>
+            </ul>
+        </li>
+             
+    </ul>
+
+    <a href="https://www.latrobe.edu.au/study" class="ds-btn-primary ds-icon-chevron-right">See all Study with us</a>
+</div>
+<div>
+	<ul>
+        <li><span class="mm2-heading">Plan your way into La Trobe</span>
+            <ul class="mm2">
+                  <li><a href="https://www.latrobe.edu.au/choose">Choose La Trobe</a></li>
+                <li><a href="https://www.latrobe.edu.au/study/undergrad/find-your-course-by-atar">Find your course by ATAR</a></li>
+                <li><a href="https://www.latrobe.edu.au/study/aspire">Aspire early entry program</a></li>
+                <li><a href="https://www.latrobe.edu.au/study/apply/pathways">Early entry and pathway programs</a></li>
+                 <li><a href="https://www.latrobe.edu.au/study/apply">How to apply</a></li>
+                <li><a href="https://www.latrobe.edu.au/study/scholarships">Scholarships</a></li>
+              
+            </ul>
+        </li>
+    </ul>
+</div>
+<div>    
+    <ul>
+        <li><span class="mm2-heading">Life at La Trobe</span>
+            <ul class="mm2">
+                <li><a href="https://www.latrobe.edu.au/study/life/support">Support while you study</a></li>
+                <li><a href="https://www.latrobe.edu.au/campuses">Explore our campuses</a></li>
+                <li><a href="https://www.latrobe.edu.au/students/new/campus-life">Campus life</a></li>
+                <li><a href="https://www.latrobe.edu.au/accommodation">Accommodation</a></li>
+                
+            </ul>
+        </li>
+    </ul>
+</div>
+<div>  
+        
+   <ul>
+        <li><span class="mm2-heading">Information for</span>
+            <ul class="mm2">
+                <li><a href="https://www.latrobe.edu.au/choose">Year 12 Students</a></li>
+                <li><a href="https://www.latrobe.edu.au/study/undergrad/return-to-study">Non-Year 12 students</a></li>
+                <li><a href="https://www.latrobe.edu.au/study/undergrad/resources/indigenous-students">Indigenous students</a></li>
+                <li><a href="https://www.latrobe.edu.au/international">International students</a></li>
+                 <li><a href="https://career-practitioner.blogs.latrobe.edu.au">Career practitioners</a></li>
+               <li><a href="https://www.latrobe.edu.au/study/undergrad/resources/parents">Parents</a></li>
+                </ul>
+        </li>
+    </ul>
+</div></div>
+</li><li class="nav-universe a2"><input class="mm-trigger" id="mm-254673" type="radio" title="Courses" value="Courses" name="mega-menu" aria-expanded="false" /><label for="mm-254673">Courses</label><div class="mega-menu-item"><div class="nav-course-search">
+	<ul>
+        <li>
+        <span class="mm2-heading">Search for a course</span>
+        <form action="/courses" method="GET">
+        <p>
+            <label class="visuallyhidden" for="query_courses">Keyword</label>
+            <input type="text" autocomplete="off" name="query" class="mm-keyword" placeholder="What do you want to study?" /><input class="mm-button" type="submit" value="Search" />
+            <input type="hidden" name="collection" value="latr~sp-course-search" />
+            <input type="hidden" name="tabSelection" value="local">
+            <input type="hidden" name="location" value="mega"><br />
+        </p>
+ 		</form>
+        </li>
+        <li>
+            <ul class="mm2">
+                <li><a href="https://www.latrobe.edu.au/study/undergrad/find-your-course-by-atar" data-ltu-cm-bp="megaMenuDiscClick">Find course by ATAR</a></li>
+            </ul>
+        </li>        
+    </ul>
+    <a href="https://www.latrobe.edu.au/courses" class="ds-btn-primary ds-icon-chevron-right">See all courses</a>
+</div>
+<div>
+    <ul>
+        <li><span class="mm2-heading">Browse by discipline</span>
+            <ul class="mm2">
+                <li><a href="https://www.latrobe.edu.au/courses/study-arts-social-sciences-and-communications" data-ltu-cm-bp="megaMenuDiscClick">Arts, social sciences and communications</a></li>
+                <li><a href="https://www.latrobe.edu.au/courses/study-business-and-commerce" data-ltu-cm-bp="megaMenuDiscClick">Business and commerce</a></li>
+                <li><a href="https://www.latrobe.edu.au/courses/study-criminology" data-ltu-cm-bp="megaMenuDiscClick">Criminology</a></li>
+                <li><a href="https://www.latrobe.edu.au/courses/study-education-teaching" data-ltu-cm-bp="megaMenuDiscClick">Education and teaching</a></li>
+                <li><a href="https://www.latrobe.edu.au/courses/study-engineering" data-ltu-cm-bp="megaMenuDiscClick">Engineering</a></li>
+                <li><a href="https://www.latrobe.edu.au/courses/study-health" data-ltu-cm-bp="megaMenuDiscClick">Health</a></li>
+                <li><a href="https://www.latrobe.edu.au/courses/study-information-technology" data-ltu-cm-bp="megaMenuDiscClick">Information technology</a></li>
+                <li><a href="https://www.latrobe.edu.au/courses/study-law" data-ltu-cm-bp="megaMenuDiscClick">Law</a></li>
+                <li><a href="https://www.latrobe.edu.au/courses/study-science" data-ltu-cm-bp="megaMenuDiscClick">Science</a></li>
+            </ul>
+        </li>
+    </ul>
+</div>
+<div>
+	<ul>
+        <li><span class="mm2-heading">Featured courses</span>
+            <ul class="mm2">
+                <li><a href="https://www.latrobe.edu.au/courses/diplomas" data-ltu-cm-bp="megaMenuDiscClick">Diplomas</a>
+                <br><span>Gain entry to a range of Bachelor courses by studying a La Trobe Diploma.</span></li>
+                <li><a href="https://www.latrobe.edu.au/study/double-degrees" data-ltu-cm-bp="megaMenuDiscClick">Double degrees</a>
+                <br><span>Broaden your career opportunities or pair a practical degree with your passion.</span></li>
+                <li><a href="https://www.latrobe.edu.au/study/online" data-ltu-cm-bp="megaMenuDiscClick">Online degrees</a>
+                <br><span>Get the standing of a reputable university with the flexibility to study anywhere, anytime.</span></li>
+                <li><a href="https://www.latrobe.edu.au/courses/packages" data-ltu-cm-bp="megaMenuDiscClick">Packaged course offers</a>
+                <br><span>Secure your spot in not one degree – but two.</span></li>
+                <li><a href="https://shortcourses.latrobe.edu.au/" data-ltu-cm-bp="megaMenuDiscClick">Short courses</a>
+                <br><span>Upskill fast or make a switch into a new career.</span></li>
+            </ul>
+        </li>
+    </ul>
+</div>
+<div>    
+    <ul>
+        <li><span class="mm2-heading">Browse by study level</span>
+            <ul class="mm2">
+                <li><a href="https://www.latrobe.edu.au/study/undergrad" data-ltu-cm-bp="megaMenuDiscClick">Undergraduate courses</a></li>
+                <li><a href="https://www.latrobe.edu.au/study/postgrad" data-ltu-cm-bp="megaMenuDiscClick">Postgraduate courses</a></li>
+                <li><a href="https://www.latrobe.edu.au/research/graduate-research" data-ltu-cm-bp="megaMenuDiscClick">Research courses</a></li>
+            </ul>
+        </li>
+    </ul>    
+</div></div>
+</li><li class="nav-universe a3"><input class="mm-trigger" id="mm-6305" type="radio" title="International students" value="International students" name="mega-menu" aria-expanded="false" /><label for="mm-6305">International students</label><div class="mega-menu-item"><div>
+	<ul>
+    	   <li><span class="mm2-heading"><a href="https://www.latrobe.edu.au/international/study">Study at La Trobe</a></span>
+               <ul class="mm2">
+                <li><a href="https://www.latrobe.edu.au/international/study/choose-latrobe">Why choose La Trobe</a></li>  
+                <li><a href="https://www.latrobe.edu.au/international/study/rankings">Ratings & rankings</a></li>
+                <li><a href="https://www.latrobe.edu.au/international/study/undergrad">Undergraduate degrees</a></li> 
+				<li><a href="https://www.latrobe.edu.au/international/study/postgrad">Postgraduate degrees</a></li>
+				<li><a href="https://www.latrobe.edu.au/international/study/research">Research degrees</a></li>
+				<li><a href="https://www.latrobe.edu.au/international/study/industry-employment">Industry & employment</a></li>
+				<li><a href="https://www.latrobe.edu.au/international/study/global-partnerships">Global partnerships</a></li>
+				<li><a href="https://www.latrobe.edu.au/international/study/study-abroad">Study abroad program</a></li>
+	            </ul>
+	        </li>
+    </ul>
+    
+    <ul>
+  <a href="https://www.latrobe.edu.au/international"class="ds-btn-primary ds-icon-chevron-right"> See all: International students</a>
+    </ul>
+    
+</div>
+<div>
+	<ul>
+    	<li><span class="mm2-heading"><a href="https://www.latrobe.edu.au/international/student-life">Student life</a></span>
+            <ul class="mm2"> 
+                <li><a href="https://www.latrobe.edu.au/international/student-life/study-in-australia">Study in Australia</a></li>  
+              <li><a href="https://www.latrobe.edu.au/international/student-life/stories">Student stories</a></li>
+                <li><a href="https://www.latrobe.edu.au/international/student-life/campuses">Campuses</a></li>
+                <li><a href="https://www.latrobe.edu.au/international/student-life/accommodation">Accommodation</a></li>
+                <li><a href="https://www.latrobe.edu.au/international/student-life/cost-of-living">Cost of living</a></li>
+                <li><a href="https://www.latrobe.edu.au/international/student-life/safety">Safety & security</a></li>
+                <li><a href="https://www.latrobe.edu.au/international/student-life/work-study">Work & study</a></li>
+                <li><a href="https://www.latrobe.edu.au/international/student-life/post-study">Post study life</a></li>
+	        </ul>
+        </li>
+    </ul>
+</div>
+
+<div>
+	<ul>
+    	<li><span class="mm2-heading"><a href="https://www.latrobe.edu.au/international/applying">Applying</a></span>
+            <ul class="mm2"> 
+                <li><a href="https://www.latrobe.edu.au/international/applying/how-to-apply">How to apply</a></li>  
+              <li><a href="https://www.latrobe.edu.au/international/applying/entry-requirements">Entry & language requirements</a></li>
+                <li><a href="https://www.latrobe.edu.au/international/applying/fees">Fees & scholarships</a></li>
+                <li><a href="https://www.latrobe.edu.au/international/applying/visas">Visas</a></li>
+                <li><a href="https://www.latrobe.edu.au/international/applying/your-country">Begin study in your home country</a></li>
+                <li><a href="https://www.latrobe.edu.au/international/applying/pathways">Pathways & partnerships</a></li>
+                <li><a href="https://www.latrobe.edu.au/international/applying/agent-finder">Find an agent</a></li>
+                <li><a href="https://www.latrobe.edu.au/international/applying/ltca">La Trobe College Australia</a></li>
+            </ul>
+        </li>
+    </ul>
+</div>
+
+<div>
+    <ul>
+        <li><span class="mm2-heading"><a href="https://www.latrobe.edu.au/international/enrol">Enrol & arrive</a></span>
+           <ul class="mm2"> 
+                <li><a href="https://www.latrobe.edu.au/international/enrol/accepting-offer">Accepting an offer</a></li>
+                <li><a href="https://www.latrobe.edu.au/international/enrol/enrolment">Enrolment</a></li>
+                <li><a href="https://www.latrobe.edu.au/international/enrol/prepare">Preparing to arrive</a></li>
+                <li><a href="https://www.latrobe.edu.au/international/enrol/arrival">Arrival</a></li>
+  
+            </ul>
+        </li>
+     <li><span class="mm2-heading"><a href="https://www.latrobe.edu.au/international/countries">Countries</a></span>
+           <ul class="mm2"> 
+                <li><a href="https://www.latrobeuniversity.cn">China</a></li>
+                <li><a href="https://www.latrobe.edu.au/international/countries/india">India</a></li>
+			    <li><a href="https://www.latrobe.edu.au/international/countries/vietnam">Vietnam</a></li>
+
+            </ul>
+        </li>
+    </ul>
+</div>
+<div>
+    <ul>
+      <li><span class="mm2-heading"><a href="https://www.latrobe.edu.au/international/support-and-help">Support & help</a></span>
+           <ul class="mm2"> 
+                <li><a href="https://www.latrobe.edu.au/international/support-and-help/students">For students</a></li>
+                <li><a href="https://www.latrobe.edu.au/international/support-and-help/agents">For agents</a></li>
+                <li><a href="https://www.latrobe.edu.au/international/support-and-help/parents">For parents</a></li>
+                <li><a href="https://www.latrobe.edu.au/international/support-and-help/webinars">International webinars</a></li>
+                <li><a href="https://www.latrobe.edu.au/international/support-and-help/question">International student enquiries</a></li>
+            </ul>
+        </li>
+    </ul>
+</div>
+</div>
+</li><li class="nav-universe a4"><input class="mm-trigger" id="mm-737996" type="radio" title="Industry and Community" value="Industry and Community" name="mega-menu" aria-expanded="false" /><label for="mm-737996">Industry and Community</label><div class="mega-menu-item"><div>
+	<ul>
+        <li><span class="mm2-heading">Industry partnerships</span>
+            <ul class="mm2">
+                <li><a href="https://scholars.latrobe.edu.au/search">Find an expert</a></li>
+                <li><a href="https://www.latrobe.edu.au/industry-and-community/la-trobe-industry">La Trobe Industry</a></li>
+                <li><a href="https://www.latrobe.edu.au/industry-and-community/la-trobe-industry/eagleworks-innovation-centre">Eagleworks Innovation Centre</a></li>
+                <li><a href="https://www.latrobe.edu.au/industry-and-community/la-trobe-industry/precinct">Research & Innovation Precinct</a></li>
+                <li><a href="https://www.latrobe.edu.au/industry-and-community/la-trobe-industry/entrepreneurship">Innovation and Entrepreneurship</a></li>
+                <li><a href="https://www.latrobe.edu.au/industry-and-community/la-trobe-industry/research-commercialisation">Industry Research and Commercialisation</a></li>
+                <li><a href="https://www.latrobe.edu.au/research/graduate-research/choose/industry-community/industry-phd">Industry focused PhDs</a></li>
+            </ul>
+        </li>
+        <li class="mm-root-node"><a href="https://www.latrobe.edu.au/industry-and-community">See all Industry and Community</a></li>
+    </ul>
+</div>
+<div>
+    <ul>
+        <li><span class="mm2-heading">Local and global engagement</span>
+            <ul class="mm2">
+                <li><a href="https://www.latrobe.edu.au/sport">La Trobe Sport</a></li>
+                <li><a href="https://www.latrobe.edu.au/international">International students</a></li>
+                <li><a href="https://www.latrobe.edu.au/alumni">Alumni</a></li>
+                <li><a href="https://www.latrobe.edu.au/industry-and-community/community-engagement">Community engagement</a></li>
+                <li><a href="https://www.latrobe.edu.au/future-city">University City of the Future</a></li>
+                <li><a href="https://www.latrobe.edu.au/industry-and-community/partnerships">Partnerships</a></li>
+            </ul>
+        </li>
+    </ul>
+</div>
+<div>
+	<ul>
+        <li><span class="mm2-heading">Career ready</span>
+            <ul class="mm2">
+                <li><a href="https://www.latrobe.edu.au/courses/short-courses">Short courses</a></li>
+                <li><a href="https://www.latrobe.edu.au/courses">Browse our courses</a></li>
+                <li><a href="https://www.latrobe.edu.au/industry-and-community/la-trobe-industry/workforce/engaging-student-talent">Employing graduates and students</a></li>
+                <li><a href="https://www.latrobe.edu.au/industry-and-community/la-trobe-industry/workforce/workbased-placement">Find a work based placement</a></li>
+                <li><a href="https://www.latrobe.edu.au/industry-and-community/la-trobe-industry/workforce">Future skills and workforce</a></li>
+            </ul>
+        </li>
+    </ul>
+</div>
+<div>    
+    <ul>
+        <li><span class="mm2-heading">Scholarships and giving</span>
+            <ul class="mm2">
+                <li><a href="https://www.latrobe.edu.au/study/scholarships">Scholarships</a></li>
+                <li><a href="https://www.latrobe.edu.au/international/applying/fees">International scholarships</a></li>
+                <li><a href="https://www.latrobe.edu.au/philanthropy">Giving to La Trobe</a></li>
+            </ul>
+        </li>
+    </ul>    
+</div></div>
+</li><li class="nav-universe a5"><input class="mm-trigger" id="mm-6293" type="radio" title="Research" value="Research" name="mega-menu" aria-expanded="false" /><label for="mm-6293">Research</label><div class="mega-menu-item"><div>
+	<ul>
+        <li><span class="mm2-heading">Research partnerships</span>
+            <ul class="mm2">
+                <li><a href="https://scholars.latrobe.edu.au/search">Find an expert</a></li>
+                <li><a href="https://www.latrobe.edu.au/industry-and-community/la-trobe-industry">La Trobe Industry</a></li>
+                <li><a href="https://www.latrobe.edu.au/industry-and-community/la-trobe-industry/precinct">Research & Innovation Precinct</a></li>
+                <li><a href="https://www.latrobe.edu.au/industry-and-community/la-trobe-industry/entrepreneurship">Innovation and Entrepreneurship</a></li>
+                <li><a href="https://www.latrobe.edu.au/industry-and-community/la-trobe-industry/research-commercialisation">Industry Research and Commercialisation</a></li>
+                <li><a href="https://www.latrobe.edu.au/research/graduate-research/choose/industry-community/industry-phd">Industry focused PhDs</a></li>
+            </ul>
+            <ul>
+                <li class="mm-root-node"><a href="https://www.latrobe.edu.au/research">See all Research</a></li>
+            </ul>
+        </li>
+    </ul>
+</div>
+<div>
+    <ul>
+        <li><span class="mm2-heading">Get a research degree</span>
+            <ul class="mm2">
+                <li><a href="https://www.latrobe.edu.au/research/graduate-research/fees-and-scholarships">Fees and scholarships</a></li>
+                <li><a href="https://www.latrobe.edu.au/research/graduate-research/apply/degrees">Research degree options</a></li>
+                <li><a href="https://www.latrobe.edu.au/research/vision">Research vision and strategy</a></li>
+                <li><a href="https://www.latrobe.edu.au/research/graduate-research/choose/industry-community">Industry PhD, internships and mentoring</a></li>
+            </ul>
+        </li>
+    </ul>
+</div>
+<div>
+	<ul>
+        <li><span class="mm2-heading">Our research</span>
+                <ul class="mm2">
+                <li><a href="https://www.latrobe.edu.au/research/centres">Research centres</a></li>
+                <li><a href="https://www.latrobe.edu.au/research/ceri">Care Economy Research Institute (CERI)</a></li>
+                <li><a href="https://www.latrobe.edu.au/research/lisaf">La Trobe Institute of Sustainable Agriculture & Food (LISAF)</a></li>
+                <li><a href="https://www.latrobe.edu.au/research/acami">Australian Centre for Artificial Intelligence in Medical Innovation (ACAMI)</a></li>
+                <li><a href="https://www.latrobe.edu.au/research">Research at La Trobe</a></li>
+                <li><a href="https://www.latrobe.edu.au/research/vision">Research and Innovation 2030</a></li>
+            </ul>
+        </li>
+    </ul>
+</div>
+<div>    
+    <ul>
+        <li><span class="mm2-heading">Researchers</span>
+                <ul class="mm2">
+                <li><a href="https://www.latrobe.edu.au/researchers/grs">Graduate Research School</a></li>
+                <li><a href="https://www.latrobe.edu.au/research/red">Research Education and Development (RED)</a></li>
+                <li><a href="https://www.latrobe.edu.au/researchers/research-office">The Research Office</a></li>
+                <li><a href="https://www.latrobe.edu.au/research-infrastructure">Office of Research Infrastructure</a></li>
+                <li><a href="https://www.latrobe.edu.au/research/research-leaders-accelerator-program">Research leaders accelerator program</a></li>
+            </ul>
+        </li>
+    </ul>    
+</div></div>
+</li><li class="nav-universe a6"><input class="mm-trigger" id="mm-6281" type="radio" title="About" value="About" name="mega-menu" aria-expanded="false" /><label for="mm-6281">About</label><div class="mega-menu-item"><div>
+	<ul>
+        <li><span class="mm2-heading">Leadership & structure</span>
+                <ul class="mm2">
+                    <li><a href="https://www.latrobe.edu.au/vice-chancellor">Vice-Chancellor</a></li>
+                    <li><a href="https://www.latrobe.edu.au/about/management">Management and organisational structure</a></li>
+                    <li><a href="https://www.latrobe.edu.au/academicboard">Academic board</a></li>
+                    <li><a href="https://www.latrobe.edu.au/about/governance">Governance</a></li>
+                    <li><a href="https://www.latrobe.edu.au/schools-departments">Schools and Departments</a></li>
+                    <li><a href="https://www.latrobe.edu.au/learning-and-teaching">Learning and teaching</a></li>
+                </ul>
+                <ul>
+                    <a href="https://www.latrobe.edu.au/about" class="ds-btn-primary ds-icon-chevron-right">See all: About La Trobe</a>
+                </ul>
+        </li>
+    </ul>
+</div>
+<div>
+    <ul>
+        <li><span class="mm2-heading">Vision and strategy</span>
+            <ul class="mm2">
+                <li><a href="https://www.latrobe.edu.au/about/vision"> La Trobe's vision and strategy</a></li>
+                <li><a href="https://www.latrobe.edu.au/future-city">University City of the Future</a></li>
+                <li><a href="https://www.latrobe.edu.au/about/at-a-glance/plans">Plans and publications</a></li>
+                <li><a href="https://www.latrobe.edu.au/about/rankings-and-ratings">Rankings and ratings</a></li>
+                <li><a href="https://www.latrobe.edu.au/net-zero">Net Zero</a></li> 
+            </ul>
+        </li>
+    </ul>
+</div>
+<div>
+	<ul>
+        <li><span class="mm2-heading">Locations and facilities</span>
+            <ul class="mm2">
+                <li><a href="https://www.latrobe.edu.au/about/at-a-glance/maps">Campus locations and maps</a></li>
+                 <li><a href="https://www.latrobe.edu.au/transport-central">Getting to La Trobe</a></li>
+                <li><a href="https://www.latrobe.edu.au/about/at-a-glance/facilities-and-services">Facilities and services</a></li>
+            </ul>
+        </li>
+    </ul>
+</div>
+<div>    
+    <ul>
+        <li><span class="mm2-heading">Engage with La Trobe</span>
+            <ul class="mm2">
+                <li><a href="https://www.latrobe.edu.au/alumni">Alumni</a></li>
+                <li><a href="https://www.latrobe.edu.au/jobs">Careers at La Trobe</a></li>
+                <li><a href="https://www.latrobe.edu.au/research">Research at La Trobe</a></li>
+                <li><a href="https://www.latrobe.edu.au/contact">Contact us</a></li>
+            </ul>
+        </li>
+    </ul>    
+</div></div>
+</li><!--li class="nav-universe a-z"><input class="mm-trigger" id="a-z" type="radio" title="close" value="close" name="mega-menu" aria-expanded="false" /><label for="a-z">A-Z</label><ol class="mega-menu-item site-index""><li><a class="letter" href="/index?result_131559_result_page=A">A</a></li><li><a class="letter" href="/index?result_131559_result_page=B">B</a></li><li><a class="letter" href="/index?result_131559_result_page=C">C</a></li><li><a class="letter" href="/index?result_131559_result_page=D">D</a></li><li><a class="letter" href="/index?result_131559_result_page=E">E</a></li><li><a class="letter" href="/index?result_131559_result_page=F">F</a></li><li><a class="letter" href="/index?result_131559_result_page=G">G</a></li><li><a class="letter" href="/index?result_131559_result_page=H">H</a></li><li><a class="letter" href="/index?result_131559_result_page=I">I</a></li><li><a class="letter" href="/index?result_131559_result_page=J">J</a></li><li><a class="letter" href="/index?result_131559_result_page=K">K</a></li><li><a class="letter" href="/index?result_131559_result_page=L">L</a></li><li><a class="letter" href="/index?result_131559_result_page=M">M</a></li><li><a class="letter" href="/index?result_131559_result_page=N">N</a></li><li><a class="letter" href="/index?result_131559_result_page=O">O</a></li><li><a class="letter" href="/index?result_131559_result_page=P">P</a></li><li><a class="letter" href="/index?result_131559_result_page=Q">Q</a></li><li><a class="letter" href="/index?result_131559_result_page=R">R</a></li><li><a class="letter" href="/index?result_131559_result_page=S">S</a></li><li><a class="letter" href="/index?result_131559_result_page=T">T</a></li><li><a class="letter" href="/index?result_131559_result_page=U">U</a></li><li><a class="letter" href="/index?result_131559_result_page=V">V</a></li><li><a class="letter" href="/index?result_131559_result_page=W">W</a></li><li><a class="letter" href="/index?result_131559_result_page=X">X</a></li><li><a class="letter" href="/index?result_131559_result_page=Y">Y</a></li><li><a class="letter" href="/index?result_131559_result_page=Z">Z</a></li></ol></li--><li class="mm-close nav-universe"><input class="mm-trigger" id="mm-close" type="radio" title="close" value="close" name="mega-menu" aria-expanded="false" /><label for="mm-close"></label></li></ul>
+        <!--ESI end - menu-->
+        
+    </nav>
+    <input id="global-search-button" title="Search" type="checkbox" /><label for="global-search-button">Search</label>
+    <section class="global-search">
+        <div class="search-wrapper">
+            <form id="ltu-global-search" action="/search">
+                <h2 class="section-heading"><label for="LT_search_field">Search La Trobe</label></h2>
+                <p class="ltu-search-fields">
+                    <input type="hidden" value="latr~sp-latrobe" name="collection">
+                    <input type="hidden" name="searchtype" value="global" />
+                    <input id="LT_search_field" type="search" name="query" placeholder="Keyword" autocomplete="off" /><button id="clear_LT_search_field" type="button"><img src="https://www.latrobe.edu.au/_media/la-trobe-api/v5/img/close-x.png" alt="Clear" /></button><input id="ltu-search-submit" type="submit" value="Go" />
+                </p>
+            </form>
+        </div>
+    </section>
+</header>
+<!--end noindex-->
+
+<main  id="content">
+    <div class="ds-main-wrapper">
+
+<!--noindex-->
+<div class="hide-nav" style="display:none !important;"><button></button></div>
+<!--endnoindex--><div class="ds-page-content-wrapper">
+    <div class="ds-breadcrumbs is-squiz "><a href="https://www.latrobe.edu.au">La Trobe University</a> > <a href="https://www.latrobe.edu.au/page-not-found">Page not found</a></div>    <article class="ds-page-content">
+        <div><h1>Page not found</h1></div>
+
+<div id="content_container_1253265">
+<p>The page you are looking for might have been removed, had its location changed, or is temporarily unavailable.&nbsp;&nbsp;Please check your spelling.</p><p>Alternatively, you can go to the La Trobe University <a href="https://www.latrobe.edu.au">home page</a> or <a href="/sitemap">site map</a>.</p>
+</div>
+
+
+    </article>
+</div>
+
+
+    </div>
+</main>
+
+<!--noindex-->
+<footer id="footer">
+    
+<img id="footer-watermark" src="/__data/assets/file/0012/796386/eagle.svg" alt="" />
+    <img id="footer-logo-old" class="hidden" src="/__data/assets/file/0010/796393/logo-white.svg" alt="La Trobe University" /><form action="/search">
+    <p class="ltu-search-fields">
+        <label class="off-screen" for="LTU_search_field">Search La Trobe</label>
+        <input type="hidden" value="latr~sp-latrobe" name="collection">
+        <input id="LTU_search_field" type="search" name="query" placeholder="Search La Trobe" autocomplete="off"><input type="submit" value="" aria-label="Search" />
+    </p>
+</form><div id="fat-footer" class="fat-footer"><div class="footer-node">
+  <img id="footer-logo" src="/__data/assets/file/0010/796393/logo-white.svg" alt="La Trobe University" />    
+  <ul class="social-media">
+    <li class="facebook"><a href="https://www.facebook.com/latrobe/">Facebook</a></li>
+    <li class="twitter"><a href="https://www.twitter.com/latrobe/">Twitter</a></li>
+    <li class="youtube"><a href="https://www.youtube.com/user/latrobeuniaustralia/">Youtube</a></li>
+    <li class="linkedin"><a href="https://www.linkedin.com/company/la-trobe-university/">LinkedIn</a></li>
+    <li class="tiktok"><a href="https://www.tiktok.com/@latrobeuni">Tiktok</a></li>
+    <li class="instagram"><a href="https://www.instagram.com/latrobeuni/">Instagram</a></li>
+    <li class="weibo"><a href="https://www.weibo.com/latrobeuniaus?is_hot=1">Weibo</a></li>
+    <li class="wechat"><a href="https://www.latrobe.edu.au/international/support-and-help/wechat">WeChat</a></li>
+    <li class="zalo"><a href="https://zalo.me/3444960043174916829">Zalo</a></li>
+  </ul>
+  <p class="ds-btn ds-btn-primary btn-donation"><a href="/giving">Donate today</a></p>
+</div>
+<div class="footer-node">
+  <h2>Study with us</h2>
+  <ul>
+    <li><a href="https://www.latrobe.edu.au/study/apply">Apply</a></li> 
+    <li><a href="https://www.latrobe.edu.au/courses">Courses</a></li>
+     <li><a href="https://www.latrobe.edu.au/study/life">Life at La Trobe</a></li>
+    <li><a href="https://latrobe.custhelp.com/app/">FAQs</a></li>
+    <li><a href="https://www.latrobe.edu.au/study/scholarships">Scholarships</a></li>
+  </ul>
+  </div>
+  <div class="footer-node">
+  <h2>Research</h2>
+  <ul>
+    <li><a href="https://www.latrobe.edu.au/research/graduate-research">Get a research degree</a></li>
+    <li><a href="https://www.latrobe.edu.au/research/research-impact">Impacts of our research</a></li>
+    <li><a href="https://www.latrobe.edu.au/research">Research at La Trobe</a></li>
+    <li><a href="https://www.latrobe.edu.au/research/centres">Research centres and institutes</a></li>
+      </ul>
+</div>
+<div class="footer-node">
+  <h2>International</h2>
+  <ul>
+    <li><a href="https://www.latrobe.edu.au/international">International home</a></li>
+    <li><a href="https://www.latrobe.edu.au/international/study">Study at La Trobe</a></li>  
+    <li><a href="https://www.latrobe.edu.au/international/applying">Apply to La Trobe</a></li>
+    <li><a href="https://www.latrobe.edu.au/international/study/study-abroad"> Study abroad and exchange</a></li>
+    <li><a href="https://www.latrobe.edu.au/international/applying/fees">Fees and scholarships</a></li>
+    <li><a href="https://www.latrobe.edu.au/international/support-and-help">International student enquiries</a></li>
+  </ul>
+  </div>
+  <div class="footer-node">  
+  <h2>Resources</h2>
+  <ul>
+     <li><a href="https://www.latrobe.edu.au/calendar">University calendar</a></li>
+     <li><a href="https://www.latrobe.edu.au/about/at-a-glance/maps">Maps and parking</a></li>
+    <li><a href="https://www.latrobe.edu.au/transport-central">Transport Central</a></li>
+    <li><a href="https://policies.latrobe.edu.au">Policy library</a></li>
+
+  </ul>
+</div>
+<div class="footer-node">
+  <h2>Connect</h2>
+  <ul>
+    <li><a href="https://www.latrobe.edu.au/alumni">Alumni</a></li>
+    <li><a href="https://www.latrobe.edu.au/philanthropy">Give to La Trobe</a></li>
+    <li><a href="https://www.latrobe.edu.au/jobs">Jobs at La Trobe</a></li>
+     <li><a href="https://www.latrobe.edu.au/schools-departments">Schools and departments</a></li>
+ 
+  </ul>
+</div></div>
+<ul id="legal" class="main-footer-legal">
+  <li class="main-footer-legal-item first"><a href="https://www.latrobe.edu.au/emergency">Emergency information</a></li>
+  <li class="main-footer-legal-item"><a class="main-footer-legal-link" href="https://www.latrobe.edu.au/statements/child-safety">Child Safety</a></li>
+  <li class="main-footer-legal-item"><a class="main-footer-legal-link" href="https://www.latrobe.edu.au/contact">Contacts</a></li>
+  <li class="main-footer-legal-item"><a class="main-footer-legal-link" href="https://www.latrobe.edu.au/sitemap">Site map</a></li>
+  <li class="main-footer-legal-item"><a class="main-footer-legal-link" rel="nofollow" href="https://www.latrobe.edu.au/statements/accessibility">Accessibility</a></li>
+  <li class="main-footer-legal-item"><a class="main-footer-legal-link" rel="nofollow" href="https://www.latrobe.edu.au/statements/privacy">Privacy</a></li>
+  <li class="main-footer-legal-item"><a class="main-footer-legal-link" rel="nofollow" href="https://www.latrobe.edu.au/statements/copyright">Copyright and disclaimer</a></li>
+    <li class="main-footer-legal-item"><a class="main-footer-legal-link" rel="nofollow" href="https://www.latrobe.edu.au/about/covid-19">COVIDSafe policies</a></li>
+</ul>
+
+<p id="copyright" class="copyright-notice">Last edited: 31 Mar 2026<br />
+
+
+
+
+
+&copy; Copyright 2026 La Trobe University | All rights reserved | TEQSA PRV12132 - Australian University | CRICOS Provider <a rel="nofollow" href="http://cricos.education.gov.au/Institution/InstitutionDetails.aspx?ProviderCode=00115M">00115M</a></p>
+
+<style>
+    .footer-node .tiktok a {
+    background-position: 0 -640px;
+}
+</style>
+
+    
+ 
+
+</footer>
+<!--end noindex-->
+
+
+
+<script type="text/javascript" src="https://www.latrobe.edu.au/__data/assets/js_file/0007/1729978/typeahead.bundle.js"></script>
+<script type="text/javascript" src="https://www.latrobe.edu.au/__data/assets/js_file/0011/1729973/handlebars.js"></script>
+<script type="text/javascript" src="https://www.latrobe.edu.au/__data/assets/js_file/0010/1729972/funnelback.autocomplete.js"></script>
+
+<script src="https://www.latrobe.edu.au/__data/assets/git_bridge/0004/1094422/_ltu-components/dist/js/ltu-legacy.js?h=422fbb2"></script>
+
+<script src="https://www.latrobe.edu.au/__data/assets/git_bridge/0004/1094422/_ltu-components/dist/js/ds-ltu.js?h=422fbb2"></script>
+
+
+
+
+
+
+<script data-cfasync="false">
+var dtmPageName = [ 'latrobe' ];
+var assetName = 'Page not found';
+var dtmPageType = '';
+var dtmCampaign = '';
+var dtmInterest = '';
+var dtmDiscipline = '';
+var dtmSchool = '';
+var dtmCourseSchool = '';
+var h1 = document.querySelector('h1');
+var pageTitle = assetName;
+var assetUrlPath = '/page-not-found' || window.location.pathname;
+var normalisedUrlPath = assetUrlPath.replace(/\/[^\/]+$/, '').replace(/\/+/g, '/').replace(/^\/+/, '').replace(/\/+$/, '');
+if (h1 && h1.textContent.trim()) { pageTitle = h1.textContent.trim(); }
+if (normalisedUrlPath.length) { dtmPageName = dtmPageName.concat( normalisedUrlPath.split('/').slice(0, 3) ); }
+if (pageTitle) { if (dtmPageName.length >= 4) { dtmPageName.pop(); } dtmPageName.push(pageTitle); }
+dtmPageName = dtmPageName.join(':');
+var digitalData = digitalData || {};
+digitalData.page = digitalData.page || {};
+digitalData.page.pageCategory = digitalData.page.pageCategory || {};
+digitalData.page.pageName = dtmPageName;
+if (dtmCourseSchool) { digitalData.page.pageType = 'Course'; }
+if (dtmPageType) { digitalData.page.pageType = dtmPageType; }
+if (dtmCampaign) { digitalData.page.pageCategory.campaign = dtmCampaign.split(',').map(function(element) {return element.replace(/&#44;/g, ',');}); }
+if (dtmSchool) { digitalData.page.pageCategory.school = dtmSchool; }
+if (dtmCourseSchool) { digitalData.page.pageCategory.school = dtmCourseSchool; }
+if (dtmInterest) { digitalData.page.pageCategory.interest = dtmInterest.split(',').map(function(element) {return element.replace(/&#44;/g, ',');}); }
+if (dtmDiscipline) { digitalData.page.pageCategory.discipline = dtmDiscipline.split(',').map(function(element) {return element.replace(/&#44;/g, ',');}); }
+</script>
+<script type="text/javascript">if (typeof _satellite === 'undefined' || !_satellite) { console.log('_satellite is undefined'); } else { console.log('_satellite object exists.'); _satellite.pageBottom(); }</script>
+
+
+<script>function _getInnerText(selector, _default) { return document.querySelector(selector) ? document.querySelector(selector).innerText.trim() : (_default || ''); }</script>
+
+
+
+
+
+
+
+
+
+
+<script>
+// http://geraintluff.github.io/sha256/sha256.min.js @ 190222
+var sha256=function a(b){function c(a,b){return a>>>b|a<<32-b}for(var d,e,f=Math.pow,g=f(2,32),h="length",i="",j=[],k=8*b[h],l=a.h=a.h||[],m=a.k=a.k||[],n=m[h],o={},p=2;64>n;p++)if(!o[p]){for(d=0;313>d;d+=p)o[d]=p;l[n]=f(p,.5)*g|0,m[n++]=f(p,1/3)*g|0}for(b+="\x80";b[h]%64-56;)b+="\x00";for(d=0;d<b[h];d++){if(e=b.charCodeAt(d),e>>8)return;j[d>>2]|=e<<(3-d)%4*8}for(j[j[h]]=k/g|0,j[j[h]]=k,e=0;e<j[h];){var q=j.slice(e,e+=16),r=l;for(l=l.slice(0,8),d=0;64>d;d++){var s=q[d-15],t=q[d-2],u=l[0],v=l[4],w=l[7]+(c(v,6)^c(v,11)^c(v,25))+(v&l[5]^~v&l[6])+m[d]+(q[d]=16>d?q[d]:q[d-16]+(c(s,7)^c(s,18)^s>>>3)+q[d-7]+(c(t,17)^c(t,19)^t>>>10)|0),x=(c(u,2)^c(u,13)^c(u,22))+(u&l[1]^u&l[2]^l[1]&l[2]);l=[w+x|0].concat(l),l[4]=l[4]+w|0}for(d=0;8>d;d++)l[d]=l[d]+r[d]|0}for(d=0;8>d;d++)for(e=3;e+1;e--){var y=l[d]>>8*e&255;i+=(16>y?0:"")+y.toString(16)}return i};
+(function() {
+    function setDigitalDataHashedValue(val) {
+        console.log('setDigitalDataHashedValue', val);
+    	var s = window;
+    	s.digitalData = s.digitalData || {};
+    	s.digitalData.emailID = val;
+    }
+    function listenChangeAndSetHashedValues(elem) {
+        elem.addEventListener('change', function() {
+            setDigitalDataHashedValue(sha256( this.value.trim() ).toUpperCase());
+    		console.log('input onchange() end', window.digitalData);
+        });
+    }
+    document.addEventListener('DOMContentLoaded', function() {
+        if (typeof MktoForms2 !== 'undefined') {
+            console.log('Marketo library exists.');
+            MktoForms2.whenReady(function(form) {
+                var elemTxtEmail = form.getFormElem().get(0).querySelector('[name="Email"]');
+                
+                if (elemTxtEmail) {
+                    listenChangeAndSetHashedValues(elemTxtEmail);
+                } else { console.log('Email input field does not exist'); }
+            });
+        }
+        
+        if (typeof RightNow !== 'undefined') {
+            console.log('RightNow library exists.');
+            var elemTxtEmail = document.querySelector('[name="wf_2_100004"]');
+            if (elemTxtEmail) {
+                listenChangeAndSetHashedValues(elemTxtEmail);
+            } else { console.log('Email input field does not exist'); }
+        }
+        
+        var elemSqEmailContainer = document.querySelector('.main-content .sq-form-question-email-address');
+        if (elemSqEmailContainer) {
+            console.log('Squiz form email container exists.');
+            var elemTxtEmail = elemSqEmailContainer.querySelector('input');
+            if (elemTxtEmail) {
+                listenChangeAndSetHashedValues(elemTxtEmail);
+            } else { console.log('Email input field does not exist'); }
+        }
+    });
+})();
+</script>
+
+
+<script>
+(function() {
+    function _getSelectText(elem) { return elem.options[elem.selectedIndex] ? elem.options[elem.selectedIndex].text : ''; }
+    document.addEventListener('DOMContentLoaded', function() {
+        var elemContainer = document.getElementById('atar-wizard');
+        if (!elemContainer) return;
+        elemContainer.querySelector('#atar-wiz-show-results').addEventListener('click', function() {
+            window.digitalData = window.digitalData || {};
+            window.digitalData.atarWizard = {
+                'courseDiscipline': _getSelectText(elemContainer.querySelector('#atar-wiz-discipline')),
+                'location': _getSelectText(elemContainer.querySelector('#atar-wiz-location')),
+                'atarValue': elemContainer.querySelector('#atar-wiz-score').value
+            };
+            if (typeof _satellite === 'undefined' || !_satellite) { console.log('_satellite is undefined'); } else { console.log('_satellite.track(\'atarWizardClicked\')'); _satellite.track('atarWizardClicked'); }
+        });
+    });
+})();
+</script>
+
+<script>
+(function() {
+    if (!Array.prototype.intersect){
+        Array.prototype.intersect = function(targetArray) {
+            return this.filter(value => targetArray.includes(value));
+        }
+    }
+    
+    function setDigitalDataAndTrack(key, obj, trackType) {
+        console.log('setDigitalDataAndTrack', arguments);
+    	const s = window;
+    	s.digitalData = s.digitalData || {};
+    	if (typeof s.digitalData[key] !== 'undefined') delete s.digitalData[key]
+    	s.digitalData[key] = obj;
+    	
+    	console.log(`digitalData.${key}`, s.digitalData[key]);
+    	console.log(`before run _satellite.track('${trackType}')`);
+    	if (typeof _satellite === 'undefined') console.log('[setDigitalDataAndTrack] _satellite is undefined')
+    	typeof _satellite !== 'undefined' && _satellite.track(trackType);
+    	console.log(`after run _satellite.track('${trackType}')`);
+    }
+    
+    // 
+
+    function whenAEMFormAvailable() {
+        let resolve;
+        const p = new Promise((_resolve, _reject) => {
+            resolve = _resolve
+        });
+        if (typeof guideBridge !== 'undefined') {
+            console.debug('guideBridge is already available on page load');
+            resolve(guideBridge);
+        } else {
+            window.addEventListener("bridgeInitializeStart", function(event) {
+                console.debug('bridgeInitializeStart() triggered');
+                resolve(event.detail.guideBridge);
+            });
+        }
+        
+        return p;
+    }
+    
+    let formName, formType;
+    
+    whenAEMFormAvailable()
+    .then((guideBridge) => {
+        guideBridge.connect(() => {
+            const elemFormContainer = document.querySelector(guideBridge.SELECTOR_FORM_CONTAINER);
+            const elemFormWrapper = elemFormContainer.closest('[data-analytics-form-tracking-name]');
+            
+            if (elemFormWrapper && elemFormWrapper.dataset.analyticsFormTrackingName && elemFormWrapper.dataset.analyticsFormTrackingType) {
+                formName = elemFormWrapper.dataset.analyticsFormTrackingName;
+                formType = elemFormWrapper.dataset.analyticsFormTrackingType;
+                
+                let _lastInteractedField = null;
+                
+                const FIELD_NOT_PRESENT = "field not present";
+                const FIELD_NO_VALUE = "field not selected";
+                
+                
+                function _trackFormStart() {
+                    if (formType === 'application') {
+                        _setApplicationDataAndTrack('Application Start', 'application_track');
+                    }
+                    else {
+                            setDigitalDataAndTrack(
+                                'form',
+                                {
+                                    'formName': formName,
+                                    'formType': formType,
+                                    'formStep': 'start',
+                                },
+                                'form_track'
+                            );
+                    }
+                    
+                    guideBridge.off("elementFocusChanged", _trackFormStart);
+                }
+                
+                guideBridge.on("elementFocusChanged", _trackFormStart);
+                
+                // gather available fields
+                const availableFields = [];
+                // const _properties = Object.getOwnPropertyDescriptors(guideBridge._guide.runtime);
+                const _guideRuntime = window.guidelib.runtime;
+                const _properties = Object.getOwnPropertyDescriptors(_guideRuntime);
+                
+                for (var i in _properties) {
+                    if (typeof _properties[i].get !== 'function') continue;
+                    if (typeof _guideRuntime[i].jsonModel.bindRef === 'undefined') continue;
+                    // console.log(i, guideBridge._guide.runtime[i].jsonModel.bindRef);
+                    availableFields.push(
+                        _guideRuntime[i].jsonModel.bindRef
+                    );
+                };
+                function _flattenRequestData(obj) {
+                    let result = {};
+                    for (const i in obj) {
+                        if ((typeof obj[i]) === 'object' && !Array.isArray(obj[i])) {
+                            const temp = _flattenRequestData(obj[i]);
+                            for (const j in temp) {
+                                result[('/' + i + '/' + j).replace('//', '/')] = temp[j];
+                            }
+                        } else {
+                            result['/' + i] = obj[i];
+                        }
+                    }
+                    return result;
+                };
+                
+                
+                
+                function _getFormValue(key, obj, availableFields) {
+                    if (!availableFields.includes(key)) return FIELD_NOT_PRESENT;
+                    return typeof obj[key] !== 'undefined' ? obj[key] : FIELD_NO_VALUE;
+                }
+                
+                function _getFormValues(keys, obj, availableFields) {
+                    console.log('_getFormValues', keys, obj);
+                    if (!availableFields.intersect(keys).length) return FIELD_NOT_PRESENT;
+                    const result = [];
+                    for (const i of keys) {
+                        if (typeof obj[i] !== 'undefined') {
+                            result.push(obj[i]);
+                        }
+                    }
+                    return result.length ? result.join(',') : FIELD_NO_VALUE;
+                }
+                
+                function _formatCoursePreference(course, location) {
+                    if (typeof course === 'undefined' || location === 'undefined' || course === FIELD_NOT_PRESENT || location === FIELD_NOT_PRESENT) {
+                        return FIELD_NOT_PRESENT;
+                    }
+                    else if (course == null || location == null || course === FIELD_NO_VALUE || location === FIELD_NO_VALUE) {
+                        return FIELD_NO_VALUE;
+                    }
+                    
+                    return course + '###' + location;
+                }
+                
+                function _getApplicationID() {
+                    if(_satellite.getVar('applicationID') === undefined || _satellite.getVar('applicationID') === null)
+                    {
+                        var currentDate = Date.now();
+                        var applicantVID = _satellite.getVisitorId().getMarketingCloudVisitorID().slice(0,5);
+                        _satellite.setVar('applicationID', currentDate+applicantVID);
+                        return currentDate+applicantVID;
+                    }
+                    else
+                    {
+                        return _satellite.getVar('applicationID');
+                    }
+                }
+                
+                function _getAEMValue(fieldName) {
+                    if (guideBridge.resolveNode(fieldName)) {
+                        if (guideBridge.resolveNode(fieldName).value) {
+                            return guideBridge.resolveNode(fieldName).value;
+                        }
+                        else {
+                            return FIELD_NO_VALUE;
+                        }
+                    }
+                    else {
+                        return FIELD_NOT_PRESENT;
+                    }
+                }
+                                
+                function _setApplicationDataAndTrack(applicationStep, trackStep) {
+                    try {
+                        console.log('applicationStep',applicationStep);
+                        setDigitalDataAndTrack(
+                            'application',
+                            {
+                                'applicationType': formName,
+                                'applicationStep': applicationStep,
+                                'applicationId': _getApplicationID(), 
+                                'studentId': FIELD_NOT_PRESENT,
+                              	'campus': FIELD_NOT_PRESENT, 
+                            	'course': FIELD_NOT_PRESENT,
+                                'courseYear': FIELD_NOT_PRESENT,
+                                'courseSemester': FIELD_NOT_PRESENT,
+                                'courseType': FIELD_NOT_PRESENT,
+                                'userType': _getAEMValue('current_year_level'),
+                                'coursePreference1': _formatCoursePreference(_getAEMValue('course_preference_1_course_search'), _getAEMValue('course_preference_1_campus_search')),
+                                'coursePreference2': _formatCoursePreference(_getAEMValue('course_preference_2_course_search'), _getAEMValue('course_preference_2_campus_search')),
+                                'coursePreference3': _formatCoursePreference(_getAEMValue('course_preference_3_course_search'), _getAEMValue('course_preference_3_campus_search')),
+                                'coursePreference4': _formatCoursePreference(_getAEMValue('course_preference_4_course_search'), _getAEMValue('course_preference_4_campus_search')),
+    
+                            },
+                            trackStep
+                        );
+                    } catch (e) {
+                        console.log(e);
+                    }
+                }
+                
+                //console.log('availableFields', availableFields);
+
+                guideBridge.on("submitStart" , (event) => {
+                    guideBridge.getData({
+                        async:false,
+                        success: (guideResultObject) => {
+                            _lastInteractedField = null;
+                            
+                            const submissionData = JSON.parse(guideResultObject.data);
+                            const requestData = submissionData.afData.afBoundData.data;
+                            const requestDataFlat = _flattenRequestData(requestData);
+                            const formDataMap = {
+                                enquiryType: FIELD_NOT_PRESENT,
+                                campus: _getFormValues( 
+                                    [
+                                        '/Request/Service_Request/Ask_Marketing_Lead_Interest_Registration/Lead_Registration_Common_Elements/Campus_Of_Interest_1',
+                                        '/Request/Service_Request/Ask_Marketing_Lead_Interest_Registration/Aspire_Year_11_Elements/Campus_Of_Interest_2',
+                                        '/Request/Service_Request/Ask_Marketing_Lead_Interest_Registration/Aspire_Year_11_Elements/Campus_Of_Interest_3',
+                                    ],
+                                    requestDataFlat,
+                                    availableFields
+                                ),
+                                residence: FIELD_NOT_PRESENT,
+                                studyArea: _getFormValue('/Request/Service_Request/Ask_Marketing_Lead_Interest_Registration/Lead_Registration_Common_Elements/Area_Of_Interest/Area_Of_Interest_Name', requestDataFlat, availableFields),
+                                userType: _getFormValues(
+                                    [
+                                        '/Request/Service_Request/Ask_Marketing_Lead_Interest_Registration/Marketing_Elements/Enquirer_Type',
+                                        '/Request/Service_Request/Ask_Marketing_Lead_Interest_Registration/Aspire_Year_11_Elements/Current_Year_Level'
+                                    ],
+                                    requestDataFlat,
+                                    availableFields
+                                ),
+                                citizenship: _getFormValue('/Request/Service_Request/Ask_Marketing_Lead_Interest_Registration/Lead_Registration_Common_Elements/Country_Of_Citizenship', requestDataFlat, availableFields),
+                                course: _getFormValues( 
+                                    [
+                                        '/Request/Service_Request/Ask_Marketing_Lead_Interest_Registration/Lead_Registration_Common_Elements/Course_Name_1',
+                                        '/Request/Service_Request/Ask_Marketing_Lead_Interest_Registration/Aspire_Year_11_Elements/Course_Name_2',
+                                        '/Request/Service_Request/Ask_Marketing_Lead_Interest_Registration/Aspire_Year_11_Elements/Course_Name_3',
+                                    ],
+                                    requestDataFlat,
+                                    availableFields
+                                ),
+                                studyLevel: FIELD_NOT_PRESENT,
+                                userCategory: FIELD_NOT_PRESENT,
+                                commencingStudyWithin: FIELD_NOT_PRESENT,
+                            };
+                            
+                            console.log('formDataMap', formDataMap);
+                            if (formType === 'application') {
+                                _setApplicationDataAndTrack('Application Complete', 'application_track');
+                            }
+                            else {
+                                 setDigitalDataAndTrack(
+                                    'form',
+                                    {
+                                        'formName': formName,
+                                        'formType': formType,
+                                        'formStep': 'complete',
+                                        ...formDataMap
+                                    },
+                                    'form_track'
+                                );
+                            }
+                        }
+                    })
+                });
+                
+                function _trackLastElement(event, payload) {
+                    const component = payload.target;
+                    //console.log('event', event);
+                    //console.log('payload', payload)
+                    
+                    //Track email address specifically
+                    const BR = component.bindRef;
+                    if (BR && digitalData.form && BR.includes('/Lead_Registration_Common_Elements/Personal_Email/Email_Address')) {
+                        digitalData.form.emailAddress = component.value ? component.value.trim().toLowerCase() : 'field not selected';
+                    }
+                    
+                    _lastInteractedField = {
+                        fieldName: component.title || component.name,
+                        interactionType: event.type,
+                    };
+                    console.log('_lastInteractedField', _lastInteractedField)
+                }
+                
+                guideBridge.on("elementValueChanged", _trackLastElement);
+                //guideBridge.on("elementFocusChanged", _trackLastElement);
+                
+                function _trackLastInteractedField() {
+                    if (!!_lastInteractedField) {
+                        const fieldName = _lastInteractedField.fieldName;
+                        _lastInteractedField = null;
+                        
+                        try {
+                            
+                        
+                        if (formType === 'application') {
+                            setDigitalDataAndTrack(
+                                'application',
+                                {
+                                    'applicationType': formName,
+                                    'applicationStep': 'Application Start',
+                                    'applicationField': fieldName,
+                                },
+                                'application_abandon_track'
+                            );
+                        }
+                        else {
+                            setDigitalDataAndTrack(
+                                'form',
+                                {
+                                    'formName': formName,
+                                    'formType': formType,
+                                    'formStep': 'start',
+                                    'formField': fieldName,
+                                },
+                                'form_abandon_track'
+                            );
+                        }
+                        }
+                        catch (e) {
+                            console.log(e);
+                        }
+                    }
+                }
+                
+                // document.addEventListener("visibilitychange", () => {
+                //     if (document.visibilityState === 'hidden' && _lastInteractedField !== null) {
+                //         _trackLastInteractedField();
+                //     }
+                // });
+                
+                window.addEventListener("beforeunload", () => _trackLastInteractedField());
+                
+            } else {
+                console.warn('AEM form wrapper does not contain required data attributes for analytics.')
+            }
+        })
+    });
+    
+    // 
+    
+    function _determineLinkType(elemAnchor) {
+        const _finalURL = new URL(elemAnchor.href, location.href)
+        
+        return _finalURL.host === location.host ? 'Current site' : 'External site'
+    }
+    
+    function extractGlobalKeyLink(elemAnchor, linkPosition) {
+        let linkName = elemAnchor.innerText.trim()
+        let elemParent
+        if ((elemParent = elemAnchor.closest('.mega-menu-item'))) {
+            // is mega menu
+            linkName = elemParent.closest('.mega-menu-item').previousSibling.innerText.trim() + ` > ${linkName}`
+        }
+        return  {
+            linkName,
+            linkType: _determineLinkType(elemAnchor),
+            linkPosition,
+            linkPage: window.digitalData.page.pageName,
+        }
+    }
+    
+    function extractLocalKeyLink(elemAnchor, position) {
+        const lineNamePrefix = elemAnchor.dataset.analyticsKeyLinkInteractionTrackingLinkNamePrefix || ''
+        return  {
+            linkName: (lineNamePrefix.trim() ? (lineNamePrefix.trim() + ': ') : '') + elemAnchor.innerText.trim(),
+            linkType: _determineLinkType(elemAnchor),
+            linkPosition: position,
+            linkPage: window.digitalData.page.pageName,
+        }
+    }
+    
+    document.body.addEventListener('click', (e) => {
+        const eventTarget = e.target;
+    
+        if (eventTarget.tagName.toLowerCase() === 'a') {
+            //e.stopPropagation();
+            //e.preventDefault();
+            
+            let position = '';
+            let isGlobal = false;
+            
+            switch (true) {
+                //case eventTarget.matches('#header .nav-utility a'):
+                case eventTarget.matches('#header .nav-universes a'):
+                    position = 'Navigation'
+                    isGlobal = true
+                    break
+                case eventTarget.matches('#footer a'):
+                    position = 'Footer'
+                    isGlobal = true
+                    break
+                case eventTarget.matches('main#content a[data-component="ds-hero-banner"]:not([data-youtube])'):
+                    position = 'Hero'
+                    break
+                case eventTarget.matches('main#content a[data-component="ds-hero-promo"]:not([data-youtube])'):
+                    position = 'Hero promo'
+                    break
+                case eventTarget.matches('main#content a[data-component="ds-promo"]:not([data-youtube])'):
+                    position = 'Promo'
+                    break
+            }
+    
+            if (!!position) {
+                const keyLinkObj = isGlobal 
+                    ? extractGlobalKeyLink(eventTarget, position)
+                    : extractLocalKeyLink(eventTarget, position)
+                // console.log('keyLinkObj', keyLinkObj)
+                setDigitalDataAndTrack('keyLink', keyLinkObj, 'keyLink');
+            }
+            // return false;
+        }
+        
+    }, true);
+})()
+</script>
+
+<script>
+(function() {
+
+    // let _lastView = null;
+    
+    function triggerView(viewName) {
+        // if (_lastView === viewName) {
+        //     console.log(`duplicate call to triggerView(${_lastView})`)
+        //     return;
+        // }
+        if (typeof adobe === 'undefined') console.log('[triggerView] adobe is undefined')
+        if (typeof adobe.target === 'undefined') console.log('[triggerView] adobe.target is undefined')
+        adobe?.target?.triggerView(viewName)
+        
+        // _lastView = viewName
+        console.log(`after run adobe.target.triggerView('${viewName}')`);
+    }
+    
+    document.body.addEventListener('click', (e) => {
+        const eventTarget = e.target;
+    
+        if (typeof eventTarget.dataset.analyticsViewName !== 'undefined') {
+            const viewName = eventTarget.dataset.analyticsViewName || eventTarget.innerText.trim()
+            triggerView(viewName)
+        }
+        
+    }, true);
+    
+    document.body.addEventListener('analyticsviewchanged', (e) => {
+        const viewName = e.detail?.viewName 
+        if (viewName) {
+            triggerView(viewName);
+        } else {
+            console.log(`viewName is not supplied`)
+        }
+    });
+})()
+</script>
+
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9f3edc0d8b62e6d9',t:'MTc3NzQ3MTUwNQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
+
