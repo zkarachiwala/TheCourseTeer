@@ -1,2 +1,2 @@
-@echo off
-docker compose logs -f
+REM @echo off
+REM docker compose logs -f

@@ -1,2 +1,2 @@
-@echo off
-docker compose up -d
+REM @echo off
+REM docker compose up -d
