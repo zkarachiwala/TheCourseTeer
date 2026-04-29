@@ -94,6 +94,7 @@ class UniversalEngine(BaseScraper):
         if filter_level == "UG":
             pg_keywords = ["master", "doctor", "juris doctor", "graduate certificate", "graduate diploma", "postgraduate"]
             if any(k in name_lower for k in pg_keywords):
+
                 # Exception: "Doctor of Medicine" is technically a graduate degree but often treated as a target.
                 # However, following the "undergraduate only" mandate strictly:
                 logger.debug(f"Discarding postgraduate course: {name}")
@@ -310,6 +311,31 @@ class UniversalEngine(BaseScraper):
 
         field_results = {}
 
+        def unescape_text(val: str) -> str:
+            if not val:
+                return val
+            if "\\" in val:
+                escapes = {
+                    "\\/": "/",
+                    "\\\"": "\"",
+                    "\\\\": "\\",
+                    "\\b": "\b",
+                    "\\f": "\f",
+                    "\\n": "\n",
+                    "\\r": "\r",
+                    "\\t": "\t"
+                }
+                for esc, sub in escapes.items():
+                    if esc in val:
+                        val = val.replace(esc, sub)
+                if "\\u" in val:
+                    try:
+                        import codecs
+                        val = codecs.decode(val, 'unicode_escape')
+                    except:
+                        pass
+            return val.strip().strip('"').strip("'").strip()
+
         # 1. Extract Name
         name_cfg = config.extraction_map.get("name", {})
         name = self._extract_field(soup, name_cfg, html, field_name="name")
@@ -331,9 +357,21 @@ class UniversalEngine(BaseScraper):
         # Last resort fallback: from URL slug
         if not name or name == "Unknown" or len(name) < 3:
             name = url.split("/")[-1].replace("-", " ").title()
+
+        name = unescape_text(name)
             
         if not name or not self._is_valid_course(name, url):
             return None
+
+        # --- START UG FILTER ---
+        # Strictly undergraduate only as per project memory
+        filter_level = os.getenv("COURSE_LEVEL_FILTER", "UG")
+        if filter_level == "UG":
+            pg_keywords = ["master", "doctor", "graduate diploma", "graduate certificate", "postgraduate", "juris doctor"]
+            if any(kw in name.lower() for kw in pg_keywords):
+                logger.info(f"Skipping PG course by name: {name}")
+                return None
+        # --- END UG FILTER ---
 
         if name:
             field_results["name"] = name
@@ -361,6 +399,18 @@ class UniversalEngine(BaseScraper):
 
         if duration:
             field_results["duration"] = str(duration)
+
+        # 2.1 Degree Type
+        deg_cfg = config.extraction_map.get("degree_type", {})
+        degree_type = self._extract_field(soup, deg_cfg, html, field_name="degree_type")
+        if not degree_type:
+            degree_type = self._infer_degree_type(name)
+            
+        # Undergraduate filter by degree type
+        filter_level = os.getenv("COURSE_LEVEL_FILTER", "UG")
+        if filter_level == "UG" and degree_type in ["PG", "POSTGRAD", "POSTGRADUATE"]:
+             logger.info(f"Skipping PG course by degree_type: {name} ({degree_type})")
+             return None
 
         # 3. Extract ATAR
         atar_cfg = config.extraction_map.get("atar", {})
@@ -563,7 +613,6 @@ class UniversalEngine(BaseScraper):
                 logger.error(f"Failed to record ATAR issue: {e}")
 
         faculty = self._infer_faculty(name)
-        degree_type = self._infer_degree_type(name)
 
         return CourseData(
             university_id=config.university_id,
