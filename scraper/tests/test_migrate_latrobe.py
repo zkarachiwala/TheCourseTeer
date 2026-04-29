@@ -73,7 +73,8 @@ async def test_latrobe_migration_reproduction(pool):
     for campus in course_data.campuses:
         # Bachelor of arts at BU (Bundoora) has ATAR 55.50
         if "Bundoora" in campus.campus_id:
-            assert campus.atar_lowest_selection_rank == 55
+            assert campus.atar_lowest_selection_rank == 55.5
+
             # Check VTAC code for Bundoora
             assert "2100313021" in campus.admissions_codes
 
@@ -155,7 +156,11 @@ async def test_latrobe_accounting_gold_standard(pool):
     extraction_map = {
         "name": {"regex": r'"advertisedTitle"\s*:\s*"([^"]+)"'},
         "duration": {"regex": r'"duration"\s*:\s*"([0-9.]+)"'},
-        "atar": {"regex": r'"minSelectionRankOffered"\s*:\s*"([0-9.]+)"'},
+        "atar": {
+            "regex": r'"minSelectionRankOffered"\s*:\s*"([0-9.]+)"',
+            "json_regex": r'"allAtars"\s*:\s*({.*?}),\s*"ugRseAtarPrereqReqmt"',
+            "json_path": "latest_key"
+        },
         "location": {
             "regex": r'"campuses"\s*:\s*(\[[^\]]+\])',
             "mapping": {
@@ -170,7 +175,7 @@ async def test_latrobe_accounting_gold_standard(pool):
         "admissions_codes": {"regex": r'"vtacCode"\s*:\s*(\d{9,10})'},
         "follow_urls": {"regex": r'/courses/data/2026/domestic/[a-z]+/bachelor-of-accounting\?v=[0-9.]+'}
     }
-    
+
     config = SiteConfig(
         id="f5b3d349-0214-480b-89bc-7b70298e722b",
         university_id="f5b3d349-0214-480b-89bc-7b70298e722b",
@@ -178,7 +183,7 @@ async def test_latrobe_accounting_gold_standard(pool):
         extraction_map=extraction_map,
         is_active=True
     )
-    
+
     # Mock fetch_fn
     async def mock_fetch(url):
         if "courses/data" in url:
@@ -186,8 +191,23 @@ async def test_latrobe_accounting_gold_standard(pool):
                 return f.read()
         return ""
 
-    course_data = await engine.scrape_page(html, config, "https://www.latrobe.edu.au/courses/bachelor-of-accounting", fetch_fn=mock_fetch)
-    
+    # Map for campus IDs to aliases used in allAtars
+    code_map = {
+        "bu": "Bundoora",
+        "be": "Bendigo",
+        "aw": "Albury-Wodonga",
+        "mi": "Mildura",
+        "sh": "Shepparton",
+        "on": "Online"
+    }
+
+    course_data = await engine.scrape_page(
+        html, 
+        config, 
+        "https://www.latrobe.edu.au/courses/bachelor-of-accounting", 
+        code_map=code_map,
+        fetch_fn=mock_fetch
+    )
     assert "Bachelor of Accounting" in course_data.name
     
     # Check ATARs for specific campuses
@@ -203,6 +223,6 @@ async def test_latrobe_accounting_gold_standard(pool):
     
     assert "Bendigo" in campuses_found
     assert campuses_found["Bendigo"] == 60.25
-    
+
     assert "Online" in campuses_found
     assert campuses_found["Online"] == 61.10

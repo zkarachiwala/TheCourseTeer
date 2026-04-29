@@ -358,8 +358,11 @@ class UniversalEngine(BaseScraper):
             field_results["fees"] = fees_str
             csp_available = any(
                 k in fees_str.lower()
-                for k in ["commonwealth", "csp", "supported", "$"]
+                for k in ["commonwealth", "csp", "supported", "$", "a$"]
             )
+            # Fallback for Monash-style JSON dataLayer fees
+            if not csp_available and any(k in clean_html.lower() for k in ["feedomesticcsp", "commonwealth supported"]):
+                csp_available = True
 
         # 5. Admissions Codes
         adm_cfg = config.extraction_map.get("admissions_codes", {})
@@ -418,14 +421,14 @@ class UniversalEngine(BaseScraper):
                             val = atar_json_map[c].get("minSelectionRankOffered")
                             if val and val not in ["N/A", "N/P", "NP", "RC"]:
                                 try:
-                                    this_atar_rank = int(float(val))
+                                    this_atar_rank = float(val)
                                 except:
                                     pass
                             
                             g_val = atar_json_map[c].get("aspireMinimumATAR")
                             if g_val and g_val not in ["N/A", "N/P", "NP", "RC"]:
                                 try:
-                                    this_atar_guaranteed = int(float(g_val))
+                                    this_atar_guaranteed = float(g_val)
                                 except:
                                     pass
                             break
@@ -435,7 +438,7 @@ class UniversalEngine(BaseScraper):
                         campus_id=campus_id,
                         atar_guaranteed=this_atar_guaranteed,
                         atar_lowest_selection_rank=this_atar_rank,
-                        admissions_codes=[], 
+                        admissions_codes=list(adm_codes), 
                         confidence_score=70,
                     )
                 )
@@ -544,28 +547,60 @@ class UniversalEngine(BaseScraper):
     ) -> str | None:
         val = None
 
-        # 1. Selector
-        selector = field_cfg.get("selector")
-        if selector:
-            key_text = field_cfg.get("key")
-            if key_text:
-                rows = soup.select(selector)
-                for row in rows:
-                    cells = row.find_all(["th", "td"])
-                    if len(cells) >= 2 and key_text.lower() in cells[0].get_text(strip=True).lower():
-                        val = cells[1].get_text(" ", strip=True)
+        # 0. JSON-LD Priority
+        json_ld_path = field_cfg.get("json_ld")
+        if json_ld_path:
+            scripts = soup.find_all("script", type="application/ld+json")
+            for script in scripts:
+                try:
+                    data = json.loads(script.string)
+                    # Simple path traversal (e.g., "Course.name")
+                    # Also handle @type check if prefix matches
+                    parts = json_ld_path.split(".")
+                    curr = data
+                    for p in parts:
+                        if isinstance(curr, dict):
+                            if p in curr:
+                                curr = curr[p]
+                            elif curr.get("@type") == p:
+                                continue
+                            else:
+                                curr = None
+                                break
+                        elif isinstance(curr, list) and p.isdigit():
+                            curr = curr[int(p)]
+                        else:
+                            curr = None
+                            break
+                    if curr and isinstance(curr, str):
+                        val = curr
                         break
-            else:
-                elem = soup.select_one(selector)
-                if elem:
-                    attr = field_cfg.get("attr")
-                    val = elem.get(attr) if attr else elem.get_text(strip=True)
+                except:
+                    continue
 
-        # 2. Anchor
+        # 1. Anchor (High signal)
         if not val:
             anchor = field_cfg.get("anchor")
             if anchor:
                 val = self.find_by_anchor(soup, anchor)
+
+        # 2. Selector
+        if not val:
+            selector = field_cfg.get("selector")
+            if selector:
+                key_text = field_cfg.get("key")
+                if key_text:
+                    rows = soup.select(selector)
+                    for row in rows:
+                        cells = row.find_all(["th", "td"])
+                        if len(cells) >= 2 and key_text.lower() in cells[0].get_text(strip=True).lower():
+                            val = cells[1].get_text(" ", strip=True)
+                            break
+                else:
+                    elem = soup.select_one(selector)
+                    if elem:
+                        attr = field_cfg.get("attr")
+                        val = elem.get(attr) if attr else elem.get_text(strip=True)
                 
         # 3. Regex
         regex = field_cfg.get("regex")
@@ -619,7 +654,7 @@ class UniversalEngine(BaseScraper):
                 
         return None
 
-    def _parse_atar(self, text: str | None) -> tuple[int | None, int | None]:
+    def _parse_atar(self, text: str | None) -> tuple[float | None, float | None]:
         if not text:
             return None, None
         
@@ -634,7 +669,7 @@ class UniversalEngine(BaseScraper):
         
         for m in matches:
             val_str = m.group(1)
-            val = int(float(val_str))
+            val = float(val_str)
             
             # Filter out years and invalid ranks
             if not (30 <= val <= 100):
@@ -644,10 +679,22 @@ class UniversalEngine(BaseScraper):
             start = max(0, m.start() - 30)
             context = text[start:m.start()].lower()
             
-            if any(k in context for k in ["guarantee", "minimum", "aspire"]):
+            is_g = any(k in context for k in ["guarantee", "aspire", "minimum"])
+            is_r = any(k in context for k in ["rank", "lowest", "offered"])
+            
+            if is_g and is_r:
+                if context.rfind("guarantee") > context.rfind("rank") or context.rfind("aspire") > context.rfind("rank"):
+                    if guaranteed is None: guaranteed = val
+                    elif rank is None: rank = val
+                else:
+                    if rank is None: rank = val
+                    elif guaranteed is None: guaranteed = val
+            elif is_g:
                 if guaranteed is None: guaranteed = val
-            elif any(k in context for k in ["rank", "lowest", "offered"]):
+                elif rank is None: rank = val
+            elif is_r or "atar" in context:
                 if rank is None: rank = val
+                elif guaranteed is None: guaranteed = val
             else:
                 # No clear keyword, assign to the first empty slot (prefer rank)
                 if rank is None: rank = val
@@ -657,12 +704,25 @@ class UniversalEngine(BaseScraper):
 
     def extract_admissions_codes(self, soup: BeautifulSoup, config: dict) -> list[str]:
         results = set()
+        selector = config.get("selector")
         anchor = config.get("anchor")
         regex = config.get("regex")
-        if anchor:
+
+        if selector:
+            elem = soup.select_one(selector)
+            if elem:
+                text = elem.get_text(" ", strip=True)
+                if regex:
+                    results.update(re.findall(regex, text))
+                else:
+                    results.add(text)
+
+        if not results and anchor:
             label_text = self.find_by_anchor(soup, anchor)
             if label_text and regex:
                 results.update(re.findall(regex, label_text))
+        
         if not results and regex:
             results.update(re.findall(regex, soup.get_text(" ")))
+        
         return sorted(list(results))

@@ -8,6 +8,5 @@ Campuses omitted from the current seed scope. Add in a future migration when cov
 | Monash University | South Africa | International |
 | Monash University | Suzhou (China) | International |
 | La Trobe University | Sydney | Non-Victorian |
-| La Trobe University | Mildura | Non-Victorian regional — assess for Phase 2 |
 | Swinburne University | Sarawak (Malaysia) | International |
 | Federation University | Brisbane | Non-Victorian |

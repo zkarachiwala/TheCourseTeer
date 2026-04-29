@@ -46,7 +46,7 @@ async def test_migrate_rmit(pool):
     # For now, campus_id will be the extracted string "Melbourne City"
     assert "Melbourne City" in campus.campus_id
     # From "2026 Guaranteed ATAR 80.00, ATAR 82.50*"
-    # Our parse_atar should return (80, 82)
-    assert campus.atar_guaranteed == 80
-    assert campus.atar_lowest_selection_rank == 82
+    # Our parse_atar should return (80.0, 82.5)
+    assert campus.atar_guaranteed == 80.0
+    assert campus.atar_lowest_selection_rank == 82.5
     assert "3200377777" in campus.admissions_codes
