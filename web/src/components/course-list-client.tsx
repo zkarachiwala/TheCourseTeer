@@ -46,7 +46,10 @@ export function CourseListClient({ courses, universities, featuredUni, initialUn
     }
     if (selectedUnis.length > 0 && !selectedUnis.includes(c.universitySlug)) return false
     if (selectedDurations.length > 0 && (c.durationYears == null || !selectedDurations.includes(String(c.durationYears)))) return false
-    if (minAtar && (c.atarGuaranteed == null || c.atarGuaranteed < Number(minAtar))) return false
+    if (minAtar) {
+      const atar = c.atarSelectionRank ?? c.atarGuaranteed
+      if (atar == null || atar < Number(minAtar)) return false
+    }
     return true
   }), [courses, search, selectedAreas, selectedUnis, selectedDurations, minAtar])
 
@@ -119,7 +122,7 @@ export function CourseListClient({ courses, universities, featuredUni, initialUn
                 <tr key={c.id} onClick={() => setSelected(c)} style={{ borderBottom: '1px solid var(--border)', cursor: 'pointer', background: selected?.id === c.id ? 'var(--accent-soft)' : 'transparent' }}>
                   <td style={{ padding: '12px 16px', fontSize: '14px', fontWeight: 600, color: 'var(--text)' }}>{c.name}</td>
                   <td style={{ padding: '12px 16px', fontSize: '13px', color: 'var(--text2)' }}>{c.universityName}</td>
-                  <td style={{ padding: '12px 16px', fontSize: '13px', fontWeight: 700, color: 'var(--text2)' }}>{c.atarGuaranteed ?? '—'}</td>
+                  <td style={{ padding: '12px 16px', fontSize: '13px', fontWeight: 700, color: 'var(--text2)' }}>{c.atarSelectionRank ?? c.atarGuaranteed ?? '—'}</td>
                   <td style={{ padding: '12px 16px', fontSize: '13px', color: 'var(--text2)' }}>{c.campusName ?? '—'}</td>
                   <td style={{ padding: '12px 16px', fontSize: '13px', color: 'var(--text2)' }}>{c.durationYears != null ? `${c.durationYears} ${c.durationYears === 1 ? 'year' : 'years'}` : '—'}</td>
                 </tr>

@@ -5,6 +5,7 @@ export interface CourseCardData {
   universityName: string; universitySlug: string
   degreeType: string | null; durationYears: number | null
   sourceUrl: string | null; atarGuaranteed: number | null
+  atarSelectionRank: number | null
   campusName: string | null
 }
 
@@ -27,6 +28,8 @@ export function CourseCard({ course, onClick, selected, onShortlist, shortlisted
     ? `${course.durationYears} ${course.durationYears === 1 ? 'year' : 'years'}`
     : null
 
+  const displayAtar = course.atarSelectionRank ?? course.atarGuaranteed
+
   return (
     <article onClick={onClick} style={{ background: 'var(--card-bg)', borderRadius: 'var(--radius-card)', border: `1.5px solid ${selected ? 'var(--accent)' : 'var(--border)'}`, padding: '20px', cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: '10px', boxShadow: selected ? 'var(--shadow-lg)' : 'var(--shadow)', transition: 'all 0.2s' }}>
 
@@ -40,9 +43,9 @@ export function CourseCard({ course, onClick, selected, onShortlist, shortlisted
             </span>
           )
         })}
-        {course.atarGuaranteed != null && (
-          <span style={{ fontSize: '13px', fontWeight: 700, color: atarColor(course.atarGuaranteed), flexShrink: 0, marginLeft: 'auto' }}>
-            ATAR {course.atarGuaranteed}
+        {displayAtar != null && (
+          <span style={{ fontSize: '13px', fontWeight: 700, color: atarColor(displayAtar), flexShrink: 0, marginLeft: 'auto' }}>
+            ATAR {displayAtar}
           </span>
         )}
       </div>
