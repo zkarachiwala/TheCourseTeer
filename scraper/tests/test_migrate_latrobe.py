@@ -73,7 +73,8 @@ async def test_latrobe_migration_reproduction(pool):
     for campus in course_data.campuses:
         # Bachelor of arts at BU (Bundoora) has ATAR 55.50
         if "Bundoora" in campus.campus_id:
-            assert campus.atar_lowest_selection_rank == 55
+            assert campus.atar_lowest_selection_rank == 55.5
+
             # Check VTAC code for Bundoora
             assert "2100313021" in campus.admissions_codes
 
@@ -134,3 +135,94 @@ async def test_latrobe_unescape_name(pool):
     
     # It should be unescaped
     assert course_data.name == "Bachelor of Commerce/Bachelor of Biomedicine"
+
+@pytest.mark.asyncio
+async def test_latrobe_accounting_gold_standard(pool):
+    """
+    Gold-standard test for La Trobe Bachelor of Accounting.
+    Verifies exact ATAR values for specific campuses.
+    """
+    engine = UniversalEngine(pool)
+    
+    # Load the sample HTML
+    sample_path = "latrobe_accounting_sample.html"
+    if not os.path.exists(sample_path):
+        pytest.skip("latrobe_accounting_sample.html not found")
+        
+    with open(sample_path, "r") as f:
+        html = f.read()
+        
+    # Extraction map for La Trobe
+    extraction_map = {
+        "name": {"regex": r'"advertisedTitle"\s*:\s*"([^"]+)"'},
+        "duration": {"regex": r'"duration"\s*:\s*"([0-9.]+)"'},
+        "atar": {
+            "regex": r'"minSelectionRankOffered"\s*:\s*"([0-9.]+)"',
+            "json_regex": r'"allAtars"\s*:\s*({.*?}),\s*"ugRseAtarPrereqReqmt"',
+            "json_path": "latest_key"
+        },
+        "location": {
+            "regex": r'"campuses"\s*:\s*(\[[^\]]+\])',
+            "mapping": {
+                "BU": "Bundoora",
+                "BE": "Bendigo",
+                "AW": "Albury-Wodonga",
+                "MI": "Mildura",
+                "SH": "Shepparton",
+                "ON": "Online"
+            }
+        },
+        "admissions_codes": {"regex": r'"vtacCode"\s*:\s*(\d{9,10})'},
+        "follow_urls": {"regex": r'/courses/data/2026/domestic/[a-z]+/bachelor-of-accounting\?v=[0-9.]+'}
+    }
+
+    config = SiteConfig(
+        id="f5b3d349-0214-480b-89bc-7b70298e722b",
+        university_id="f5b3d349-0214-480b-89bc-7b70298e722b",
+        base_url="https://www.latrobe.edu.au",
+        extraction_map=extraction_map,
+        is_active=True
+    )
+
+    # Mock fetch_fn
+    async def mock_fetch(url):
+        if "courses/data" in url:
+            with open("latrobe_accounting_detail.json", "r") as f:
+                return f.read()
+        return ""
+
+    # Map for campus IDs to aliases used in allAtars
+    code_map = {
+        "bu": "Bundoora",
+        "be": "Bendigo",
+        "aw": "Albury-Wodonga",
+        "mi": "Mildura",
+        "sh": "Shepparton",
+        "on": "Online"
+    }
+
+    course_data = await engine.scrape_page(
+        html, 
+        config, 
+        "https://www.latrobe.edu.au/courses/bachelor-of-accounting", 
+        code_map=code_map,
+        fetch_fn=mock_fetch
+    )
+    assert "Bachelor of Accounting" in course_data.name
+    
+    # Check ATARs for specific campuses
+    campuses_found = {c.campus_id: c.atar_lowest_selection_rank for c in course_data.campuses}
+    
+    # Assertions from task:
+    # Melbourne (Bundoora): 61.90
+    # Bendigo: 60.25
+    # Online: 61.10
+    
+    assert "Bundoora" in campuses_found
+    assert campuses_found["Bundoora"] == 61.90
+    
+    assert "Bendigo" in campuses_found
+    assert campuses_found["Bendigo"] == 60.25
+
+    assert "Online" in campuses_found
+    assert campuses_found["Online"] == 61.10

@@ -8,8 +8,8 @@ class CampusLink:
     """Campus association for a course, with optional campus-specific ATAR."""
 
     campus_id: str
-    atar_guaranteed: int | None = None
-    atar_lowest_selection_rank: int | None = None
+    atar_guaranteed: float | None = None
+    atar_lowest_selection_rank: float | None = None
     extraction_notes: str | None = None
     admissions_codes: list[str] = field(default_factory=list)
     confidence_score: int | None = None

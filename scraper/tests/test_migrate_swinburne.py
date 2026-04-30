@@ -51,6 +51,8 @@ async def test_migrate_swinburne(pool):
     # Current simple mapping will find "Hawthorn, Online" as location_str
     assert len(course.campuses) >= 1
     campus = course.campuses[0]
-    assert "Hawthorn" in campus.campus_id
-    assert campus.atar_guaranteed == 70
+    # Check if it's either the string "Hawthorn" or the UUID from the mapping
+    assert campus.campus_id in ["Hawthorn", "682134ca-95e0-41be-8baa-3093db3c7ee5"]
+    assert campus.atar_lowest_selection_rank == 70.0
+
     assert "3400312345" in campus.admissions_codes

@@ -31,6 +31,7 @@ LATROBE_CAMPUS_CODES = [
     ("b53c0416-8f3e-4a91-869d-f53d300cd8db", "MC"), # Melbourne City
     ("fa65309e-488e-4278-bc13-5e720e8a8b3d", "ON"), # Online
     # Fallback/Additional codes (multiple codes can map to same campus in seed script)
+    ("8841ca47-be65-4697-a49b-ed738259a315", "Melbourne"), # Melbourne alias for Bundoora
     ("074cbaa0-68fd-47fb-906e-6b99ed5fdcf0", "WO"), # Wodonga
     ("b53c0416-8f3e-4a91-869d-f53d300cd8db", "CI"), # City
     ("b53c0416-8f3e-4a91-869d-f53d300cd8db", "SY"), # Sydney
@@ -137,7 +138,7 @@ SITE_CONFIGS = [
                 "regex": r'("duration"\s*:\s*"?([0-9.]+)"?|Duration.*?\b(\d+(?:\.\d+)?)\s*years?)'
             },
             "atar": {
-                "anchor": "Lowest selection rank", 
+                "anchor": "Lowest selection rank",
                 "regex": r"(Lowest selection rank.*?(\d{2}(?:\.\d+)?))"
             },
             "location": {
@@ -201,6 +202,18 @@ async def seed():
                     )
                 )
             print(f"Seeded {len(SITE_CONFIGS)} site configurations.")
+
+            # Seed Campus Aliases for La Trobe
+            for campus_id, alias_code in LATROBE_CAMPUS_CODES:
+                await cur.execute(
+                    """
+                    INSERT INTO campus_aliases (campus_id, alias_code)
+                    VALUES (%s, %s)
+                    ON CONFLICT (campus_id, alias_code) DO NOTHING
+                    """,
+                    (campus_id, alias_code)
+                )
+            print(f"Seeded {len(LATROBE_CAMPUS_CODES)} campus aliases for La Trobe.")
 
 if __name__ == "__main__":
     asyncio.run(seed())
