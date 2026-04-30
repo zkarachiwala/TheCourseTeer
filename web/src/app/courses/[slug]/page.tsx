@@ -1,6 +1,6 @@
 export const dynamic = 'force-dynamic'
-import { db } from '../../../db'
-import { courses, universities, courseCampuses, campuses } from '../../../db/schema'
+import { db } from '../../../../db'
+import { courses, universities, courseCampuses, campuses } from '../../../../db/schema'
 import { eq, sql, and } from 'drizzle-orm'
 import { CourseListClient } from '@/components/course-list-client'
 import { notFound } from 'next/navigation'
