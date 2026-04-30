@@ -14,14 +14,15 @@ interface Props {
   courses: CourseCardData[]
   universities: { slug: string; name: string }[]
   featuredUni?: FeaturedUniConfig | null
+  initialUnis?: string[]
 }
 
-export function CourseListClient({ courses, universities, featuredUni }: Props) {
+export function CourseListClient({ courses, universities, featuredUni, initialUnis }: Props) {
   const [layout, setLayout] = useState<Layout>('grid')
   const [selected, setSelected] = useState<CourseCardData | null>(null)
   const [search, setSearch] = useState('')
   const [selectedAreas, setSelectedAreas] = useState<string[]>([])
-  const [selectedUnis, setSelectedUnis] = useState<string[]>([])
+  const [selectedUnis, setSelectedUnis] = useState<string[]>(initialUnis ?? [])
   const [selectedDurations, setSelectedDurations] = useState<string[]>([])
   const [minAtar, setMinAtar] = useState('')
 
