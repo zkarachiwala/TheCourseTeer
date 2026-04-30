@@ -76,7 +76,7 @@ async def test_latrobe_atar_extraction_from_sample(pool):
     assert bu_campus is not None
     # We expect this to fail because current regex might pick up nothing or wrong value
     assert bu_campus.atar_lowest_selection_rank is not None
-    assert bu_campus.atar_lowest_selection_rank == 60
+    assert bu_campus.atar_lowest_selection_rank == 60.25
 
 @pytest.mark.asyncio
 async def test_latrobe_duration_extraction(pool):
