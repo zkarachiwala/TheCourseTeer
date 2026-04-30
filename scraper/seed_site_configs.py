@@ -149,7 +149,7 @@ SITE_CONFIGS = [
             "atar": {
                 "anchor": "Lowest selection rank", 
                 "regex": r"(Lowest selection rank.*?(\d{2}(?:\.\d+)?))",
-                "json_regex": r'"allAtars"\s*:\s*({.*?}),\s*"ugRseAtarPrereqReqmt"',
+                "json_regex": r'"allAtars"\s*:\s*({.+?}),\s*"ugRseAtarPrereqReqmt"',
                 "json_path": "latest_key"
             },
             "location": {

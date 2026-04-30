@@ -82,28 +82,22 @@ class UniversalEngine(BaseScraper):
         """
         Strict validation: real degrees start with specific academic titles.
         Discards hub pages, majors, and study areas.
+        STRICT: Only allow Bachelor degrees as per user instruction.
         """
         if not name or name.lower() == "unknown" or len(name) <= 3:
             return False
             
         name_lower = name.lower()
         
-        # Valid prefixes for degrees
-        valid_prefixes = [
-            "bachelor", "diploma", "associate degree", "undergraduate certificate", 
-            "advanced diploma", "master", "doctor", "graduate certificate", 
-            "graduate diploma", "juris doctor", "honours"
-        ]
-        
-        # Check if it starts with any valid prefix
-        if any(name_lower.startswith(p) for p in valid_prefixes):
-            return True
-            
-        # Exception: if it clearly contains "degree" in the name
-        if " degree" in name_lower or " course" in name_lower:
+        # Discard obvious non-undergraduate markers
+        if any(k in name_lower for k in ["master", "doctor", "graduate certificate", "graduate diploma", "juris doctor", "postgraduate"]):
+            return False
+
+        # STRICT: Must contain 'bachelor'
+        if "bachelor" in name_lower:
             return True
 
-        logger.warning(f"Discarding potential non-course page: '{name}' from {url}")
+        logger.warning(f"Discarding non-bachelor or non-course page: '{name}' from {url}")
         return False
 
     async def discover_urls(self, rp: urllib.robotparser.RobotFileParser) -> list[str]:
@@ -524,7 +518,7 @@ class UniversalEngine(BaseScraper):
         faculty = self._infer_faculty(name)
         degree_type = self._infer_degree_type(name)
 
-        print(f"  [DEBUG] Upserting {degree_type}: {name} (Duration: {duration})")
+        logger.debug(f"Upserting {degree_type}: {name} (Duration: {duration})")
 
         return CourseData(
             university_id=config.university_id,
