@@ -79,3 +79,28 @@ class SnapshotManager:
         
         file_age = time.time() - path.stat().st_mtime
         return file_age <= self.ttl_seconds
+
+    def purge_university_cache(self, university_id: str) -> int:
+        """
+        Delete all snapshots and metadata for a specific university.
+        Returns the count of deleted files.
+        """
+        uni_path = self.base_path / str(university_id)
+        if not uni_path.exists():
+            return 0
+            
+        count = 0
+        for item in uni_path.iterdir():
+            if item.is_file():
+                try:
+                    item.unlink()
+                    count += 1
+                except Exception as e:
+                    print(f"Failed to delete {item}: {e}")
+        
+        try:
+            uni_path.rmdir()
+        except:
+            pass # Directory might not be empty if nested or permission issues
+            
+        return count

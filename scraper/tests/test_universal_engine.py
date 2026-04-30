@@ -108,9 +108,9 @@ def test_is_valid_course(pool):
     
     # Valid
     assert engine._is_valid_course("Bachelor of Commerce", "http://test.com") is True
-    assert engine._is_valid_course("Diploma of Arts", "http://test.com") is True
     
-    # Invalid (Postgraduate - default filter is UG)
+    # Invalid (Non-Bachelor / Postgraduate)
+    assert engine._is_valid_course("Diploma of Arts", "http://test.com") is False
     assert engine._is_valid_course("Master of Science", "http://test.com") is False
     assert engine._is_valid_course("Juris Doctor", "http://test.com") is False
     

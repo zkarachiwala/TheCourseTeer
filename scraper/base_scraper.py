@@ -65,6 +65,11 @@ class BaseScraper(ABC):
             run_id = str(scrape_run["id"])
             self._run_id = run_id
 
+            if force:
+                del_count = self.snapshots.purge_university_cache(university_id)
+                if del_count > 0:
+                    print(f"  {self.slug}: Purged {del_count} files from local cache for fresh scrape")
+
             if not scrape_run["discovery_complete"]:
                 urls = await self.discover_urls(rp)
                 await enqueue_urls(self.pool, university_id, run_id, urls)
