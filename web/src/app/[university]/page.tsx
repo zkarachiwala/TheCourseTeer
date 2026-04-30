@@ -2,14 +2,31 @@ export const dynamic = 'force-dynamic'
 
 import { db } from '../../../db'
 import { universities } from '../../../db/schema'
-import { asc, sql } from 'drizzle-orm'
+import { asc, sql, eq } from 'drizzle-orm'
 import { CourseListClient } from '@/components/course-list-client'
+import { notFound } from 'next/navigation'
 
-export default async function CoursesPage() {
-  // Use DISTINCT ON to get exactly one row per course (picking the campus with the highest ATAR)
-  // This is much faster than fetching all campus rows and deduplicating in Node.
+interface Props {
+  params: {
+    university: string
+  }
+}
+
+export default async function UniversityPage({ params }: Props) {
+  const { university: slug } = params
+
+  // Verify university exists
+  const uni = await db.query.universities.findFirst({
+    where: eq(universities.slug, slug),
+  })
+
+  if (!uni) {
+    notFound()
+  }
+
+  // Use DISTINCT ON to get exactly one row per course for this university
   const distinctRows = await db.execute(sql`
-    SELECT DISTINCT ON (c.name, u.name)
+    SELECT DISTINCT ON (c.name)
       c.id,
       c.name,
       c.faculty,
@@ -24,11 +41,10 @@ export default async function CoursesPage() {
     LEFT JOIN universities u ON c.university_id = u.id
     LEFT JOIN course_campuses cc ON c.id = cc.course_id
     LEFT JOIN campuses cp ON cc.campus_id = cp.id
-    ORDER BY c.name ASC, u.name ASC, cc.atar_guaranteed DESC NULLS LAST
+    WHERE u.slug = ${slug}
+    ORDER BY c.name ASC, cc.atar_guaranteed DESC NULLS LAST
   `)
 
-  // postgres-js returns a RowList which is an array of rows.
-  // We map directly over it and ensure numeric types are correctly handled.
   const formattedCourses = distinctRows.map((row: any) => ({
     ...row,
     durationYears: row.durationYears != null ? Number(row.durationYears) : null,
@@ -40,5 +56,11 @@ export default async function CoursesPage() {
     .from(universities)
     .orderBy(asc(universities.name))
 
-  return <CourseListClient courses={formattedCourses} universities={uniList} />
+  return (
+    <CourseListClient 
+      courses={formattedCourses} 
+      universities={uniList} 
+      initialUnis={[slug]}
+    />
+  )
 }

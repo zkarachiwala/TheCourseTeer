@@ -1,4 +1,4 @@
-# The Courseteer - A university course aggregator and search engine
+# The Courseteer - An Australian undergraduate course aggregator and search engine
 
 All project documentation is in the planning directory.
 

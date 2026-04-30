@@ -1,6 +1,6 @@
 # Initial Concept
 
-The goal is to build a course aggregator and search engine for university courses. A core component of this is an automated scraper fleet that keeps course data (ATARs, fees, etc.) up-to-date. To scale this, we are building a "Visual Scraper Builder" that allows non-technical users to visually map website elements to data points, generating configurations for our centralized scraping engine.
+The goal is to build an undergraduate course aggregator and search engine for Australian university courses. A core component of this is an automated scraper fleet that keeps course data (ATARs, fees, etc.) up-to-date. To scale this, we are building a "Visual Scraper Builder" that allows non-technical users to visually map website elements to data points, generating configurations for our centralized scraping engine.
 
 # Universal Scraper Engine
 
@@ -11,6 +11,7 @@ The goal is to build a course aggregator and search engine for university course
 - **Visual Anchor Logic:** A fallback mechanism that searches for text labels (e.g., "ATAR") when primary selectors fail.
 - **Multi-Campus Support:** Handles courses offered across different locations, mapping them to standardized database IDs.
 - **Follow-through Requests:** Ability to fetch auxiliary data from detail JSON endpoints or sub-pages.
+- **Course Level Filtering:** Configurable filtering (via `COURSE_LEVEL_FILTER`) to focus strictly on undergraduate degrees.
 - **Confidence Scoring:** Assigns audit scores (100/70/30) to each extraction based on the method used (Selector vs. Anchor vs. Default).
 
 # Visual Scraper Builder (POC)

@@ -17,7 +17,7 @@ All feature work and changes to this codebase must follow the `/feature-dev` 7-p
 Invoke with `/feature-dev:feature-dev [description of change]` at the start of any new feature, bugfix, or non-trivial modification. Do not skip phases or proceed past Phase 4 without explicit user approval.
 
 ## 1. Project Overview
-This project creates a comprehensive, persistent data repository and a responsive web application that aggregates undergraduate and postgraduate course information from all Australian-based universities. The core value proposition is an AI-driven data extraction engine that adapts to website changes and provides a unified search experience for students.
+This project creates a comprehensive, persistent data repository and a responsive web application that aggregates undergraduate course information from all Australian-based universities. The core value proposition is an AI-driven data extraction engine that adapts to website changes and provides a unified search experience for students.
 
 ## 2. Data Acquisition Strategy (The Engine)
 The system employs a hybrid approach to data collection, prioritizing efficiency and resilience.

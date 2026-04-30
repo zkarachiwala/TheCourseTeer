@@ -1,2 +1,2 @@
-@echo off
-docker compose down
+REM @echo off
+REM docker compose down

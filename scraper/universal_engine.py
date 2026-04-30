@@ -1,5 +1,6 @@
 import json
 import logging
+import os
 import re
 import urllib.robotparser
 from typing import Any
@@ -8,7 +9,7 @@ from bs4 import BeautifulSoup
 from psycopg_pool import AsyncConnectionPool
 
 from base_scraper import BaseScraper
-from db import get_campus_map, get_site_config, log_atar_issue, get_faculties
+from db import get_campus_map, get_faculties, get_site_config, log_atar_issue
 from http_client import make_client
 from models import CourseData, SiteConfig
 
@@ -88,6 +89,17 @@ class UniversalEngine(BaseScraper):
             return False
             
         name_lower = name.lower()
+
+        # Undergraduate filter
+        filter_level = os.getenv("COURSE_LEVEL_FILTER", "UG")
+        if filter_level == "UG":
+            pg_keywords = ["master", "doctor", "juris doctor", "graduate certificate", "graduate diploma", "postgraduate"]
+            if any(k in name_lower for k in pg_keywords):
+
+                # Exception: "Doctor of Medicine" is technically a graduate degree but often treated as a target.
+                # However, following the "undergraduate only" mandate strictly:
+                logger.debug(f"Discarding postgraduate course: {name}")
+                return False
         
         # Discard obvious non-undergraduate markers
         if any(k in name_lower for k in ["master", "doctor", "graduate certificate", "graduate diploma", "juris doctor", "postgraduate"]):
@@ -293,48 +305,106 @@ class UniversalEngine(BaseScraper):
 
         field_results = {}
 
+        def unescape_text(val: str) -> str:
+            if not val:
+                return val
+            if "\\" in val:
+                escapes = {
+                    "\\/": "/",
+                    "\\\"": "\"",
+                    "\\\\": "\\",
+                    "\\b": "\b",
+                    "\\f": "\f",
+                    "\\n": "\n",
+                    "\\r": "\r",
+                    "\\t": "\t"
+                }
+                for esc, sub in escapes.items():
+                    if esc in val:
+                        val = val.replace(esc, sub)
+                if "\\u" in val:
+                    try:
+                        import codecs
+                        val = codecs.decode(val, 'unicode_escape')
+                    except:
+                        pass
+            return val.strip().strip('"').strip("'").strip()
+
         # 1. Extract Name
         name_cfg = config.extraction_map.get("name", {})
-        name = self._extract_field(soup, name_cfg, clean_html, field_name="name")
+        name = self._extract_field(soup, name_cfg, html, field_name="name")
         
-        # Generic Name Fallbacks
-        if not name or name == "Unknown" or len(name) <= 3:
+        # Fallback: try to get name from awardTitle or advertisedTitle if regex was too specific
+        if not name or name == "Unknown" or len(name) < 3:
+            for key in ["awardTitle", "advertisedTitle", "award_title"]:
+                m = re.search(f'"{key}"\\s*:\\s*"?([^",}}]+)"?', html)
+                if m:
+                    name = m.group(1).strip()
+                    break
+        
+        # Another fallback: h1 tag
+        if not name or name == "Unknown" or len(name) < 3:
             h1 = soup.select_one("h1")
             if h1:
                 name = h1.get_text(strip=True)
-            
-            if not name or len(name) <= 3:
-                name = url.rstrip("/").split("/")[-1].replace("-", " ").title()
+        
+        # Last resort fallback: from URL slug
+        if not name or name == "Unknown" or len(name) < 3:
+            name = url.split("/")[-1].replace("-", " ").title()
 
-        # STRICT VALIDATION: Is this actually a course?
-        if not self._is_valid_course(name, url):
+        name = unescape_text(name)
+            
+        if not name or not self._is_valid_course(name, url):
             return None
+
+        # --- START UG FILTER ---
+        # Strictly undergraduate only as per project memory
+        filter_level = os.getenv("COURSE_LEVEL_FILTER", "UG")
+        if filter_level == "UG":
+            pg_keywords = ["master", "doctor", "graduate diploma", "graduate certificate", "postgraduate", "juris doctor"]
+            if any(kw in name.lower() for kw in pg_keywords):
+                logger.info(f"Skipping PG course by name: {name}")
+                return None
+        # --- END UG FILTER ---
 
         if name:
             field_results["name"] = name
 
         # 2. Extract Duration
         dur_cfg = config.extraction_map.get("duration", {})
-        duration_str = self._extract_field(soup, dur_cfg, clean_html, field_name="duration")
+        duration_str = self._extract_field(soup, dur_cfg, html, field_name="duration")
+        
+        # Fallback: try to find duration in full HTML if selector/regex failed
+        if not duration_str:
+            m = re.search(r'"duration"\s*:\s*"?([^",}]+)"?', html)
+            if m:
+                duration_str = m.group(1)
+
         duration = self._parse_duration(duration_str)
         
-        # Generic Fallback & Priority: Infer from credit points
-        # For La Trobe and others, CP is THE definitive data source for duration.
-        # 120 CP = 1 year. 600 CP = 5 years.
-        m_cp = re.search(r'"totalCreditPoints"\s*:\s*(\d+)', clean_html)
-        if m_cp:
-            cp = int(m_cp.group(1))
-            if cp > 0:
-                inferred = cp / 120.0
-                if 0.5 <= inferred <= 10.0:
-                    # CRITICAL: If we have an inferred duration, it takes precedence 
-                    # over noisy HTML regex matches, especially for double degrees.
-                    if not duration or inferred > duration or (duration <= 1.0 and inferred > 1.0):
-                        duration = inferred
-                        logger.debug(f"Prioritizing inferred duration {duration} from {cp} credit points for {name}")
+        # Fallback: try to infer from credit points (360 CP = 3 years, 240 CP = 2 years, etc.)
+        if not duration:
+            m = re.search(r'"totalCreditPoints"\s*:\s*(\d+)', html)
+            if m:
+                cp = int(m.group(1))
+                if cp > 0:
+                    duration = cp / 120.0
+                    logger.debug(f"Inferred duration {duration} from {cp} credit points")
 
         if duration:
             field_results["duration"] = str(duration)
+
+        # 2.1 Degree Type
+        deg_cfg = config.extraction_map.get("degree_type", {})
+        degree_type = self._extract_field(soup, deg_cfg, html, field_name="degree_type")
+        if not degree_type:
+            degree_type = self._infer_degree_type(name)
+            
+        # Undergraduate filter by degree type
+        filter_level = os.getenv("COURSE_LEVEL_FILTER", "UG")
+        if filter_level == "UG" and degree_type in ["PG", "POSTGRAD", "POSTGRADUATE"]:
+             logger.info(f"Skipping PG course by degree_type: {name} ({degree_type})")
+             return None
 
         # 3. Extract ATAR
         atar_cfg = config.extraction_map.get("atar", {})
@@ -343,6 +413,17 @@ class UniversalEngine(BaseScraper):
 
         # Generic JSON Fallback (e.g. for La Trobe allAtars)
         atar_json_map = self._extract_json_map(clean_html, atar_cfg)
+
+        # DISCARD NON-COURSE PAGES (e.g. info pages, contact pages, study areas)
+        # If it doesn't have credit points AND doesn't have a duration, it's probably not a course
+        if not duration and '"totalCreditPoints":0' in html.replace(" ", ""):
+            logger.warning(f"Discarding potential non-course page: {url}")
+            return None
+        
+        # If the name is a known study area or major name from the sitemap
+        if any(k in name.lower() for k in ["contact us", "how to apply", "timetables", "director and staff"]):
+             logger.warning(f"Discarding information page: {name} from {url}")
+             return None
 
         # 4. Extract Fees
         fees_cfg = config.extraction_map.get("fees", {})
@@ -506,19 +587,29 @@ class UniversalEngine(BaseScraper):
 
         confidence = self.calculate_confidence(field_results)
 
-        # FINAL QUALITY CHECKS
-        if not name or name == "Unknown" or len(name) <= 3:
+        # FINAL DATA QUALITY CHECKS
+        if not name or name == "Unknown" or len(name) < 3:
+            logger.warning(f"Discarding result with invalid name '{name}' from {url}")
             return None
 
-        # DISCARD NON-COURSE PAGES
-        if not duration and '"totalCreditPoints":0' in clean_html.replace(" ", ""):
-            return None
-        
-        # DB-driven faculty mapping
+        # Record ATAR issue if missing for UG courses
+        if not atar_guaranteed and not atar_rank:
+            try:
+                # We need self._run_id from base_scraper
+                if hasattr(self, "_run_id") and self._run_id:
+                    await log_atar_issue(
+                        self.pool,
+                        config.university_id,
+                        self._run_id,
+                        name,
+                        url,
+                        "missing_atar",
+                        "No ATAR found via primary selectors or anchors"
+                    )
+            except Exception as e:
+                logger.error(f"Failed to record ATAR issue: {e}")
+
         faculty = self._infer_faculty(name)
-        degree_type = self._infer_degree_type(name)
-
-        logger.debug(f"Upserting {degree_type}: {name} (Duration: {duration})")
 
         return CourseData(
             university_id=config.university_id,
@@ -609,13 +700,35 @@ class UniversalEngine(BaseScraper):
                         val = m.group(0)
 
         if val and isinstance(val, str):
-            if "\\/" in val:
-                val = val.replace("\\/", "/")
-            if "\\u" in val:
-                try:
-                    val = val.encode("utf-16", "surrogatepass").decode("unicode-escape")
-                except:
-                    pass
+            # Unescape common JSON escapes if found (e.g. \/ -> /)
+            # We do a case-insensitive check for common escapes
+            if "\\" in val:
+                # Handle common JSON string escapes
+                escapes = {
+                    "\\/": "/",
+                    "\\\"": "\"",
+                    "\\\\": "\\",
+                    "\\b": "\b",
+                    "\\f": "\f",
+                    "\\n": "\n",
+                    "\\r": "\r",
+                    "\\t": "\t"
+                }
+                for esc, sub in escapes.items():
+                    if esc in val:
+                        val = val.replace(esc, sub)
+                
+                # Also handle potential unicode escapes if needed
+                if "\\u" in val:
+                    try:
+                        # Use codecs for more robust unicode unescaping
+                        import codecs
+                        val = codecs.decode(val, 'unicode_escape')
+                    except Exception as e:
+                        logger.warning(f"Failed to unescape unicode in {field_name}: {e}")
+
+            # Final cleanup: strip any trailing quotes that might have been caught by flexible regex
+            val = val.strip().strip('"').strip("'").strip()
 
         return val
 

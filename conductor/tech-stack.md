@@ -6,7 +6,7 @@
 - **Tailwind CSS:** Responsive styling for the side-by-side view.
 
 **Data & Infrastructure:**
-- **PostgreSQL:** Primary database (Supabase in production).
+- **PostgreSQL:** Primary database (Supabase strictly enforced for all environments).
 - **Drizzle ORM:** Managing database operations and schema integration.
 - **Next.js Server Actions:** Handling selector saving and database updates.
 - **Azure Static Web Apps:** Hosting platform for the web application.
