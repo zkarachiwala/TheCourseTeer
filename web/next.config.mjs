@@ -8,8 +8,8 @@ const nextConfig = {
   async redirects() {
     return [
       {
-        source: '/latrobe',
-        destination: '/courses/latrobe',
+        source: '/:slug(latrobe|rmit|monash|unimelb|deakin|federation|swinburne|vu)',
+        destination: '/courses/:slug',
         permanent: false,
       },
     ]
