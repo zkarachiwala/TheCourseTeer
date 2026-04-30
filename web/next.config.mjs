@@ -5,6 +5,15 @@ const nextConfig = {
     // imageSizes pool so Next.js generates sharp srcset entries for it.
     imageSizes: [16, 32, 48, 64, 81, 96, 128, 162, 242, 256, 384],
   },
+  async redirects() {
+    return [
+      {
+        source: '/latrobe',
+        destination: '/courses/latrobe',
+        permanent: false,
+      },
+    ]
+  },
 };
 
 export default nextConfig;
