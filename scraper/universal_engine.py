@@ -90,6 +90,13 @@ class UniversalEngine(BaseScraper):
             
         name_lower = name.lower()
 
+        # DISCARD CAMPUS NAMES AS COURSE NAMES
+        # (Fix for Swinburne "Prahran" ghost course)
+        campuses = ["prahran", "hawthorn", "croydon", "wantirna", "bundoora", "bendigo", "melbourne city", "albury-wodonga", "mildura", "shepparton"]
+        if name_lower in campuses:
+            logger.warning(f"Discarding course name that matches campus: '{name}' from {url}")
+            return False
+
         # Undergraduate filter
         filter_level = os.getenv("COURSE_LEVEL_FILTER", "UG")
         if filter_level == "UG":
@@ -766,7 +773,7 @@ class UniversalEngine(BaseScraper):
             return None, None
         
         # Look for numbers while keeping track of their context
-        # ATARs are almost always 30.00 to 99.95
+        # VALID RANGE: 50.00 to 99.95 (as per user instruction)
         matches = list(re.finditer(r"(\d{2}(?:\.\d+)?)", text))
         if not matches:
             return None, None
@@ -776,10 +783,10 @@ class UniversalEngine(BaseScraper):
         
         for m in matches:
             val_str = m.group(1)
-            val = float(val_str)
+            val = round(float(val_str), 2)
             
             # Filter out years and invalid ranks
-            if not (30 <= val <= 100):
+            if not (50 <= val <= 99.95):
                 continue
                 
             # Check context: 30 chars before the match
