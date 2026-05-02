@@ -17,6 +17,23 @@ from models import CourseData, SiteConfig
 logger = logging.getLogger(__name__)
 
 
+def _unescape_text(val: str) -> str:
+    if not val:
+        return val
+    if "\\" in val:
+        escapes = {"\\/": "/", "\\\"": "\"", "\\\\": "\\", "\\b": "\b", "\\f": "\f", "\\n": "\n", "\\r": "\r", "\\t": "\t"}
+        for esc, sub in escapes.items():
+            if esc in val:
+                val = val.replace(esc, sub)
+        if "\\u" in val:
+            try:
+                import codecs
+                val = codecs.decode(val, 'unicode_escape')
+            except:
+                pass
+    return val.strip().strip('"').strip("'").strip()
+
+
 class UniversalEngine(BaseScraper):
     """
     Centralized scraping engine driven by database-stored configurations.
@@ -234,17 +251,6 @@ class UniversalEngine(BaseScraper):
         soup = BeautifulSoup(clean_html, "lxml")
         if self._should_discard_by_meta(soup, config): return None
 
-        def unescape_text(val: str) -> str:
-            if not val: return val
-            if "\\" in val:
-                escapes = {"\\/": "/", "\\\"": "\"", "\\\\": "\\", "\\b": "\b", "\\f": "\f", "\\n": "\n", "\\r": "\r", "\\t": "\t"}
-                for esc, sub in escapes.items():
-                    if esc in val: val = val.replace(esc, sub)
-                if "\\u" in val:
-                    try: import codecs; val = codecs.decode(val, 'unicode_escape')
-                    except: pass
-            return val.strip().strip('"').strip("'").strip()
-
         # 1. Name
         name_cfg = config.extraction_map.get("name", {})
         name = self._extract_field(soup, name_cfg, html, field_name="name", json_data=json_data)
@@ -256,7 +262,7 @@ class UniversalEngine(BaseScraper):
             h1 = soup.select_one("h1")
             if h1: name = h1.get_text(strip=True)
         if (not name or name == "Unknown" or len(name) < 3) and json_data: name = json_data.get("title")
-        name = unescape_text(name or "")
+        name = _unescape_text(name or "")
         if not name or not self._is_valid_course(name, url): return None
 
         # 2. Duration
@@ -281,17 +287,39 @@ class UniversalEngine(BaseScraper):
         atar_str = self._extract_field(soup, atar_cfg, clean_html, field_name="atar", json_data=json_data)
         atar_guaranteed, atar_rank = self._parse_atar(atar_str)
 
-        # 5. Location
+        # 5. Fees / CSP
+        fees_cfg = config.extraction_map.get("fees", {})
+        fees_str = self._extract_field(soup, fees_cfg, clean_html, field_name="fees")
+        csp_available = False
+        if fees_str:
+            csp_available = any(k in fees_str.lower() for k in ["commonwealth", "csp", "supported", "$", "a$"])
+        if not csp_available and any(k in clean_html.lower() for k in ["feedomesticcsp", "commonwealth supported"]):
+            csp_available = True
+
+        # 6. Admissions codes
+        adm_cfg = config.extraction_map.get("admissions_codes", {})
+        adm_codes = self.extract_admissions_codes(soup, adm_cfg)
+
+        # 7. Location
         loc_cfg = config.extraction_map.get("location", {})
         location_raw = self._extract_field(soup, loc_cfg, clean_html, field_name="location", json_data=json_data)
         campuses = []
         if location_raw:
-            raw_list = re.split(r",|;| and ", str(location_raw), flags=re.IGNORECASE)
+            location_str = str(location_raw).strip()
+            if location_str.startswith("[") and location_str.endswith("]"):
+                try:
+                    raw_list = json.loads(location_str)
+                except Exception:
+                    raw_list = re.split(r",|;| and ", location_str, flags=re.IGNORECASE)
+            else:
+                raw_list = re.split(r",|;| and ", location_str, flags=re.IGNORECASE)
+            location_mapping = loc_cfg.get("mapping", {})
             from models import CampusLink
             for loc in raw_list:
                 loc = loc.strip()
-                campus_id = None
-                if self._campus_name_map: campus_id = self._campus_name_map.get(loc.lower())
+                campus_id = location_mapping.get(loc) if location_mapping else None
+                if not campus_id and self._campus_name_map:
+                    campus_id = self._campus_name_map.get(loc.lower())
                 this_atar_rank = atar_rank
                 rank_path = atar_cfg.get("json_path_template_rank")
                 if rank_path and json_data:
@@ -299,9 +327,14 @@ class UniversalEngine(BaseScraper):
                     raw_atar = self._extract_field(None, {"json_path": path}, json_data=json_data)
                     parsed_rank = self._parse_atar(str(raw_atar))[1] if raw_atar else None
                     if parsed_rank: this_atar_rank = parsed_rank
-                campuses.append(CampusLink(campus_id=campus_id or loc, atar_lowest_selection_rank=this_atar_rank, atar_guaranteed=atar_guaranteed))
+                campuses.append(CampusLink(
+                    campus_id=campus_id or loc,
+                    atar_lowest_selection_rank=this_atar_rank,
+                    atar_guaranteed=atar_guaranteed,
+                    admissions_codes=list(adm_codes),
+                ))
 
-        return CourseData(university_id=config.university_id, name=name, source_url=url, faculty=self._infer_faculty(name), campuses=campuses, degree_type=degree_type, duration_years=duration, confidence_score=90 if json_data else 70)
+        return CourseData(university_id=config.university_id, name=name, source_url=url, faculty=self._infer_faculty(name), campuses=campuses, degree_type=degree_type, duration_years=duration, csp_available=csp_available if csp_available else None, confidence_score=90 if json_data else 70)
 
     def _extract_field(self, soup: BeautifulSoup | None, field_cfg: dict, full_text: str | None = None, field_name: str | None = None, json_data: dict | None = None) -> str | None:
         val = None
@@ -346,7 +379,7 @@ class UniversalEngine(BaseScraper):
                 if m:
                     try: val = m.group(1)
                     except IndexError: val = m.group(0)
-        return unescape_text(val) if val else None
+        return _unescape_text(val) if val else None
 
     def _parse_duration(self, text: str | None) -> float | None:
         if not text: return None
@@ -404,6 +437,24 @@ class UniversalEngine(BaseScraper):
                 if text and anchor_text.lower() not in text.lower(): return text
                 curr = next_text
         return None
+
+    def extract_admissions_codes(self, soup: BeautifulSoup, config: dict) -> list[str]:
+        results = set()
+        selector = config.get("selector")
+        anchor = config.get("anchor")
+        regex = config.get("regex")
+        if selector:
+            elem = soup.select_one(selector)
+            if elem:
+                text = elem.get_text(" ", strip=True)
+                if regex: results.update(re.findall(regex, text))
+                else: results.add(text)
+        if not results and anchor:
+            label_text = self.find_by_anchor(soup, anchor)
+            if label_text and regex: results.update(re.findall(regex, label_text))
+        if not results and regex:
+            results.update(re.findall(regex, soup.get_text(" ")))
+        return sorted(list(results))
 
     def _preprocess_html(self, html: str, config: SiteConfig) -> str:
         cleanup = config.extraction_map.get("cleanup_regexes", [])

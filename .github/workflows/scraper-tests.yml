@@ -1,0 +1,36 @@
+name: Scraper Tests
+
+on:
+  pull_request:
+    paths:
+      - "scraper/**"
+  push:
+    branches:
+      - main
+    paths:
+      - "scraper/**"
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: scraper
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: scraper/pyproject.toml
+
+      - name: Install dependencies
+        run: pip install -e .
+
+      - name: Run scraper unit tests
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: pytest tests/ --ignore=tests/test_queue_db.py -v
