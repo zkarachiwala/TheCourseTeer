@@ -334,6 +334,61 @@ class UniversalEngine(BaseScraper):
                     admissions_codes=list(adm_codes),
                 ))
 
+        # 7b. Per-campus ATAR override from allAtars-style JSON map
+        if atar_cfg.get("json_regex") and campuses and code_map:
+            atar_map = self._extract_json_map(clean_html, atar_cfg)
+            if atar_map:
+                inv_code_map = {v: k for k, v in code_map.items()}
+                for c in campuses:
+                    campus_code = inv_code_map.get(c.campus_id, "")
+                    campus_data = atar_map.get(campus_code.upper()) or atar_map.get(campus_code)
+                    if campus_data:
+                        rank_val = campus_data.get("minSelectionRankOffered")
+                        guaranteed_val = campus_data.get("aspireMinimumATAR")
+                        if rank_val:
+                            try:
+                                c.atar_lowest_selection_rank = round(float(rank_val), 2)
+                            except (ValueError, TypeError):
+                                pass
+                        if guaranteed_val:
+                            try:
+                                c.atar_guaranteed = round(float(guaranteed_val), 2)
+                            except (ValueError, TypeError):
+                                pass
+
+        # 8. Follow URLs (e.g. La Trobe data API sub-pages for admissions codes)
+        follow_cfg = config.extraction_map.get("follow_urls")
+        if follow_cfg and fetch_fn:
+            regex = follow_cfg.get("regex")
+            if regex:
+                matches = re.findall(regex, clean_html)
+                for sub_url in matches:
+                    if not sub_url.startswith("http"):
+                        sub_url = config.base_url.rstrip("/") + "/" + sub_url.lstrip("/")
+                    try:
+                        sub_content = await fetch_fn(sub_url)
+                        if not sub_content:
+                            continue
+                        sub_soup = BeautifulSoup(sub_content, "lxml")
+                        sub_adm_codes = self.extract_admissions_codes(sub_soup, adm_cfg)
+                        sub_duration = self._parse_duration(
+                            next((m.group(1) for m in [re.search(r'"duration"\s*:\s*"?([^",}]+)"?', sub_content)] if m), None)
+                        )
+                        if sub_adm_codes or sub_duration:
+                            matched = next(
+                                (c for c in campuses if code_map and
+                                 any(f"/{k}/" in sub_url.lower() for k, v in code_map.items() if v == c.campus_id)),
+                                None
+                            )
+                            targets = [matched] if matched else campuses
+                            for c in targets:
+                                if sub_adm_codes:
+                                    c.admissions_codes = sorted(set(c.admissions_codes) | set(sub_adm_codes))
+                                if sub_duration and (not duration or sub_duration > duration):
+                                    duration = sub_duration
+                    except Exception as e:
+                        logger.error(f"Failed to fetch follow URL {sub_url}: {e}")
+
         return CourseData(university_id=config.university_id, name=name, source_url=url, faculty=self._infer_faculty(name), campuses=campuses, degree_type=degree_type, duration_years=duration, csp_available=csp_available if csp_available else None, confidence_score=90 if json_data else 70)
 
     def _extract_field(self, soup: BeautifulSoup | None, field_cfg: dict, full_text: str | None = None, field_name: str | None = None, json_data: dict | None = None) -> str | None:
@@ -455,6 +510,24 @@ class UniversalEngine(BaseScraper):
         if not results and regex:
             results.update(re.findall(regex, soup.get_text(" ")))
         return sorted(list(results))
+
+    def _extract_json_map(self, text: str, field_cfg: dict) -> dict | None:
+        json_regex = field_cfg.get("json_regex")
+        json_path = field_cfg.get("json_path")
+        if not json_regex:
+            return None
+        m = re.search(json_regex, text, re.DOTALL)
+        if not m:
+            return None
+        try:
+            data = json.loads(m.group(1))
+        except Exception:
+            return None
+        if json_path == "latest_key" and isinstance(data, dict):
+            sorted_keys = sorted(data.keys(), reverse=True)
+            if sorted_keys:
+                return data[sorted_keys[0]]
+        return data
 
     def _preprocess_html(self, html: str, config: SiteConfig) -> str:
         cleanup = config.extraction_map.get("cleanup_regexes", [])
