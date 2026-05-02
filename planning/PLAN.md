@@ -54,8 +54,8 @@ For all options, scraper status is visible in the Next.js health dashboard via t
 ## 3. Data Schema & Storage
 
 ### 3.1 Infrastructure
-- **Local dev:** Docker Compose with Postgres 17 + Adminer (web DB browser on port 8080).
-- **Migrations:** dbmate. Plain SQL files in `db/migrations/`. Run with `scripts/migrate.bat` (Windows) or `bash scripts/migrate.sh`.
+- **Database:** Supabase (managed Postgres). Used for both local dev and production via the Supabase connection string.
+- **Migrations:** dbmate. Plain SQL files in `db/migrations/`. Run with `dbmate up`.
 - **Production database:** Supabase (managed Postgres, free tier for MVP). Migrate to RDS if scale demands it.
 - **App hosting:** Azure Static Web Apps (free tier). Next.js App Router with hybrid SSR via built-in serverless runtime.
 - **Scraper:** Decoupled from app hosting. Runs independently on demand. See Section 2.3 for execution options.

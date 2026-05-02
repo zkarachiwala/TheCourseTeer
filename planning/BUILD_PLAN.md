@@ -33,7 +33,7 @@ Reserve Claude Code for high-value, high-context work. Offload routine and mecha
 - Writing scraper extraction logic for individual universities
 - Writing unit tests
 - Generating SQL migration files from the schema spec
-- Drafting config files: `.env.example`, Docker Compose, CI yaml
+- Drafting config files: `.env.example`, CI yaml
 - Any well-specified task that does not require deep repo context
 
 Use `gemini-2.5-flash` by default. Drop to `gemini-2.5-pro` only when a larger context window is needed (use sparingly).

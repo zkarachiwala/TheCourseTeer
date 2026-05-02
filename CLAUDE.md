@@ -93,7 +93,7 @@ Delegate to Gemini for:
 - Writing scraper extraction logic for a single university (given the HTML structure)
 - Writing unit tests for a specified function or module
 - Generating SQL migration files from a schema description
-- Drafting config files: `.env.example`, `docker-compose.yml`, CI yaml, `pyproject.toml`
+- Drafting config files: `.env.example`, CI yaml, `pyproject.toml`
 
 If the output needs review or integration into the codebase, do that in Claude after Gemini returns.
 

@@ -108,10 +108,8 @@ Each has a different HTML structure, which will stress-test the scraper design e
 ## 5. Infrastructure - Not Addressed in Plan
 
 ### 5.1 Where does Postgres run?
-- Local dev: Docker Compose (fine)
-- Production: RDS, Supabase, Railway, Neon?
-**Recommendation:** Supabase for MVP. Managed Postgres, built-in REST API, free tier sufficient for initial data volume. Switch to RDS if scale demands it.
-ANSWER: As recommended
+- Local dev and production: Supabase (managed Postgres). Connect via Supabase connection string.
+ANSWER: Supabase for all environments. Switch to RDS if scale demands it.
 
 ### 5.2 Where does the scraper run?
 Playwright requires a real browser. This is heavy for a Lambda/serverless function.

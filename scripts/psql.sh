@@ -1,2 +1,0 @@
-#!/usr/bin/env bash
-#docker compose exec db psql -U postgres -d courseteer
