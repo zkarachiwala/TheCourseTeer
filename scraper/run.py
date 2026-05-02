@@ -18,6 +18,7 @@ from db import get_pool
 from universal_engine import UniversalEngine
 
 SCRAPERS: dict[str, type[BaseScraper]] = {
+    "deakin": UniversalEngine,
     "latrobe": UniversalEngine,
     "monash": UniversalEngine,
     "rmit": UniversalEngine,
