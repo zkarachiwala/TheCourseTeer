@@ -19,6 +19,23 @@ dependencies = [
 [tool.uv]
 package = false
 
+[tool.setuptools]
+py-modules = [
+    "ai_parse",
+    "ai_remap",
+    "base_scraper",
+    "browser",
+    "db",
+    "http_client",
+    "models",
+    "robots",
+    "run",
+    "seed_site_configs",
+    "selector",
+    "snapshot_manager",
+    "universal_engine",
+]
+
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "session"
