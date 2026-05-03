@@ -298,7 +298,7 @@ class UniversalEngine(BaseScraper):
 
         # 6. Admissions codes
         adm_cfg = config.extraction_map.get("admissions_codes", {})
-        adm_codes = self.extract_admissions_codes(soup, adm_cfg)
+        adm_codes = self.extract_admissions_codes(soup, adm_cfg, full_html=clean_html)
 
         # 7. Location
         loc_cfg = config.extraction_map.get("location", {})
@@ -306,6 +306,8 @@ class UniversalEngine(BaseScraper):
         campuses = []
         if location_raw:
             location_str = str(location_raw).strip()
+            location_str = re.sub(r'<br\s*/?>', ',', location_str, flags=re.IGNORECASE)
+            location_str = re.sub(r'<[^>]+>', '', location_str)
             if location_str.startswith("[") and location_str.endswith("]"):
                 try:
                     raw_list = json.loads(location_str)
@@ -313,6 +315,7 @@ class UniversalEngine(BaseScraper):
                     raw_list = re.split(r",|;| and ", location_str, flags=re.IGNORECASE)
             else:
                 raw_list = re.split(r",|;| and ", location_str, flags=re.IGNORECASE)
+            raw_list = [re.sub(r'\s*\([^)]*\)', '', loc).strip() for loc in raw_list if loc.strip()]
             location_mapping = loc_cfg.get("mapping", {})
             from models import CampusLink
             for loc in raw_list:
@@ -333,6 +336,8 @@ class UniversalEngine(BaseScraper):
                     atar_guaranteed=atar_guaranteed,
                     admissions_codes=list(adm_codes),
                 ))
+            seen_ids: set = set()
+            campuses = [c for c in campuses if not (c.campus_id in seen_ids or seen_ids.add(c.campus_id))]
 
         # 7b. Per-campus ATAR override from allAtars-style JSON map
         if atar_cfg.get("json_regex") and campuses and code_map:
@@ -370,7 +375,7 @@ class UniversalEngine(BaseScraper):
                         if not sub_content:
                             continue
                         sub_soup = BeautifulSoup(sub_content, "lxml")
-                        sub_adm_codes = self.extract_admissions_codes(sub_soup, adm_cfg)
+                        sub_adm_codes = self.extract_admissions_codes(sub_soup, adm_cfg, full_html=sub_content)
                         sub_duration = self._parse_duration(
                             next((m.group(1) for m in [re.search(r'"duration"\s*:\s*"?([^",}]+)"?', sub_content)] if m), None)
                         )
@@ -493,7 +498,7 @@ class UniversalEngine(BaseScraper):
                 curr = next_text
         return None
 
-    def extract_admissions_codes(self, soup: BeautifulSoup, config: dict) -> list[str]:
+    def extract_admissions_codes(self, soup: BeautifulSoup, config: dict, full_html: str | None = None) -> list[str]:
         results = set()
         selector = config.get("selector")
         anchor = config.get("anchor")
@@ -508,7 +513,7 @@ class UniversalEngine(BaseScraper):
             label_text = self.find_by_anchor(soup, anchor)
             if label_text and regex: results.update(re.findall(regex, label_text))
         if not results and regex:
-            results.update(re.findall(regex, soup.get_text(" ")))
+            results.update(re.findall(regex, full_html or soup.get_text(" ")))
         return sorted(list(results))
 
     def _extract_json_map(self, text: str, field_cfg: dict) -> dict | None:

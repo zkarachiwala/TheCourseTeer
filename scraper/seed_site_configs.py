@@ -19,6 +19,7 @@ UNI_MAP = {
     "unimelb": "efd28617-ec88-42ca-a710-6b3edd5f8e0e",
     "latrobe": "f5b3d349-0214-480b-89bc-7b70298e722b",
     "swinburne": "fa7b5854-a3bd-4572-aff6-d43cf6249581",
+    "federation": "ea176745-a7d0-4773-b9dc-c08624754035",
 }
 
 # La Trobe Campus Codes to seed into external_code column
@@ -130,11 +131,11 @@ SITE_CONFIGS = [
         "base_url": "https://www.latrobe.edu.au",
         "extraction_map": {
             "name": {
-                "selector": "h1.ds-course-header__title", 
+                "selector": "h1.ds-course-header__title",
                 "regex": r'"advertisedTitle"\s*:\s*"?([^",}]+)"?'
             },
             "duration": {
-                "anchor": "Duration", 
+                "anchor": "Duration",
                 "regex": r'("duration"\s*:\s*"?([0-9.]+)"?|Duration.*?\b(\d+(?:\.\d+)?)\s*years?)'
             },
             "atar": {
@@ -167,6 +168,35 @@ SITE_CONFIGS = [
         },
         "robots_txt_status": "allowed",
         "notes": "La Trobe discovery updated to prioritize main course pages for ATAR extraction. Uses follow_urls to find VTAC codes."
+    },
+    {
+        "university_id": UNI_MAP["federation"],
+        "base_url": "https://www.federation.edu.au",
+        "extraction_map": {
+            "name": {"selector": "title", "regex": r"^([^|]+?)\s*\|"},
+            "duration": {"regex": r'"heading"\s*:\s*"Duration"\s*,\s*"summary"\s*:\s*"([^"]+)"'},
+            "atar": {"regex": r'"heading"\s*:\s*"ATAR"\s*,\s*"summary"\s*:\s*"([^"]+)"'},
+            "fees": {"regex": r'Commonwealth Supported Place'},
+            "location": {
+                "regex": r'"heading"\s*:\s*"Locations"\s*,\s*"summary"\s*:\s*"([^"]+)"',
+                "mapping": {
+                    "Ballarat":  "e84c817b-c88d-4211-801b-7f97009f0370",
+                    "Mt Helen":  "e84c817b-c88d-4211-801b-7f97009f0370",
+                    "Gippsland": "87036014-4081-4075-bbed-784bb926a788",
+                    "Churchill": "87036014-4081-4075-bbed-784bb926a788",
+                    "Berwick":   "c89c9c6b-4a6b-442e-801c-1073fa69b8fd",
+                    "Online":    "e9649dc5-7636-4822-8d34-e192fc1bf195"
+                }
+            },
+            "admissions_codes": {"regex": r"(37\d{8})"}
+        },
+        "discovery_config": {
+            "method": "sitemap",
+            "url": "https://www.federation.edu.au/sitemap.xml",
+            "include_patterns": ["/courses/"]
+        },
+        "robots_txt_status": "allowed",
+        "notes": "All course data in embedded JSON blob (Course essentials heading/summary pairs). Location uses <br> separators with delivery modes stripped by engine."
     }
 ]
 

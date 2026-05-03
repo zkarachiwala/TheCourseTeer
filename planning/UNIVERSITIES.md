@@ -159,6 +159,26 @@ Newer sites or known React/Vue/Angular frontends.
 
 ---
 
+### Federation University Australia
+| Field | Value |
+|---|---|
+| Homepage | https://www.federation.edu.au |
+| Course URL pattern | `/courses/{code}-{name-slug}/` |
+| robots.txt blocks courses | No |
+| Bot protection | None |
+| Rendering | Server-rendered HTML |
+| JSON-LD / Schema.org | None (JSON-LD contains org info only, not course data) |
+| ATAR in static HTML | Yes — embedded JSON blob under "Course essentials" heading/summary pairs |
+| Fees in static HTML | Yes — "Commonwealth Supported Place" text |
+| Scraper mode | `static` |
+| Course discovery | Sitemap at `/sitemap.xml` — filter `/courses/` paths |
+| Campuses | Ballarat Mt Helen, Gippsland Churchill, Berwick, Online |
+| VTAC codes | 10 digits starting with `37` — regex `(37\d{8})` |
+| Notes | Location field uses `<br>` separators with delivery mode qualifiers (e.g. "(blended)"). Engine normalises these. Wonthaggi excluded from campus mapping — placement site only. |
+| Phase | `mvp` |
+
+---
+
 ## How to Add a New University
 
 When spiking a new university for Phase 2, record the following in this file:
