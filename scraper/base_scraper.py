@@ -12,6 +12,7 @@ from db import (
     get_or_create_run,
     get_pending_urls,
     get_university,
+    log_atar_issue,
     mark_discovery_complete,
     mark_url_complete,
     mark_url_failed,
@@ -93,6 +94,11 @@ class BaseScraper(ABC):
                     await mark_url_failed(self.pool, university_id, url, str(result), MAX_ATTEMPTS)
                 elif result is not None:
                     await upsert_course(self.pool, result)
+                    for issue_type, description in result.atar_issues:
+                        await log_atar_issue(
+                            self.pool, university_id, run_id,
+                            result.name, result.source_url, issue_type, description,
+                        )
                     await mark_url_complete(self.pool, university_id, url, run_id)
                     completed += 1
                 else:

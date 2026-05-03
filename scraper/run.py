@@ -25,6 +25,7 @@ SCRAPERS: dict[str, type[BaseScraper]] = {
     "rmit": UniversalEngine,
     "swinburne": UniversalEngine,
     "unimelb": UniversalEngine,
+    "vu": UniversalEngine,
 }
 
 
