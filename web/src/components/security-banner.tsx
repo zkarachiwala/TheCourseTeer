@@ -20,12 +20,14 @@ export function SecurityBanner() {
         <div className="flex gap-2">
           <Link
             href="/login/github"
+            prefetch={false}
             className="rounded-md bg-amber-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-amber-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-600 transition-colors"
           >
             GitHub Sign In
           </Link>
           <Link
             href="/login/microsoft"
+            prefetch={false}
             className="rounded-md bg-white dark:bg-amber-900 px-3 py-1.5 text-xs font-semibold text-amber-900 dark:text-amber-100 border border-amber-300 dark:border-amber-800 shadow-sm hover:bg-amber-100 dark:hover:bg-amber-800 transition-colors"
           >
             Microsoft Sign In

@@ -27,7 +27,7 @@ export function Header() {
         </Link>
         <nav style={{ display: 'flex', gap: '4px', flex: 1, alignItems: 'center' }}>
           <NavLink href="/courses" active={pathname.startsWith('/courses')}>Courses</NavLink>
-          <NavLink href="/admin" active={pathname.startsWith('/admin')}>Admin</NavLink>
+          <NavLink href="/admin" active={pathname.startsWith('/admin')} prefetch={false}>Admin</NavLink>
         </nav>
         {shortlisted.length > 0 && (
           <button onClick={openDrawer} style={{ padding: '6px 14px', borderRadius: 'var(--radius-pill)', border: 'none', cursor: 'pointer', fontSize: '14px', fontWeight: 500, background: 'var(--bg3)', color: 'var(--text2)', display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
@@ -42,9 +42,9 @@ export function Header() {
   )
 }
 
-function NavLink({ href, children, active }: { href: string; children: React.ReactNode; active: boolean }) {
+function NavLink({ href, children, active, prefetch }: { href: string; children: React.ReactNode; active: boolean; prefetch?: false }) {
   return (
-    <Link href={href} style={{
+    <Link href={href} prefetch={prefetch} style={{
       padding: '6px 14px',
       borderRadius: 'var(--radius-pill)',
       fontSize: '14px', fontWeight: 500,

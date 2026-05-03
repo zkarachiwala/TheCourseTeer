@@ -32,6 +32,11 @@ export function CourseListClient({
   const router = useRouter()
   const pathname = usePathname()
   const [layout, setLayout] = useState<Layout>('grid')
+
+  function navigate(url: string, opts?: { scroll?: boolean }) {
+    router.replace(url, opts)
+    router.refresh()
+  }
   const [selected, setSelected] = useState<CourseCardData | null>(null)
   const { isShortlisted, toggle } = useShortlist()
 
@@ -73,7 +78,7 @@ export function CourseListClient({
 
   const toggleArea = (a: string) => {
     const areas = currentParams.filters.areas ?? []
-    router.replace(
+    navigate(
       buildUrl({ areas: areas.includes(a) ? areas.filter(x => x !== a) : [...areas, a], page: 1 }),
       { scroll: false }
     )
@@ -81,7 +86,7 @@ export function CourseListClient({
 
   const toggleUni = (s: string) => {
     const unis = currentParams.filters.unis ?? []
-    router.replace(
+    navigate(
       buildUrl({ unis: unis.includes(s) ? unis.filter(x => x !== s) : [...unis, s], page: 1 }),
       { scroll: false }
     )
@@ -89,7 +94,7 @@ export function CourseListClient({
 
   const toggleDuration = (d: string) => {
     const durations = currentParams.filters.durations ?? []
-    router.replace(
+    navigate(
       buildUrl({
         durations: durations.includes(d) ? durations.filter(x => x !== d) : [...durations, d],
         page: 1,
@@ -99,7 +104,7 @@ export function CourseListClient({
   }
 
   const clearAll = () =>
-    router.replace(
+    navigate(
       buildUrl({ search: undefined, areas: [], unis: [], durations: [], minAtar: undefined, page: 1 }),
       { scroll: false }
     )
@@ -120,7 +125,7 @@ export function CourseListClient({
       <HeroSection
         search={currentParams.filters.search ?? ''}
         onSearchChange={v =>
-          router.replace(buildUrl({ search: v || undefined, page: 1 }), { scroll: false })
+          navigate(buildUrl({ search: v || undefined, page: 1 }), { scroll: false })
         }
         selectedAreas={currentParams.filters.areas ?? []}
         onAreaToggle={toggleArea}
@@ -131,7 +136,7 @@ export function CourseListClient({
         availableDurations={availableDurations}
         minAtar={currentParams.filters.minAtar ? String(currentParams.filters.minAtar) : ''}
         onMinAtarChange={v =>
-          router.replace(
+          navigate(
             buildUrl({ minAtar: v ? Number(v) : undefined, page: 1 }),
             { scroll: false }
           )
@@ -169,7 +174,7 @@ export function CourseListClient({
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', justifyContent: 'center', padding: '8px 0', maxWidth: 'var(--max-w)', margin: '0 auto' }}>
           <button
             disabled={page <= 1}
-            onClick={() => router.replace(buildUrl({ page: page - 1 }), { scroll: true })}
+            onClick={() => navigate(buildUrl({ page: page - 1 }), { scroll: true })}
             style={{ padding: '6px 14px', borderRadius: 'var(--radius-btn)', border: '1.5px solid var(--border)', background: 'var(--card-bg)', color: page <= 1 ? 'var(--text3)' : 'var(--text)', cursor: page <= 1 ? 'default' : 'pointer', fontSize: '13px' }}
           >
             ← Prev
@@ -179,7 +184,7 @@ export function CourseListClient({
           </span>
           <button
             disabled={page >= totalPages}
-            onClick={() => router.replace(buildUrl({ page: page + 1 }), { scroll: true })}
+            onClick={() => navigate(buildUrl({ page: page + 1 }), { scroll: true })}
             style={{ padding: '6px 14px', borderRadius: 'var(--radius-btn)', border: '1.5px solid var(--border)', background: 'var(--card-bg)', color: page >= totalPages ? 'var(--text3)' : 'var(--text)', cursor: page >= totalPages ? 'default' : 'pointer', fontSize: '13px' }}
           >
             Next →
@@ -187,7 +192,7 @@ export function CourseListClient({
           <select
             value={currentParams.pageSize}
             onChange={e =>
-              router.replace(buildUrl({ pageSize: Number(e.target.value), page: 1 }), { scroll: false })
+              navigate(buildUrl({ pageSize: Number(e.target.value), page: 1 }), { scroll: false })
             }
             style={{ padding: '6px 10px', borderRadius: 'var(--radius-btn)', border: '1.5px solid var(--border)', background: 'var(--card-bg)', color: 'var(--text2)', fontSize: '13px', cursor: 'pointer' }}
           >
