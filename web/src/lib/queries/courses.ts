@@ -141,7 +141,7 @@ export async function fetchCoursePage(
   const [dataRows, countRows, durationRows] = await Promise.all([
     db.execute(sql`
       SELECT
-        c.id || '-' || cp.id AS id,
+        c.id::text || '-' || COALESCE(cp.id::text, 'none') AS id,
         c.name,
         c.faculty,
         c.degree_type AS "degreeType",

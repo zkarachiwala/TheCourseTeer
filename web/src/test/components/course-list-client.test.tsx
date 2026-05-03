@@ -8,7 +8,7 @@ import type { FetchCoursePageParams } from '@/lib/queries/courses'
 const mockReplace = vi.hoisted(() => vi.fn())
 
 vi.mock('next/navigation', () => ({
-  useRouter: () => ({ replace: mockReplace, push: vi.fn(), prefetch: vi.fn() }),
+  useRouter: () => ({ replace: mockReplace, push: vi.fn(), prefetch: vi.fn(), refresh: vi.fn() }),
   usePathname: () => '/courses',
 }))
 
