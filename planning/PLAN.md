@@ -162,7 +162,7 @@ Created at schema setup even if empty in MVP.
 
 ### Phase 1: MVP
 - Database schema setup (all tables including `course_prerequisites` and `scraper_configs`).
-- Scraper for Victorian universities: RMIT, Monash University, University of Melbourne, La Trobe, Deakin, Federation University, Swinburne, Victoria University.
+- Scraper for Victorian universities: RMIT, Monash University, University of Melbourne, La Trobe, Deakin, Federation University, Swinburne, Victoria University, and Australian Catholic University (ACU).
 - Multi-campus model: courses link to campuses via `course_campuses` join table; ATAR stored per campus.
 - One "Online" campus per university (flagged `is_online = true`).
 - Per-university scraping approach, URL patterns, and data availability: see [UNIVERSITIES.md](UNIVERSITIES.md).
