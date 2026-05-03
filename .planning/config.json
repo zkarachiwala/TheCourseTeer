@@ -1,9 +1,0 @@
-{
-  "granularity": "fine",
-  "framework": {
-    "web": "Next.js",
-    "scraper": "Python"
-  },
-  "database": "Supabase",
-  "deployment": "Azure Static Web Apps"
-}
