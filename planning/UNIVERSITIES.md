@@ -68,6 +68,23 @@ Spike evidence for MVP universities: see [ROBOTS_SPIKE.md](ROBOTS_SPIKE.md).
 
 ---
 
+### 4. Australian Catholic University (ACU)
+| Field | Value |
+|---|---|
+| Homepage | https://www.acu.edu.au |
+| Course URL pattern | `tbd` |
+| robots.txt blocks courses | `tbd` |
+| Bot protection | `tbd` |
+| Rendering | `tbd` |
+| JSON-LD / Schema.org | `tbd` |
+| ATAR in static HTML | `tbd` |
+| Fees in static HTML | `tbd` |
+| Scraper mode | `tbd` |
+| Notes | Added to Victorian list due to significant Melbourne and Ballarat presence. |
+| Phase | `mvp` |
+
+---
+
 ## Phase 2 — All Remaining Australian Universities
 
 Grouped by expected scraper complexity based on typical university web stack patterns. All require individual robots.txt verification and a scraping spike before implementation.
@@ -112,14 +129,33 @@ Newer sites or known React/Vue/Angular frontends.
 | University | Homepage | Phase | Status |
 |---|---|---|---|
 | Charles Sturt University | https://www.csu.edu.au | `phase2` | `tbd` |
-| Federation University | https://federation.edu.au | `phase2` | `tbd` |
+| Federation University | https://federation.edu.au | `mvp` | `mvp` |
 | Southern Cross University | https://www.scu.edu.au | `phase2` | `tbd` |
 | Central Queensland University | https://www.cqu.edu.au | `phase2` | `tbd` |
 | University of the Sunshine Coast | https://www.usc.edu.au | `phase2` | `tbd` |
 | Edith Cowan University | https://www.ecu.edu.au | `phase2` | `tbd` |
 | University of New England | https://www.une.edu.au | `phase2` | `tbd` |
 | Torrens University | https://www.torrens.edu.au | `phase2` | `tbd` |
-| Australian Catholic University | https://www.acu.edu.au | `phase2` | `tbd` |
+
+---
+
+### Federation University Australia
+| Field | Value |
+|---|---|
+| Homepage | https://www.federation.edu.au |
+| Course URL pattern | `/courses/{code}-{name-slug}/` |
+| robots.txt blocks courses | No |
+| Bot protection | None |
+| Rendering | Server-rendered HTML |
+| JSON-LD / Schema.org | None (JSON-LD contains org info only, not course data) |
+| ATAR in static HTML | Yes — embedded JSON blob under "Course essentials" heading/summary pairs |
+| Fees in static HTML | Yes — "Commonwealth Supported Place" text |
+| Scraper mode | `static` |
+| Course discovery | Sitemap at `/sitemap.xml` — filter `/courses/` paths |
+| Campuses | Ballarat Mt Helen, Gippsland Churchill, Berwick, Online |
+| VTAC codes | 8 digits (not 9-10 like other unis) — regex `\b(1\d{7})\b` |
+| Notes | Location field uses `<br>` separators with delivery mode qualifiers (e.g. "(blended)"). Engine normalises these. Wonthaggi excluded from campus mapping — placement site only. |
+| Phase | `mvp` |
 
 ---
 

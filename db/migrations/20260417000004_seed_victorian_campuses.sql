@@ -40,7 +40,7 @@ JOIN (VALUES
 ) AS c(uni_slug, name, slug, address, latitude, longitude)
 ON u.slug = c.uni_slug;
 
--- Online campus (is_online = true) for all 8 Victorian universities
+-- Online campus (is_online = true) for all 9 Victorian universities
 INSERT INTO campuses (university_id, name, slug, is_online)
 SELECT u.id, 'Online', u.slug || '-online', true
 FROM universities u

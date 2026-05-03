@@ -115,6 +115,7 @@ All 5 universities **allow scraping of course/handbook pages** in their robots.t
 | RMIT | Yes | None | Server HTML | Yes | Yes | No |
 | Monash | Yes | Cloudflare (UA) | Server HTML | Yes | Yes (inline JSON) | No |
 | UQ | Yes | None | Server HTML | Partial | Partial | Yes (for amounts) |
+| ACU | TBD | TBD | TBD | TBD | TBD | TBD |
 
 ---
 
@@ -140,6 +141,7 @@ The `scraper_configs` table should include a `mode` field: `static` or `browser`
 
 ## Open Issues to Monitor
 
+- **ACU Assessment**: ACU has been added to the Victorian university list. A scraping spike is required to determine rendering mode and data availability.
 - **Melbourne Cloudflare**: If Cloudflare escalates from User-Agent check to full managed challenge (JS fingerprinting), even Playwright may be blocked. Monitor during initial scraper runs. Mitigation: Playwright stealth plugin, or check if an undocumented API powers the Nuxt.js frontend (intercept XHR calls).
 - **UQ dynamic data**: ATAR guarantee and exact annual fees are referenced but amounts not confirmed in static HTML. Verify with Playwright run.
 - **RMIT URL discovery**: Course list page only surfaces ~7 links in static HTML — a sitemap or search API will be needed to enumerate all RMIT courses.
