@@ -31,7 +31,7 @@ def _unescape_text(val: str) -> str:
                 val = codecs.decode(val, 'unicode_escape')
             except:
                 pass
-    return val.strip().strip('"').strip("'").strip()
+    return " ".join(val.strip().strip('"').strip("'").split())
 
 
 class UniversalEngine(BaseScraper):
