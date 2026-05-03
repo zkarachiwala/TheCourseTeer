@@ -1,68 +1,46 @@
 export const dynamic = 'force-dynamic'
 
-import { db } from '../../../db'
-import { universities } from '../../../db/schema'
-import { asc, sql, eq } from 'drizzle-orm'
-import { CourseListClient } from '@/components/course-list-client'
+import {
+  fetchCoursePage,
+  fetchUniversities,
+  fetchUniversityBySlug,
+  parseSearchParams,
+} from '../../lib/queries/courses'
+import { CourseListClient } from '../../components/course-list-client'
 import { notFound } from 'next/navigation'
 
 interface Props {
-  params: {
-    university: string
-  }
+  params: { university: string }
+  searchParams: { [key: string]: string | string[] | undefined }
 }
 
-export default async function UniversityPage({ params }: Props) {
+export default async function UniversityPage({ params, searchParams }: Props) {
   const { university: slug } = params
+  const university = await fetchUniversityBySlug(slug)
+  if (!university) notFound()
 
-  // Verify university exists
-  const uni = await db.query.universities.findFirst({
-    where: eq(universities.slug, slug),
-  })
+  const courseParams = parseSearchParams(searchParams, { slug })
+  const [{ rows, total, availableDurations }, universities] = await Promise.all([
+    fetchCoursePage(courseParams),
+    fetchUniversities(),
+  ])
 
-  if (!uni) {
-    notFound()
+  const featuredConfig = {
+    universityName: university.name,
+    tagline: `Explore undergraduate degrees at ${university.name}.`,
+    highlight: university.scraperStatus === 'active' ? 'Verified Data' : 'Data Aggregated',
+    ctaText: 'Visit University Site',
+    ctaUrl: university.homepageUrl,
   }
 
-  // Fetch all course-campus combinations for this university so users can see all options.
-  const rows = await db.execute(sql`
-    SELECT
-      c.id || '-' || cp.id as id,
-      c.name,
-      c.faculty,
-      c.degree_type as "degreeType",
-      c.duration_years as "durationYears",
-      c.source_url as "sourceUrl",
-      u.name as "universityName",
-      u.slug as "universitySlug",
-      cc.atar_guaranteed as "atarGuaranteed",
-      cc.atar_lowest_selection_rank as "atarSelectionRank",
-      cp.name as "campusName"
-    FROM courses c
-    LEFT JOIN universities u ON c.university_id = u.id
-    LEFT JOIN course_campuses cc ON c.id = cc.course_id
-    LEFT JOIN campuses cp ON cc.campus_id = cp.id
-    WHERE u.slug = ${slug}
-    ORDER BY c.name ASC, cp.name ASC
-  `)
-
-  const formattedCourses = (rows as any).map((row: any) => ({
-    ...row,
-    durationYears: row.durationYears != null ? Number(row.durationYears) : null,
-    atarGuaranteed: row.atarGuaranteed != null ? Number(row.atarGuaranteed) : null,
-    atarSelectionRank: row.atarSelectionRank != null ? Number(row.atarSelectionRank) : null,
-  }))
-
-  const uniList = await db
-    .select({ slug: universities.slug, name: universities.name })
-    .from(universities)
-    .orderBy(asc(universities.name))
-
   return (
-    <CourseListClient 
-      courses={formattedCourses} 
-      universities={uniList} 
-      initialUnis={[slug]}
+    <CourseListClient
+      courses={rows}
+      total={total}
+      availableDurations={availableDurations}
+      universities={universities}
+      currentParams={courseParams}
+      featuredUni={featuredConfig}
     />
   )
 }
