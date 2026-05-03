@@ -35,7 +35,6 @@ export function CourseListClient({
 
   function navigate(url: string, opts?: { scroll?: boolean }) {
     router.replace(url, opts)
-    router.refresh()
   }
   const [selected, setSelected] = useState<CourseCardData | null>(null)
   const { isShortlisted, toggle } = useShortlist()
