@@ -112,7 +112,7 @@ Newer sites or known React/Vue/Angular frontends.
 | University | Homepage | Phase | Status |
 |---|---|---|---|
 | Charles Sturt University | https://www.csu.edu.au | `phase2` | `tbd` |
-| Federation University | https://federation.edu.au | `phase2` | `tbd` |
+| Federation University | https://federation.edu.au | `mvp` | `mvp` |
 | Southern Cross University | https://www.scu.edu.au | `phase2` | `tbd` |
 | Central Queensland University | https://www.cqu.edu.au | `phase2` | `tbd` |
 | University of the Sunshine Coast | https://www.usc.edu.au | `phase2` | `tbd` |
@@ -120,6 +120,26 @@ Newer sites or known React/Vue/Angular frontends.
 | University of New England | https://www.une.edu.au | `phase2` | `tbd` |
 | Torrens University | https://www.torrens.edu.au | `phase2` | `tbd` |
 | Australian Catholic University | https://www.acu.edu.au | `phase2` | `tbd` |
+
+---
+
+### Federation University Australia
+| Field | Value |
+|---|---|
+| Homepage | https://www.federation.edu.au |
+| Course URL pattern | `/courses/{code}-{name-slug}/` |
+| robots.txt blocks courses | No |
+| Bot protection | None |
+| Rendering | Server-rendered HTML |
+| JSON-LD / Schema.org | None (JSON-LD contains org info only, not course data) |
+| ATAR in static HTML | Yes — embedded JSON blob under "Course essentials" heading/summary pairs |
+| Fees in static HTML | Yes — "Commonwealth Supported Place" text |
+| Scraper mode | `static` |
+| Course discovery | Sitemap at `/sitemap.xml` — filter `/courses/` paths |
+| Campuses | Ballarat Mt Helen, Gippsland Churchill, Berwick, Online |
+| VTAC codes | 10 digits starting with `37` — regex `(37\d{8})` |
+| Notes | Location field uses `<br>` separators with delivery mode qualifiers (e.g. "(blended)"). Engine normalises these. Wonthaggi excluded from campus mapping — placement site only. |
+| Phase | `mvp` |
 
 ---
 
