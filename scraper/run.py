@@ -19,6 +19,7 @@ from universal_engine import UniversalEngine
 
 SCRAPERS: dict[str, type[BaseScraper]] = {
     "deakin": UniversalEngine,
+    "federation": UniversalEngine,
     "latrobe": UniversalEngine,
     "monash": UniversalEngine,
     "rmit": UniversalEngine,
