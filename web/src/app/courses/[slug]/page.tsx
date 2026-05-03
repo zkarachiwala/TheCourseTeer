@@ -1,7 +1,7 @@
 export const dynamic = 'force-dynamic'
 import { db } from '../../../../db'
-import { courses, universities, courseCampuses, campuses } from '../../../../db/schema'
-import { eq, sql, and } from 'drizzle-orm'
+import { universities } from '../../../../db/schema'
+import { eq, sql } from 'drizzle-orm'
 import { CourseListClient } from '@/components/course-list-client'
 import { notFound } from 'next/navigation'
 
@@ -18,9 +18,9 @@ export default async function UniversityCoursesPage({ params }: { params: { slug
     notFound()
   }
 
-  const distinctRows = await db.execute(sql`
-    SELECT DISTINCT ON (c.name, u.name)
-      c.id,
+  const rows = await db.execute(sql`
+    SELECT
+      c.id || '-' || cp.id as id,
       c.name,
       c.faculty,
       c.degree_type as "degreeType",
@@ -36,11 +36,10 @@ export default async function UniversityCoursesPage({ params }: { params: { slug
     LEFT JOIN course_campuses cc ON c.id = cc.course_id
     LEFT JOIN campuses cp ON cc.campus_id = cp.id
     WHERE u.slug = ${slug}
-    ORDER BY c.name ASC, u.name ASC, 
-             COALESCE(cc.atar_lowest_selection_rank, cc.atar_guaranteed) DESC NULLS LAST
+    ORDER BY c.name ASC, cp.name ASC
   `)
 
-  const formattedCourses = distinctRows.map((row: any) => ({
+  const formattedCourses = (rows as any).map((row: any) => ({
     ...row,
     durationYears: row.durationYears != null ? Number(row.durationYears) : null,
     atarGuaranteed: row.atarGuaranteed != null ? Number(row.atarGuaranteed) : null,
