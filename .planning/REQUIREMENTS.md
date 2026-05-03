@@ -7,7 +7,7 @@
 
 ## Category: Loading & Proxying (LOAD)
 - **LOAD-01**: Implement a server-side proxy in Next.js to bypass CORS when fetching university pages.
-- **LOAD-02**: Integrate Playwright or Puppeteer on the server to handle JavaScript-heavy university pages.
+- **LOAD-02**: Integrate a managed headless browser service (e.g., Browserless.io) via WebSocket for reliable JS rendering.
 - **LOAD-03**: Handle relative links and assets (CSS, Images) in the proxied page to ensure it renders correctly in the UI.
 
 ## Category: Visual Tagging (TAG)
@@ -20,8 +20,8 @@
 
 ## Category: Saving & Integration (SAVE)
 - **SAVE-01**: Implement a UI for reviewing and editing generated selectors before saving.
-- **SAVE-02**: Save the configuration (selectors, university mapping, field names) to the `scraper_configs` table in Supabase.
-- **SAVE-03**: Ensure the Python `UniversalEngine` can immediately consume the new configuration without code changes.
+- **SAVE-02**: Migrate/Unify `site_configs` and `scraper_configs` into a single consistent schema for both the Builder and the Python Scraper Engine.
+- **SAVE-03**: Ensure the Python `UniversalEngine` can immediately consume the unified configuration without code changes.
 
 ## Category: Validation (VALIDATE)
 - **VALIDATE-01**: Provide a "Test" button that runs the extraction logic against the loaded page using the generated selectors.
