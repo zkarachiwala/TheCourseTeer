@@ -10,7 +10,7 @@ import { SecurityBanner } from "@/components/security-banner";
 export const metadata: Metadata = {
   title: "The Courseteer",
   description: "Australian university course aggregator",
-  icons: { icon: '/logo-icon.png', apple: '/logo-icon.png' },
+  icons: { icon: '/logo-icon.png', apple: '/apple-touch-icon.png' },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
