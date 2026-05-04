@@ -10,6 +10,13 @@ At present I am leveraging different commmand line-based AI tools to build the e
 - The scraper app will farm out lesser tasks to other AI models including Google Gemini and Ollama
 - Claude code to build the web app to display the scraped information as the core application
 
+## iOS & App Icon Standards
+
+- **Transparency:** iOS (apple-touch-icon) does NOT support transparency. Transparent areas default to solid black.
+- **Backgrounds:** Always use a solid background color (e.g., white or brand primary) and flatten the alpha channel.
+- **Format:** Icons should be square PNGs (180x180 standard, 600x600+ for high quality). iOS applies the rounded corner mask automatically.
+- **Workflow:** When requested to generate or update iOS-related icons, proactively confirm the desired background color before implementation.
+
 ## What do I need Google Gemini to focus on
 
 The task of building the scraper is labourious.  So far we have built 3 scrapers and they need to go through rounds of validation and tweaking.
