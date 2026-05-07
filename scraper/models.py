@@ -30,6 +30,7 @@ class CourseData:
     price_annual_dfee_aud: int | None = None
     csp_available: bool | None = None
     prerequisites: list[str] | None = None
+    atar_issues: list[tuple[str, str]] = field(default_factory=list)
     confidence_score: int | None = None
 
 

@@ -361,6 +361,13 @@ class UniversalEngine(BaseScraper):
                             except (ValueError, TypeError):
                                 pass
 
+        # Log missing ATAR if config requests it (e.g. VU where many courses have no ATAR)
+        atar_issues: list[tuple[str, str]] = []
+        if atar_cfg.get("log_missing") and campuses and not any(
+            c.atar_lowest_selection_rank or c.atar_guaranteed for c in campuses
+        ):
+            atar_issues.append(("no_atar", "No ATAR found — course may not require one"))
+
         # 8. Follow URLs (e.g. La Trobe data API sub-pages for admissions codes)
         follow_cfg = config.extraction_map.get("follow_urls")
         if follow_cfg and fetch_fn:
@@ -394,7 +401,18 @@ class UniversalEngine(BaseScraper):
                     except Exception as e:
                         logger.error(f"Failed to fetch follow URL {sub_url}: {e}")
 
-        return CourseData(university_id=config.university_id, name=name, source_url=url, faculty=self._infer_faculty(name), campuses=campuses, degree_type=degree_type, duration_years=duration, csp_available=csp_available if csp_available else None, confidence_score=90 if json_data else 70)
+        return CourseData(
+            university_id=config.university_id,
+            name=name,
+            source_url=url,
+            faculty=self._infer_faculty(name),
+            campuses=campuses,
+            degree_type=degree_type,
+            duration_years=duration,
+            csp_available=csp_available if csp_available else None,
+            confidence_score=90 if json_data else 70,
+            atar_issues=atar_issues,
+        )
 
     def _extract_field(self, soup: BeautifulSoup | None, field_cfg: dict, full_text: str | None = None, field_name: str | None = None, json_data: dict | None = None) -> str | None:
         val = None

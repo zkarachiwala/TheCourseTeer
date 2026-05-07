@@ -20,6 +20,7 @@ UNI_MAP = {
     "latrobe": "f5b3d349-0214-480b-89bc-7b70298e722b",
     "swinburne": "fa7b5854-a3bd-4572-aff6-d43cf6249581",
     "federation": "ea176745-a7d0-4773-b9dc-c08624754035",
+    "vu": "76f950f6-4ff8-4a54-b3ad-f194221ece1c",
 }
 
 # La Trobe Campus Codes to seed into external_code column
@@ -201,10 +202,75 @@ SITE_CONFIGS = [
 ]
 
 async def seed():
-    async with await psycopg.AsyncConnection.connect(DATABASE_URL) as conn:
+    async with await psycopg.AsyncConnection.connect(DATABASE_URL, prepare_threshold=None) as conn:
         async with conn.cursor() as cur:
+            await cur.execute("SET search_path = public")
+
+            # Resolve VU Footscray Nicholson UUID (inserted by migration 20260503000002)
+            await cur.execute("SELECT id FROM public.campuses WHERE slug = 'vu-footscray-nicholson'")
+            row = await cur.fetchone()
+            vu_footscray_nicholson_id = str(row[0]) if row else None
+
+            vu_config = {
+                "university_id": UNI_MAP["vu"],
+                "base_url": "https://www.vu.edu.au",
+                "extraction_map": {
+                    "fetch_mode": "static",
+                    "cleanup_regexes": [
+                        r"<script[^>]*>.*?</script>",
+                        r"<style[^>]*>.*?</style>",
+                        r"\s*Applications closed",
+                    ],
+                    "name": {"selector": "h1"},
+                    "duration": {
+                        "anchor": "Duration",
+                        "regex": r"(\d+(?:\.\d+)?)\s*years?"
+                    },
+                    "atar": {
+                        "anchor": "Lowest selection rank",
+                        "regex": r"(\d{2,3}(?:\.\d+)?)",
+                        "log_missing": True
+                    },
+                    "fees": {"anchor": "Commonwealth supported place"},
+                    "location": {
+                        "anchor": "Location",
+                        "mapping": {
+                            "City Campus":                "3626dd07-e327-4322-aefd-c3c2023e53a4",
+                            "Footscray Park Campus":      "1deddf26-ad7f-4dcd-a20a-beaf43ca219b",
+                            "Footscray Park":             "1deddf26-ad7f-4dcd-a20a-beaf43ca219b",
+                            "St Albans Campus":           "29c1b21e-0f5f-4ef2-865c-5c61773df451",
+                            "St Albans":                  "29c1b21e-0f5f-4ef2-865c-5c61773df451",
+                            "Online":                     "741bd14f-74cd-4a08-966d-5af35a391573",
+                            "VU Online":                  "741bd14f-74cd-4a08-966d-5af35a391573",
+                            "Online Real Time":           "741bd14f-74cd-4a08-966d-5af35a391573",
+                            "Footscray Nicholson Campus": vu_footscray_nicholson_id,
+                            "Footscray Nicholson":        vu_footscray_nicholson_id,
+                            "Sunshine Campus":            "67530c6e-1691-4aed-b3f4-623a3bd95e3d",
+                            "Sunshine":                   "67530c6e-1691-4aed-b3f4-623a3bd95e3d",
+                        }
+                    },
+                    "admissions_codes": {
+                        "anchor": "VTAC course code",
+                        "regex": r"(43\d{8})"
+                    },
+                    "discovery_config": {
+                        "method": "sitemap",
+                        "url": "https://www.vu.edu.au/sitemap.xml?page=1",
+                        "include_patterns": ["/courses/bachelor"]
+                    }
+                },
+                "robots_txt_status": "allowed",
+                "notes": (
+                    "Nuxt SSR — static fetch works. ATAR = lowest selection rank only; "
+                    "many courses have no ATAR (VU Block Model) — logged via log_missing flag. "
+                    "VTAC codes in entry requirements section, 10-digit starting with 43. "
+                    "Sydney/Brisbane campus strings silently dropped (not in mapping). "
+                    "Crawl-delay 10 per robots.txt."
+                ),
+            }
+
             # Seed Site Configs
-            for config in SITE_CONFIGS:
+            for config in SITE_CONFIGS + [vu_config]:
                 # Merge discovery_config into extraction_map for storage
                 full_map = config["extraction_map"].copy()
                 if "discovery_config" in config:
