@@ -130,7 +130,7 @@ function UniMultiSelect({ universities, selected, onToggle }: { universities: { 
         </svg>
       </button>
       {open && (
-        <div style={{ position: 'absolute', top: 'calc(100% + 6px)', left: '50%', transform: 'translateX(-50%)', background: 'var(--card-bg)', border: '1px solid var(--border)', borderRadius: '12px', boxShadow: 'var(--shadow-lg)', zIndex: 200, minWidth: '220px', overflow: 'hidden' }}>
+        <div style={{ position: 'absolute', top: 'calc(100% + 6px)', left: '50%', transform: 'translateX(-50%)', background: 'var(--card-bg)', border: '1px solid var(--border)', borderRadius: '12px', boxShadow: 'var(--shadow-lg)', zIndex: 200, minWidth: '220px', overflow: 'hidden', textAlign: 'left' }}>
           {universities.map(u => {
             const checked = selected.includes(u.slug)
             return (

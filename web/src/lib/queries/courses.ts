@@ -191,7 +191,7 @@ export async function fetchCoursePage(
 
   const availableDurations = (durationRows as any[])
     .map(r => Number(r.durationYears))
-    .filter(n => !isNaN(n))
+    .filter(n => !isNaN(n) && n > 0)
 
   return { rows, total, availableDurations }
 }
