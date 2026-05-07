@@ -72,15 +72,18 @@ Spike evidence for MVP universities: see [ROBOTS_SPIKE.md](ROBOTS_SPIKE.md).
 | Field | Value |
 |---|---|
 | Homepage | https://www.acu.edu.au |
-| Course URL pattern | `tbd` |
-| robots.txt blocks courses | `tbd` |
-| Bot protection | `tbd` |
-| Rendering | `tbd` |
-| JSON-LD / Schema.org | `tbd` |
-| ATAR in static HTML | `tbd` |
-| Fees in static HTML | `tbd` |
-| Scraper mode | `tbd` |
-| Notes | Added to Victorian list due to significant Melbourne and Ballarat presence. Issue #81 open. |
+| Course URL pattern | `/course/bachelor-[name]` |
+| robots.txt blocks courses | No (`Allow: /` for all agents) |
+| Bot protection | None |
+| Rendering | Server-rendered HTML |
+| JSON-LD / Schema.org | None |
+| ATAR in static HTML | Yes — per-campus in inline JS array (`const rendering_HASH`) |
+| Fees in static HTML | Yes — DT/DD anchor structure (`Fees (first year)*`) |
+| Scraper mode | `static` |
+| Course discovery | Sitemap at `/sitemap.xml` — filter `/course/bachelor` paths |
+| Campuses | Melbourne (St Patrick's), Ballarat (Aquinas), Online |
+| VTAC codes | 10 digits starting with `12` — extracted per campus from JS array |
+| Notes | National site — non-Victorian campuses (Brisbane, Canberra, North Sydney, Blacktown, Strathfield) absent from `campus_array.mapping` and silently dropped. Courses with no Victorian campus are discarded. Uses `campus_array` engine strategy. |
 | Phase | `mvp` |
 
 ---

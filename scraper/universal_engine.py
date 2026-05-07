@@ -300,66 +300,76 @@ class UniversalEngine(BaseScraper):
         adm_cfg = config.extraction_map.get("admissions_codes", {})
         adm_codes = self.extract_admissions_codes(soup, adm_cfg, full_html=clean_html)
 
-        # 7. Location
-        loc_cfg = config.extraction_map.get("location", {})
-        location_raw = self._extract_field(soup, loc_cfg, clean_html, field_name="location", json_data=json_data)
-        campuses = []
-        if location_raw:
-            location_str = str(location_raw).strip()
-            location_str = re.sub(r'<br\s*/?>', ',', location_str, flags=re.IGNORECASE)
-            location_str = re.sub(r'<[^>]+>', '', location_str)
-            if location_str.startswith("[") and location_str.endswith("]"):
-                try:
-                    raw_list = json.loads(location_str)
-                except Exception:
-                    raw_list = re.split(r",|;| and ", location_str, flags=re.IGNORECASE)
-            else:
-                raw_list = re.split(r",|;| and ", location_str, flags=re.IGNORECASE)
-            raw_list = [re.sub(r'\s*\([^)]*\)', '', loc).strip() for loc in raw_list if loc.strip()]
-            location_mapping = loc_cfg.get("mapping", {})
-            from models import CampusLink
-            for loc in raw_list:
-                loc = loc.strip()
-                campus_id = location_mapping.get(loc) if location_mapping else None
-                if not campus_id and self._campus_name_map:
-                    campus_id = self._campus_name_map.get(loc.lower())
-                this_atar_rank = atar_rank
-                rank_path = atar_cfg.get("json_path_template_rank")
-                if rank_path and json_data:
-                    path = rank_path.replace("{location}", loc.lower().replace(" ", ""))
-                    raw_atar = self._extract_field(None, {"json_path": path}, json_data=json_data)
-                    parsed_rank = self._parse_atar(str(raw_atar))[1] if raw_atar else None
-                    if parsed_rank: this_atar_rank = parsed_rank
-                campuses.append(CampusLink(
-                    campus_id=campus_id or loc,
-                    atar_lowest_selection_rank=this_atar_rank,
-                    atar_guaranteed=atar_guaranteed,
-                    admissions_codes=list(adm_codes),
-                ))
-            seen_ids: set = set()
-            campuses = [c for c in campuses if not (c.campus_id in seen_ids or seen_ids.add(c.campus_id))]
-
-        # 7b. Per-campus ATAR override from allAtars-style JSON map
-        if atar_cfg.get("json_regex") and campuses and code_map:
-            atar_map = self._extract_json_map(clean_html, atar_cfg)
-            if atar_map:
-                inv_code_map = {v: k for k, v in code_map.items()}
+        # 7. Campuses — campus_array path OR standard location path
+        array_cfg = config.extraction_map.get("campus_array")
+        if array_cfg:
+            campuses = self._extract_campus_array(clean_html, array_cfg)
+            if not campuses:
+                return None
+            if adm_codes and not any(c.admissions_codes for c in campuses):
                 for c in campuses:
-                    campus_code = inv_code_map.get(c.campus_id, "")
-                    campus_data = atar_map.get(campus_code.upper()) or atar_map.get(campus_code)
-                    if campus_data:
-                        rank_val = campus_data.get("minSelectionRankOffered")
-                        guaranteed_val = campus_data.get("aspireMinimumATAR")
-                        if rank_val:
-                            try:
-                                c.atar_lowest_selection_rank = round(float(rank_val), 2)
-                            except (ValueError, TypeError):
-                                pass
-                        if guaranteed_val:
-                            try:
-                                c.atar_guaranteed = round(float(guaranteed_val), 2)
-                            except (ValueError, TypeError):
-                                pass
+                    c.admissions_codes = list(adm_codes)
+        else:
+            # 7. Location
+            loc_cfg = config.extraction_map.get("location", {})
+            location_raw = self._extract_field(soup, loc_cfg, clean_html, field_name="location", json_data=json_data)
+            campuses = []
+            if location_raw:
+                location_str = str(location_raw).strip()
+                location_str = re.sub(r'<br\s*/?>', ',', location_str, flags=re.IGNORECASE)
+                location_str = re.sub(r'<[^>]+>', '', location_str)
+                if location_str.startswith("[") and location_str.endswith("]"):
+                    try:
+                        raw_list = json.loads(location_str)
+                    except Exception:
+                        raw_list = re.split(r",|;| and ", location_str, flags=re.IGNORECASE)
+                else:
+                    raw_list = re.split(r",|;| and ", location_str, flags=re.IGNORECASE)
+                raw_list = [re.sub(r'\s*\([^)]*\)', '', loc).strip() for loc in raw_list if loc.strip()]
+                location_mapping = loc_cfg.get("mapping", {})
+                from models import CampusLink
+                for loc in raw_list:
+                    loc = loc.strip()
+                    campus_id = location_mapping.get(loc) if location_mapping else None
+                    if not campus_id and self._campus_name_map:
+                        campus_id = self._campus_name_map.get(loc.lower())
+                    this_atar_rank = atar_rank
+                    rank_path = atar_cfg.get("json_path_template_rank")
+                    if rank_path and json_data:
+                        path = rank_path.replace("{location}", loc.lower().replace(" ", ""))
+                        raw_atar = self._extract_field(None, {"json_path": path}, json_data=json_data)
+                        parsed_rank = self._parse_atar(str(raw_atar))[1] if raw_atar else None
+                        if parsed_rank: this_atar_rank = parsed_rank
+                    campuses.append(CampusLink(
+                        campus_id=campus_id or loc,
+                        atar_lowest_selection_rank=this_atar_rank,
+                        atar_guaranteed=atar_guaranteed,
+                        admissions_codes=list(adm_codes),
+                    ))
+                seen_ids: set = set()
+                campuses = [c for c in campuses if not (c.campus_id in seen_ids or seen_ids.add(c.campus_id))]
+
+            # 7b. Per-campus ATAR override from allAtars-style JSON map
+            if atar_cfg.get("json_regex") and campuses and code_map:
+                atar_map = self._extract_json_map(clean_html, atar_cfg)
+                if atar_map:
+                    inv_code_map = {v: k for k, v in code_map.items()}
+                    for c in campuses:
+                        campus_code = inv_code_map.get(c.campus_id, "")
+                        campus_data = atar_map.get(campus_code.upper()) or atar_map.get(campus_code)
+                        if campus_data:
+                            rank_val = campus_data.get("minSelectionRankOffered")
+                            guaranteed_val = campus_data.get("aspireMinimumATAR")
+                            if rank_val:
+                                try:
+                                    c.atar_lowest_selection_rank = round(float(rank_val), 2)
+                                except (ValueError, TypeError):
+                                    pass
+                            if guaranteed_val:
+                                try:
+                                    c.atar_guaranteed = round(float(guaranteed_val), 2)
+                                except (ValueError, TypeError):
+                                    pass
 
         # Log missing ATAR if config requests it (e.g. VU where many courses have no ATAR)
         atar_issues: list[tuple[str, str]] = []
@@ -551,6 +561,80 @@ class UniversalEngine(BaseScraper):
             if sorted_keys:
                 return data[sorted_keys[0]]
         return data
+
+    def _extract_campus_array(self, html: str, cfg: dict) -> list["CampusLink"]:
+        from models import CampusLink
+
+        array_regex = cfg.get("array_regex")
+        if not array_regex:
+            return []
+
+        m = re.search(array_regex, html, re.DOTALL)
+        if not m:
+            logger.debug("campus_array: regex did not match any script content")
+            return []
+
+        try:
+            raw_array = json.loads(m.group(1))
+        except (json.JSONDecodeError, IndexError) as exc:
+            logger.warning(f"campus_array: JSON parse error — {exc}")
+            return []
+
+        if not isinstance(raw_array, list):
+            logger.warning("campus_array: parsed value is not a list")
+            return []
+
+        campus_title_key = cfg.get("campus_title_key", "CampusTitle")
+        atar_key         = cfg.get("atar_key", "ATARCode")
+        atar_regex       = cfg.get("atar_regex", r"(\d{2,3}(?:\.\d+)?)")
+        tac_code_key     = cfg.get("tac_code_key", "TACCode")
+        tac_label_key    = cfg.get("tac_label_key", "Code")
+        vtac_filter      = cfg.get("vtac_filter", "VTAC code")
+        mapping: dict[str, str] = cfg.get("mapping", {})
+
+        seen_ids: set[str] = set()
+        links: list[CampusLink] = []
+
+        for item in raw_array:
+            if not isinstance(item, dict):
+                continue
+
+            campus_title = item.get(campus_title_key, "")
+            campus_id = mapping.get(campus_title)
+            if not campus_id or campus_id in seen_ids:
+                continue
+            seen_ids.add(campus_id)
+
+            atar_val: float | None = None
+            atar_raw = item.get(atar_key, "")
+            if atar_raw:
+                am = re.search(atar_regex, str(atar_raw))
+                if am:
+                    try:
+                        candidate = round(float(am.group(1)), 2)
+                        if 50 <= candidate <= 99.95:
+                            atar_val = candidate
+                    except (ValueError, TypeError):
+                        pass
+
+            admissions_codes: list[str] = []
+            raw_code = item.get(tac_code_key, "")
+            raw_label = item.get(tac_label_key, "")
+            if raw_label == vtac_filter and raw_code:
+                clean_code = re.sub(r"<[^>]+>", "", str(raw_code)).strip()
+                if clean_code:
+                    admissions_codes.append(clean_code)
+
+            links.append(CampusLink(
+                campus_id=campus_id,
+                atar_lowest_selection_rank=atar_val,
+                atar_guaranteed=None,
+                admissions_codes=admissions_codes,
+            ))
+
+        if not links:
+            logger.warning("campus_array: no recognized campuses found — check mapping config")
+        return links
 
     def _preprocess_html(self, html: str, config: SiteConfig) -> str:
         cleanup = config.extraction_map.get("cleanup_regexes", [])

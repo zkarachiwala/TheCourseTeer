@@ -21,6 +21,7 @@ UNI_MAP = {
     "swinburne": "fa7b5854-a3bd-4572-aff6-d43cf6249581",
     "federation": "ea176745-a7d0-4773-b9dc-c08624754035",
     "vu": "76f950f6-4ff8-4a54-b3ad-f194221ece1c",
+    "acu": "581b9252-ea48-45cb-9109-80fe634708ed",
 }
 
 # La Trobe Campus Codes to seed into external_code column
@@ -253,11 +254,11 @@ async def seed():
                         "anchor": "VTAC course code",
                         "regex": r"(43\d{8})"
                     },
-                    "discovery_config": {
-                        "method": "sitemap",
-                        "url": "https://www.vu.edu.au/sitemap.xml?page=1",
-                        "include_patterns": ["/courses/bachelor"]
-                    }
+                },
+                "discovery_config": {
+                    "method": "sitemap",
+                    "url": "https://www.vu.edu.au/sitemap.xml?page=1",
+                    "include_patterns": ["/courses/bachelor"]
                 },
                 "robots_txt_status": "allowed",
                 "notes": (
@@ -269,8 +270,68 @@ async def seed():
                 ),
             }
 
+            # Resolve ACU campus UUIDs (inserted by migration 20260503000001)
+            await cur.execute("SELECT id FROM public.campuses WHERE slug = 'acu-melbourne'")
+            row = await cur.fetchone()
+            acu_melbourne_id = str(row[0]) if row else None
+
+            await cur.execute("SELECT id FROM public.campuses WHERE slug = 'acu-ballarat'")
+            row = await cur.fetchone()
+            acu_ballarat_id = str(row[0]) if row else None
+
+            await cur.execute("SELECT id FROM public.campuses WHERE slug = 'acu-online'")
+            row = await cur.fetchone()
+            acu_online_id = str(row[0]) if row else None
+
+            acu_config = {
+                "university_id": UNI_MAP["acu"],
+                "base_url": "https://www.acu.edu.au",
+                "extraction_map": {
+                    "fetch_mode": "static",
+                    "name": {
+                        "selector": "meta[property='og:title']",
+                        "attr": "content",
+                        "regex": r"^(.+?)\s*\|\s*ACU courses?\s*$",
+                    },
+                    "duration": {
+                        "regex": r"<dt>Duration</dt>\s*<dd>\s*(\d+(?:\.\d+)?)\s*years?",
+                    },
+                    "campus_array": {
+                        "array_regex": r"const rendering_\w+ = (\[[\s\S]*?\]);",
+                        "campus_title_key": "CampusTitle",
+                        "atar_key": "ATARCode",
+                        "atar_regex": r"(\d{2,3}(?:\.\d+)?)",
+                        "tac_code_key": "TACCode",
+                        "tac_label_key": "Code",
+                        "vtac_filter": "VTAC code",
+                        "mapping": {
+                            "Melbourne":                    acu_melbourne_id,
+                            "Ballarat":                     acu_ballarat_id,
+                            "ACU Online Supported Program": acu_online_id,
+                        },
+                    },
+                },
+                "discovery_config": {
+                    "method": "sitemap",
+                    "url": "https://www.acu.edu.au/sitemap.xml",
+                    "include_patterns": ["/course/bachelor"],
+                },
+                "robots_txt_status": "allowed",
+                "notes": (
+                    "Static HTML. Course name from og:title meta, '| ACU courses' suffix stripped. "
+                    "Duration and fees from DT/DD anchor structure. "
+                    "Campus data from inline JS array (const rendering_HASH). "
+                    "Victorian campuses only: Melbourne (St Patrick's), Ballarat (Aquinas), Online. "
+                    "Non-Victorian campuses (Brisbane, Canberra, North Sydney, Blacktown, Strathfield) "
+                    "absent from campus_array.mapping — silently dropped. "
+                    "VTAC codes are 10 digits starting with 12, extracted per campus from the JS array. "
+                    "Courses with no Victorian campus are discarded (scrape_page returns None)."
+                ),
+            }
+
             # Seed Site Configs
-            for config in SITE_CONFIGS + [vu_config]:
+            all_configs = SITE_CONFIGS + [vu_config, acu_config]
+            for config in all_configs:
                 # Merge discovery_config into extraction_map for storage
                 full_map = config["extraction_map"].copy()
                 if "discovery_config" in config:
@@ -297,7 +358,7 @@ async def seed():
                         datetime.now()
                     )
                 )
-            print(f"Seeded {len(SITE_CONFIGS)} site configurations.")
+            print(f"Seeded {len(all_configs)} site configurations.")
 
             # Seed Campus Aliases for La Trobe
             for campus_id, alias_code in LATROBE_CAMPUS_CODES:
