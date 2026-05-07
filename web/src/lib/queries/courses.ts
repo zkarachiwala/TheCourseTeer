@@ -115,13 +115,15 @@ export async function fetchCoursePage(
   }
 
   if (filters.unis?.length) {
-    whereParts.push(sql`u.slug = ANY(${filters.unis})`)
+    const vals = sql.join(filters.unis.map(s => sql`${s}`), sql.raw(', '))
+    whereParts.push(sql`u.slug IN (${vals})`)
   }
 
   if (filters.durations?.length) {
     const nums = filters.durations.map(Number).filter(n => !isNaN(n))
     if (nums.length > 0) {
-      whereParts.push(sql`c.duration_years = ANY(${nums})`)
+      const vals = sql.join(nums.map(n => sql`${n}`), sql.raw(', '))
+      whereParts.push(sql`c.duration_years IN (${vals})`)
     }
   }
 
