@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { HeroSection } from './hero-section'
 import { CourseCard, CourseCardData } from './course-card'
@@ -32,6 +32,12 @@ export function CourseListClient({
   const router = useRouter()
   const pathname = usePathname()
   const [layout, setLayout] = useState<Layout>('grid')
+  const [localSearch, setLocalSearch] = useState(currentParams.filters.search ?? '')
+  const [localMinAtar, setLocalMinAtar] = useState(
+    currentParams.filters.minAtar ? String(currentParams.filters.minAtar) : ''
+  )
+  const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const atarTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   function navigate(url: string, opts?: { scroll?: boolean }) {
     router.replace(url, opts)
@@ -102,11 +108,34 @@ export function CourseListClient({
     )
   }
 
-  const clearAll = () =>
+  const handleSearchChange = (v: string) => {
+    setLocalSearch(v)
+    if (searchTimer.current) clearTimeout(searchTimer.current)
+    searchTimer.current = setTimeout(
+      () => navigate(buildUrl({ search: v || undefined, page: 1 }), { scroll: false }),
+      400
+    )
+  }
+
+  const handleMinAtarChange = (v: string) => {
+    setLocalMinAtar(v)
+    if (atarTimer.current) clearTimeout(atarTimer.current)
+    atarTimer.current = setTimeout(
+      () => navigate(buildUrl({ minAtar: v ? Number(v) : undefined, page: 1 }), { scroll: false }),
+      400
+    )
+  }
+
+  const clearAll = () => {
+    setLocalSearch('')
+    setLocalMinAtar('')
+    if (searchTimer.current) clearTimeout(searchTimer.current)
+    if (atarTimer.current) clearTimeout(atarTimer.current)
     navigate(
       buildUrl({ search: undefined, areas: [], unis: [], durations: [], minAtar: undefined, page: 1 }),
       { scroll: false }
     )
+  }
 
   const activeFilters = [
     ...(currentParams.filters.areas ?? []).map(a => AREAS[a as AreaKey]?.label).filter(Boolean),
@@ -122,10 +151,8 @@ export function CourseListClient({
   return (
     <>
       <HeroSection
-        search={currentParams.filters.search ?? ''}
-        onSearchChange={v =>
-          navigate(buildUrl({ search: v || undefined, page: 1 }), { scroll: false })
-        }
+        search={localSearch}
+        onSearchChange={handleSearchChange}
         selectedAreas={currentParams.filters.areas ?? []}
         onAreaToggle={toggleArea}
         selectedUnis={currentParams.filters.unis ?? []}
@@ -133,13 +160,8 @@ export function CourseListClient({
         selectedDurations={currentParams.filters.durations ?? []}
         onDurationToggle={toggleDuration}
         availableDurations={availableDurations}
-        minAtar={currentParams.filters.minAtar ? String(currentParams.filters.minAtar) : ''}
-        onMinAtarChange={v =>
-          navigate(
-            buildUrl({ minAtar: v ? Number(v) : undefined, page: 1 }),
-            { scroll: false }
-          )
-        }
+        minAtar={localMinAtar}
+        onMinAtarChange={handleMinAtarChange}
         activeFilters={activeFilters}
         onClearAll={clearAll}
         universities={universities}
