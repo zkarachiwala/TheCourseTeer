@@ -218,3 +218,13 @@ __marimo__/
 # Scraper snapshots
 scraper/snapshots/
 .worktrees/
+
+# Internal planning/workflow tooling
+conductor/
+
+# Scraper development samples and debug scripts
+*_sample.html
+*_sample.json
+*_detail.json
+scraper/check_*.py
+scraper/debug_*.py

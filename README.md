@@ -40,7 +40,6 @@ An Australian undergraduate course aggregator and search engine. Aggregates unde
 | Database | PostgreSQL (Supabase) |
 | Scraper | Python, Playwright |
 | Scraper AI | Local LLM via Ollama (fallback: Claude Haiku) |
-| Scraper API | FastAPI |
 
 ## Project status
 
@@ -51,9 +50,10 @@ Phase 1 (MVP) in progress. See `planning/PLAN.md` for the full technical specifi
 | Database schema | Complete — all tables migrated and seeded |
 | Scraper infrastructure | Complete — base scraper, robots.txt compliance, AI re-mapping framework |
 | RMIT scraper | Complete |
-| Melbourne, Sydney, Monash, UQ scrapers | Not started |
-| FastAPI scraper management API | Not started |
-| Next.js frontend | Not started |
+| La Trobe scraper | Complete |
+| ACU scraper | Complete |
+| Deakin, Melbourne, Monash, others | Not started |
+| Next.js frontend | In progress |
 
 ## License
 
