@@ -236,9 +236,10 @@ scraper/snapshots/
 # Internal planning/workflow tooling
 conductor/
 
-# Scraper development samples and debug scripts
+# Scraper development samples and debug scripts (but not committed test fixtures)
 *_sample.html
 *_sample.json
 *_detail.json
+!scraper/tests/gold_standards/fixtures/*
 scraper/check_*.py
 scraper/debug_*.py

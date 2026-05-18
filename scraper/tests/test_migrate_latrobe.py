@@ -1,9 +1,12 @@
 import pytest
 import os
 import logging
+from pathlib import Path
 from bs4 import BeautifulSoup
 from universal_engine import UniversalEngine
 from models import SiteConfig, CourseData
+
+_FIXTURES = Path(__file__).parent / "gold_standards" / "fixtures"
 
 logger = logging.getLogger(__name__)
 
@@ -17,8 +20,8 @@ async def test_latrobe_migration_reproduction(pool):
     engine = UniversalEngine(pool)
     
     # Load the sample HTML
-    sample_path = "latrobe_sample.html"
-    if not os.path.exists(sample_path):
+    sample_path = _FIXTURES / "latrobe_sample.html"
+    if not sample_path.exists():
         pytest.skip("latrobe_sample.html not found")
         
     with open(sample_path, "r") as f:
@@ -51,7 +54,7 @@ async def test_latrobe_migration_reproduction(pool):
     # Mock fetch_fn
     async def mock_fetch(url):
         if "courses/data" in url:
-            with open("latrobe_detail_sample.json", "r") as f:
+            with open(_FIXTURES / "latrobe_detail_sample.json", "r") as f:
                 return f.read()
         return ""
 
@@ -145,8 +148,8 @@ async def test_latrobe_accounting_gold_standard(pool):
     engine = UniversalEngine(pool)
     
     # Load the sample HTML
-    sample_path = "latrobe_accounting_sample.html"
-    if not os.path.exists(sample_path):
+    sample_path = _FIXTURES / "latrobe_accounting_sample.html"
+    if not sample_path.exists():
         pytest.skip("latrobe_accounting_sample.html not found")
         
     with open(sample_path, "r") as f:
@@ -187,7 +190,7 @@ async def test_latrobe_accounting_gold_standard(pool):
     # Mock fetch_fn
     async def mock_fetch(url):
         if "courses/data" in url:
-            with open("latrobe_accounting_detail.json", "r") as f:
+            with open(_FIXTURES / "latrobe_accounting_detail.json", "r") as f:
                 return f.read()
         return ""
 

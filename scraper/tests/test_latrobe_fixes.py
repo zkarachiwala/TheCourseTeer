@@ -2,9 +2,12 @@ import pytest
 import os
 import json
 import logging
+from pathlib import Path
 from bs4 import BeautifulSoup
 from universal_engine import UniversalEngine
 from models import SiteConfig, CourseData
+
+_FIXTURES = Path(__file__).parent / "gold_standards" / "fixtures"
 
 logger = logging.getLogger(__name__)
 
@@ -46,9 +49,9 @@ async def test_latrobe_atar_extraction_from_sample(pool):
     engine = UniversalEngine(pool)
     
     # Load the local sample
-    sample_path = "../latrobe_sample.html"
-    if not os.path.exists(sample_path):
-        pytest.skip(f"{sample_path} not found")
+    sample_path = _FIXTURES / "latrobe_sample.html"
+    if not sample_path.exists():
+        pytest.skip("latrobe_sample.html fixture not found")
         
     with open(sample_path, "r") as f:
         html = f.read()
@@ -85,7 +88,9 @@ async def test_latrobe_duration_extraction(pool):
     """
     engine = UniversalEngine(pool)
     
-    sample_path = "../latrobe_sample.html"
+    sample_path = _FIXTURES / "latrobe_sample.html"
+    if not sample_path.exists():
+        pytest.skip("latrobe_sample.html fixture not found")
     with open(sample_path, "r") as f:
         html = f.read()
         

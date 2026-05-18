@@ -1,7 +1,10 @@
 import pytest
 import os
+from pathlib import Path
 from universal_engine import UniversalEngine
 from models import SiteConfig
+
+_FIXTURES = Path(__file__).parent / "gold_standards" / "fixtures"
 
 
 @pytest.mark.asyncio
@@ -13,8 +16,8 @@ async def test_federation_nursing_gold_standard(pool):
     engine = UniversalEngine(pool)
 
     # Load the sample HTML
-    sample_path = "federation_nursing_sample.html"
-    if not os.path.exists(sample_path):
+    sample_path = _FIXTURES / "federation_nursing_sample.html"
+    if not sample_path.exists():
         pytest.skip("federation_nursing_sample.html not found")
 
     with open(sample_path, "r") as f:
