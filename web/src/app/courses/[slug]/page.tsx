@@ -10,16 +10,16 @@ import { CourseListClient } from '@/components/course-list-client'
 import { notFound } from 'next/navigation'
 
 interface Props {
-  params: { slug: string }
-  searchParams: { [key: string]: string | string[] | undefined }
+  params: Promise<{ slug: string }>
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>
 }
 
 export default async function UniversityCoursesPage({ params, searchParams }: Props) {
-  const { slug } = params
+  const { slug } = await params
   const university = await fetchUniversityBySlug(slug)
   if (!university) notFound()
 
-  const courseParams = parseSearchParams(searchParams, { slug })
+  const courseParams = parseSearchParams(await searchParams, { slug })
   const [{ rows, total, availableDurations }, universities] = await Promise.all([
     fetchCoursePage(courseParams),
     fetchUniversities(),

@@ -6,9 +6,9 @@ import { CourseListClient } from '@/components/course-list-client'
 export default async function CoursesPage({
   searchParams,
 }: {
-  searchParams: { [key: string]: string | string[] | undefined }
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>
 }) {
-  const params = parseSearchParams(searchParams)
+  const params = parseSearchParams(await searchParams)
   const [{ rows, total, availableDurations }, universities] = await Promise.all([
     fetchCoursePage(params),
     fetchUniversities(),
