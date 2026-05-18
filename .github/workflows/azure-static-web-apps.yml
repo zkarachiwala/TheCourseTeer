@@ -13,6 +13,7 @@ on:
       - main
     paths:
       - 'web/**'
+  workflow_dispatch:
 
 jobs:
   # Deploy to production only on push to main (owner only — secrets unavailable on forks)
