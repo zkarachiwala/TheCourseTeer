@@ -210,6 +210,8 @@ __marimo__/
 
 # Local AI tool config
 .claude/
+!.claude/hooks/
+!.claude/hooks/*.py
 .gemini/
 .playwright-mcp/
 
