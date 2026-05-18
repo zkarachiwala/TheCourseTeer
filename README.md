@@ -1,36 +1,12 @@
 # The Courseteer
 
-An Australian undergraduate course aggregator and search engine. Aggregates undergraduate course data from all Australian universities into a unified, searchable interface.
+An Australian undergraduate course aggregator and search engine. Students currently have to visit a dozen different university websites to compare courses, fees, and ATAR requirements. The Courseteer pulls all of that into one place.
 
-## Local Development
+## How it works
 
-**Prerequisites:** [dbmate](https://github.com/amacneil/dbmate)
-
-1. **Environment Setup:**
-   ```bash
-   cp .env.example .env
-   # Update DATABASE_URL in .env with your Supabase connection string.
-   # Ensure sslmode=require is present.
-   ```
-
-2. **Database:**
-   This project strictly uses **Supabase** for its database. For both local development and production, you must point `DATABASE_URL` to your Supabase instance.
-   - Recommended: Use the Transaction Pooler (port 6543).
-
-3. **Running migrations:**
-   ```bash
-   scripts\migrate.bat        # Windows
-   bash scripts/migrate.sh    # bash/Mac
-   ```
-   Migrations live in `db/migrations/`. dbmate tracks applied migrations automatically and reads `DATABASE_URL` from `.env`.
-
----
-
-## What it does
-
-- Collects course data (name, faculty, campus, ATAR, fees, prerequisites, duration) from Australian university websites
-- Uses an AI-adaptive scraper that self-heals when university websites change layout
-- Provides a fast, filterable search interface for students comparing courses across universities
+- An AI-adaptive scraper collects course data (name, faculty, campus, ATAR, fees, prerequisites, duration) from Australian university websites
+- If a university redesigns their site and selectors break, the scraper uses an LLM to re-map fields automatically
+- A fast, filterable search interface lets students compare courses across universities in one view
 
 ## Tech stack
 
@@ -41,18 +17,57 @@ An Australian undergraduate course aggregator and search engine. Aggregates unde
 | Scraper | Python, Playwright |
 | Scraper AI | Local LLM via Ollama (fallback: Claude Haiku) |
 
+## Scraper coverage
+
+Victorian universities are the Phase 1 focus.
+
+| University | Status |
+|---|---|
+| RMIT | Complete |
+| La Trobe | Complete |
+| ACU | Complete |
+| Monash | In progress |
+| University of Melbourne | In progress |
+| Swinburne | In progress |
+| Federation University | In progress |
+| Victoria University | In progress |
+| Deakin | Planned |
+| All other Australian universities | Phase 2 |
+
+## Local development
+
+**Prerequisites:** [dbmate](https://github.com/amacneil/dbmate)
+
+1. **Environment setup:**
+   ```bash
+   cp .env.example .env
+   # Set DATABASE_URL to your Supabase connection string (sslmode=require)
+   ```
+
+2. **Database:** This project uses Supabase for both local dev and production. Point `DATABASE_URL` at your Supabase instance — Transaction Pooler on port 6543 is recommended.
+
+3. **Run migrations:**
+   ```bash
+   scripts\migrate.bat        # Windows
+   bash scripts/migrate.sh    # macOS/Linux
+   ```
+   Migrations live in `db/migrations/`. dbmate tracks applied migrations and reads `DATABASE_URL` from `.env`.
+
+4. **Run the scraper:**
+   ```bash
+   cd scraper
+   uv run python run.py --university rmit
+   ```
+
 ## Project status
 
-Phase 1 (MVP) in progress. See `planning/PLAN.md` for the full technical specification.
+Phase 1 (Victorian universities) in progress. See [`planning/PLAN.md`](planning/PLAN.md) for the full technical specification.
 
 | Component | Status |
 |---|---|
-| Database schema | Complete — all tables migrated and seeded |
-| Scraper infrastructure | Complete — base scraper, robots.txt compliance, AI re-mapping framework |
-| RMIT scraper | Complete |
-| La Trobe scraper | Complete |
-| ACU scraper | Complete |
-| Deakin, Melbourne, Monash, others | Not started |
+| Database schema | Complete |
+| Scraper infrastructure | Complete — robots.txt compliance, snapshot caching, AI re-mapping |
+| Victorian university scrapers | In progress (8 of 9 configured) |
 | Next.js frontend | In progress |
 
 ## License
