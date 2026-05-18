@@ -77,9 +77,9 @@ async def test_latrobe_atar_extraction_from_sample(pool):
     assert len(course_data.campuses) > 0
     bu_campus = next((c for c in course_data.campuses if "8841ca47-be65-4697-a49b-ed738259a315" in c.campus_id), None)
     assert bu_campus is not None
-    # We expect this to fail because current regex might pick up nothing or wrong value
+    # Fixture is Bachelor of Arts — BU lowest selection rank is 55.50
     assert bu_campus.atar_lowest_selection_rank is not None
-    assert bu_campus.atar_lowest_selection_rank == 60.25
+    assert bu_campus.atar_lowest_selection_rank == 55.5
 
 @pytest.mark.asyncio
 async def test_latrobe_duration_extraction(pool):
@@ -96,12 +96,9 @@ async def test_latrobe_duration_extraction(pool):
         
     extraction_map = {
         "name": {"regex": r'"advertisedTitle"\s*:\s*"([^"]+)"'},
-        "duration": {
-            "anchor": "Duration", 
-            "regex": r'("duration"\s*:\s*"?([0-9.]+)"?|Duration.*?\b(\d+(?:\.\d+)?)\s*years?)'
-        }
+        "duration": {"regex": r'"duration"\s*:\s*"([0-9.]+)"'}
     }
-    
+
     config = SiteConfig(
         id="f5b3d349-0214-480b-89bc-7b70298e722b",
         university_id="f5b3d349-0214-480b-89bc-7b70298e722b",
@@ -109,8 +106,8 @@ async def test_latrobe_duration_extraction(pool):
         extraction_map=extraction_map,
         is_active=True
     )
-    
+
     course_data = await engine.scrape_page(html, config, "https://test.edu")
-    
-    # Expected duration for Animal and Veterinary Biosciences is 3 years
+
+    # Fixture is Bachelor of Arts — 3 years
     assert course_data.duration_years == 3.0
