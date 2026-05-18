@@ -160,7 +160,7 @@ SITE_CONFIGS = [
                 }
             },
             "admissions_codes": {"regex": r'"vtacCode"\s*:\s*(\d{9,10})'},
-            "follow_urls": {"regex": r"/courses/data/202[6-7]/domestic/[a-z]+/[^'\"\s]+"}
+            "follow_urls": {"regex": r"/courses/data/202[6-9]/domestic/[a-z]+/[^'\"\s]+", "delay": 1.0}
         },
         "discovery_config": {
             "method": "sitemap",

@@ -382,12 +382,14 @@ class UniversalEngine(BaseScraper):
         follow_cfg = config.extraction_map.get("follow_urls")
         if follow_cfg and fetch_fn:
             regex = follow_cfg.get("regex")
+            delay = follow_cfg.get("delay", 0.5)
             if regex:
                 matches = re.findall(regex, clean_html)
                 for sub_url in matches:
                     if not sub_url.startswith("http"):
                         sub_url = config.base_url.rstrip("/") + "/" + sub_url.lstrip("/")
                     try:
+                        await asyncio.sleep(delay)
                         sub_content = await fetch_fn(sub_url)
                         if not sub_content:
                             continue
