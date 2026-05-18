@@ -406,7 +406,7 @@ class UniversalEngine(BaseScraper):
                             for c in targets:
                                 if sub_adm_codes:
                                     c.admissions_codes = sorted(set(c.admissions_codes) | set(sub_adm_codes))
-                                if sub_duration and (not duration or sub_duration > duration):
+                                if sub_duration:
                                     duration = sub_duration
                     except Exception as e:
                         logger.error(f"Failed to fetch follow URL {sub_url}: {e}")

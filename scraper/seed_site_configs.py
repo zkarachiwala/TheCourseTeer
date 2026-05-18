@@ -140,8 +140,8 @@ SITE_CONFIGS = [
                 "regex": r'"duration"\s*:\s*"([0-9.]+)"'
             },
             "atar": {
-                "anchor": "Lowest selection rank",
-                "regex": r"(Lowest selection rank.*?(\d{2}(?:\.\d+)?))"
+                "json_regex": r'"allAtars"\s*:\s*(\{.*?\})\s*,\s*"ugRse',
+                "json_path": "latest_key"
             },
             "location": {
                 "regex": r'"campuses"\s*:\s*(\[[^\]]+\])',
