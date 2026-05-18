@@ -23,20 +23,27 @@ An Australian undergraduate course aggregator and search engine. Students curren
 
 ## Scraper coverage
 
-Victorian universities are the Phase 1 focus.
+### Phase 1 — Victorian universities (complete)
 
 | University | Status |
 |---|---|
 | RMIT | Complete |
-| La Trobe | Complete |
-| ACU | Complete |
-| Monash | In progress |
-| University of Melbourne | In progress |
-| Swinburne | In progress |
-| Federation University | In progress |
-| Victoria University | In progress |
-| Deakin | Planned |
-| All other Australian universities | Phase 2 |
+| University of Melbourne | Complete |
+| Monash University | Complete |
+| La Trobe University | Complete |
+| Swinburne University of Technology | Complete |
+| Federation University | Complete |
+| Victoria University | Complete |
+| Australian Catholic University (ACU) | Complete |
+| Deakin University | Complete |
+
+### Phase 2 — All other Australian universities
+
+| University | Status |
+|---|---|
+| University of Sydney | Planned |
+| University of Queensland | Planned |
+| All remaining universities | Planned |
 
 ## Local development
 
@@ -65,14 +72,17 @@ Victorian universities are the Phase 1 focus.
 
 ## Project status
 
-Phase 1 (Victorian universities) in progress. See [`planning/PLAN.md`](planning/PLAN.md) for the full technical specification.
+Phase 1 (Victorian universities) is complete. Phase 2 expands coverage to all remaining Australian universities.
 
 | Component | Status |
 |---|---|
 | Database schema | Complete |
 | Scraper infrastructure | Complete — robots.txt compliance, snapshot caching, AI re-mapping |
-| Victorian university scrapers | In progress (8 of 9 configured) |
-| Next.js frontend | In progress |
+| Victorian university scrapers | Complete — all 9 universities |
+| Next.js frontend | Complete — course listings, filters, pagination, campus/ATAR display |
+| Admin health dashboard | Complete |
+| Authentication (multi-provider) | Complete |
+| Phase 2 scrapers | Planned |
 
 ## License
 
