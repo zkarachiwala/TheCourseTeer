@@ -1,10 +1,6 @@
-# The Courseteer - A university course aggregator and search engine
+# Claude Code — The Courseteer
 
-All project documentation is in the `planning` directory.
-
-The key document is PLAN.md included in full here:
-
-@planning/PLAN.md
+@CONTEXT.md
 
 ---
 
