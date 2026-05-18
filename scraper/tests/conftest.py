@@ -8,6 +8,7 @@ import os
 import sys
 from pathlib import Path
 
+import pytest
 import pytest_asyncio
 from dotenv import load_dotenv
 from psycopg.rows import dict_row
@@ -23,8 +24,11 @@ if sys.platform == "win32":
 @pytest_asyncio.fixture(scope="session")
 async def pool():
     """Session-scoped connection pool using DATABASE_URL (Supabase)."""
+    db_url = os.environ.get("DATABASE_URL")
+    if not db_url:
+        pytest.skip("DATABASE_URL not set — skipping DB-dependent tests")
     p = AsyncConnectionPool(
-        os.environ["DATABASE_URL"],
+        db_url,
         open=False,
         kwargs={"prepare_threshold": None},
     )
