@@ -17,11 +17,14 @@ At present I am leveraging different commmand line-based AI tools to build the e
 - **Format:** Icons should be square PNGs (180x180 standard, 600x600+ for high quality). iOS applies the rounded corner mask automatically.
 - **Workflow:** When requested to generate or update iOS-related icons, proactively confirm the desired background color before implementation.
 
-## What do I need Google Gemini to focus on
+## What Gemini is used for
 
-The task of building the scraper is labourious.  So far we have built 3 scrapers and they need to go through rounds of validation and tweaking.
+Gemini CLI handles well-specified, mechanical tasks that don't require full codebase context:
 
-I was thinking there could be a better way.  Could we build a POC of an app that when given a sample URL it would display the website in the interface.
-The user would be able to associate parts of the loaded in page to tags that identify key data points that need to be scraped.  This could short-cut the build of scrapers
+- Generating boilerplate: Next.js pages, API routes, Tailwind components
+- Writing scraper extraction logic for a single university (given the HTML structure)
+- Writing unit tests for a specified function or module
+- Generating SQL migration files from a schema description
+- Drafting config files (`.env.example`, CI yaml, `pyproject.toml`)
 
-This would work like an OCR tool but instead of just extracting text it would also extract the structure of the page and allow the user to identify key data points visually.  The app would then generate a scraper based on the identified data points and the structure of the page.
+Invoke via: `gemini -m gemini-2.5-flash -p "<task>"`

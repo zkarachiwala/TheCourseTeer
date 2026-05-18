@@ -12,6 +12,7 @@ on:
 
 jobs:
   test:
+    if: github.repository_owner == 'zkarachiwala'
     runs-on: ubuntu-latest
 
     defaults:

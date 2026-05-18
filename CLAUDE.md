@@ -23,30 +23,17 @@ All feature work must follow the `/feature-dev:feature-dev` 7-phase workflow. Do
 
 **Phase 5 rule:** After Phase 4 approval, delegate implementation to a Haiku subagent via the Agent tool (`model: "haiku"`). Pass the approved architecture, relevant file paths, and conventions as the prompt. Review and integrate the output in Sonnet before committing.
 
-### GitHub Project Integration
+### GitHub Issues Integration
 
 When a feature-dev request references an issue number (e.g. "feature-dev #4" or "work on issue 4"):
 
-**Project:** `5` | Owner: `zkarachiwala` | Project ID: `PVT_kwHOAedlmM4BUdpc`
-**Status field ID:** `PVTSSF_lAHOAedlmM4BUdpczhBlk6g`
-**Status options:** Backlog `f75ad846` | Ready `61e4505c` | In progress `47fc9ee4` | In review `df73e18b` | Done `98236657`
-
-**Step 1 — Before starting, move to "In Progress":**
-```bash
-ITEM_ID=$(gh project item-list 5 --owner zkarachiwala --format json | python3 -c "import sys,json; items=json.load(sys.stdin)['items']; print(next(i['id'] for i in items if i.get('content',{}).get('number')==N))")
-gh project item-edit --project-id PVT_kwHOAedlmM4BUdpc --id $ITEM_ID --field-id PVTSSF_lAHOAedlmM4BUdpczhBlk6g --single-select-option-id 47fc9ee4
-```
-Replace `N` with the issue number (integer, no quotes).
-
-**Step 2 — Fetch issue context for the feature-dev workflow:**
+**Step 1 — Fetch issue context:**
 ```bash
 gh issue view N --repo zkarachiwala/TheCourseTeer
 ```
 Use the issue title and body as the feature description when running the 7-phase workflow.
 
-**Step 3 — Before closing Phase 3, post a Decisions comment on the issue:**
-
-Summarise all clarifying questions raised and answers given during Phase 3 as a GitHub issue comment:
+**Step 2 — Before closing Phase 3, post a Decisions comment on the issue:**
 ```bash
 gh issue comment N --repo zkarachiwala/TheCourseTeer --body "## Feature-dev decisions
 
@@ -54,19 +41,9 @@ gh issue comment N --repo zkarachiwala/TheCourseTeer --body "## Feature-dev deci
 ```
 If any answer changes the broader architecture, also update `planning/PLAN_REVIEW.md` and `planning/PLAN.md`.
 
-**Step 4 — When creating the PR, link it to the issue and add it to the project:**
+**Step 3 — When creating the PR, link it to the issue:**
 ```bash
-# Create PR linked to the issue (replace N with issue number)
 gh pr create --title "..." --body "Closes #N" ...
-
-# Add the PR to the project board
-PR_ID=$(gh pr view --json id -q '.id')
-gh project item-add 5 --owner zkarachiwala --url $(gh pr view --json url -q '.url')
-```
-
-**Step 5 — After creating the PR, move the issue to "In Review":**
-```bash
-gh project item-edit --project-id PVT_kwHOAedlmM4BUdpc --id $ITEM_ID --field-id PVTSSF_lAHOAedlmM4BUdpczhBlk6g --single-select-option-id df73e18b
 ```
 
 ---
