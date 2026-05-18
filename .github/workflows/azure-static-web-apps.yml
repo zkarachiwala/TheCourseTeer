@@ -59,6 +59,7 @@ jobs:
           app_location: "/web"
           api_location: ""
           output_location: ""
+          skip_deploy_on_missing_secrets: true
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
