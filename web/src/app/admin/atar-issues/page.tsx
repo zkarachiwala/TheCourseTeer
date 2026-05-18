@@ -61,10 +61,11 @@ const inputCls = "rounded border border-gray-200 bg-white px-2 py-1 text-xs dark
 export default async function AtarIssuesPage({
   searchParams,
 }: {
-  searchParams: { uni?: string; type?: string };
+  searchParams: Promise<{ uni?: string; type?: string }>;
 }) {
-  const uniFilter = searchParams.uni ?? "";
-  const typeFilter = searchParams.type ?? "";
+  const { uni, type } = await searchParams;
+  const uniFilter = uni ?? "";
+  const typeFilter = type ?? "";
 
   const [issues, filterOptions] = await Promise.all([
     getIssues(uniFilter, typeFilter),
