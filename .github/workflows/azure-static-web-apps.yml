@@ -15,9 +15,9 @@ on:
       - 'web/**'
 
 jobs:
-  # Deploy to production only on push to main
+  # Deploy to production only on push to main (owner only — secrets unavailable on forks)
   deploy_job:
-    if: github.event_name == 'push'
+    if: github.event_name == 'push' && github.repository_owner == 'zkarachiwala'
     runs-on: ubuntu-latest
     name: Build and Deploy Production
     steps:
@@ -38,9 +38,9 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
-  # Deploy staging environment on pull request
+  # Deploy staging environment on pull request (owner only — secrets unavailable on forks)
   deploy_staging_job:
-    if: github.event_name == 'pull_request'
+    if: github.event_name == 'pull_request' && github.repository_owner == 'zkarachiwala'
     runs-on: ubuntu-latest
     name: Build and Deploy Staging
     steps:
@@ -61,9 +61,9 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
-  # Tear down staging environment when PR is closed or merged
+  # Tear down staging environment when PR is closed or merged (owner only)
   close_pull_request_job:
-    if: github.event_name == 'pull_request' && github.event.action == 'closed'
+    if: github.event_name == 'pull_request' && github.event.action == 'closed' && github.repository_owner == 'zkarachiwala'
     runs-on: ubuntu-latest
     name: Close Pull Request Job
     steps:
