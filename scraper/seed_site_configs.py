@@ -137,8 +137,7 @@ SITE_CONFIGS = [
                 "regex": r'"advertisedTitle"\s*:\s*"?([^",}]+)"?'
             },
             "duration": {
-                "anchor": "Duration",
-                "regex": r'("duration"\s*:\s*"?([0-9.]+)"?|Duration.*?\b(\d+(?:\.\d+)?)\s*years?)'
+                "regex": r'"duration"\s*:\s*"([0-9.]+)"'
             },
             "atar": {
                 "anchor": "Lowest selection rank",
