@@ -20,3 +20,7 @@ All project documentation is in the `planning` directory. The key document is `p
 ## Standards
 
 @docs/standards/ios-icons.md
+@docs/standards/code-style.md
+@docs/standards/quality-and-testing.md
+@docs/standards/data-conventions.md
+@docs/standards/scraper-conventions.md
