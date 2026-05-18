@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="media/CoureTeerLogo_ImageOnlyV2.png" alt="The Courseteer" width="120" />
+</p>
+
 # The Courseteer
 
 An Australian undergraduate course aggregator and search engine. Students currently have to visit a dozen different university websites to compare courses, fees, and ATAR requirements. The Courseteer pulls all of that into one place.
