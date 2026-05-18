@@ -1,30 +1,48 @@
 # The Courseteer - An Australian undergraduate course aggregator and search engine
 
-All project documentation is in the planning directory.
+All project documentation is in the `planning` directory. The key document is `planning/PLAN.md`.
 
-## Development Methodology
+---
 
-At present I am leveraging different commmand line-based AI tools to build the entire package.  I am using the following tools:
+## Role
 
-- Claude code to build the scraper application to scrape university websites for details as per the documentation
-- The scraper app will farm out lesser tasks to other AI models including Google Gemini and Ollama
-- Claude code to build the web app to display the scraped information as the core application
+Gemini CLI handles well-specified, mechanical tasks that do not require full codebase context. All architecture decisions, multi-file debugging, and critical code review stay with Claude Code.
 
-## iOS & App Icon Standards
+Invoke via:
+```bash
+gemini -m gemini-2.5-flash -p "<task>"
+```
 
-- **Transparency:** iOS (apple-touch-icon) does NOT support transparency. Transparent areas default to solid black.
-- **Backgrounds:** Always use a solid background color (e.g., white or brand primary) and flatten the alpha channel.
-- **Format:** Icons should be square PNGs (180x180 standard, 600x600+ for high quality). iOS applies the rounded corner mask automatically.
-- **Workflow:** When requested to generate or update iOS-related icons, proactively confirm the desired background color before implementation.
+Use `gemini-2.5-pro` only when a larger context window is needed.
 
-## What Gemini is used for
+---
 
-Gemini CLI handles well-specified, mechanical tasks that don't require full codebase context:
+## What to delegate here
 
 - Generating boilerplate: Next.js pages, API routes, Tailwind components
 - Writing scraper extraction logic for a single university (given the HTML structure)
 - Writing unit tests for a specified function or module
 - Generating SQL migration files from a schema description
-- Drafting config files (`.env.example`, CI yaml, `pyproject.toml`)
+- Drafting config files: `.env.example`, CI yaml, `pyproject.toml`
 
-Invoke via: `gemini -m gemini-2.5-flash -p "<task>"`
+All output should be reviewed and integrated by Claude Code before committing.
+
+---
+
+## Tech stack
+
+| Layer | Technology |
+|---|---|
+| Frontend | Next.js (App Router), Tailwind CSS, next-themes |
+| Database | PostgreSQL (Supabase) — migrations via dbmate in `db/migrations/` |
+| Scraper | Python, Playwright, uv |
+| ORM | Drizzle (web), psycopg3 (scraper) |
+
+---
+
+## iOS & App Icon Standards
+
+- **Transparency:** iOS (apple-touch-icon) does NOT support transparency. Transparent areas default to solid black.
+- **Backgrounds:** Always use a solid background color (e.g. white or brand primary) and flatten the alpha channel.
+- **Format:** Square PNGs, 180×180 standard (600×600+ for high quality). iOS applies rounded corners automatically.
+- **Workflow:** When asked to generate or update iOS icons, confirm the desired background color before implementation.
