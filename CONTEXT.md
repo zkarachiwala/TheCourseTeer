@@ -17,9 +17,6 @@ All project documentation is in the `planning` directory. The key document is `p
 
 ---
 
-## iOS & App Icon Standards
+## Standards
 
-- **Transparency:** iOS (apple-touch-icon) does NOT support transparency. Transparent areas default to solid black.
-- **Backgrounds:** Always use a solid background color (e.g. white or brand primary) and flatten the alpha channel.
-- **Format:** Square PNGs, 180×180 standard (600×600+ for high quality). iOS applies rounded corners automatically.
-- **Workflow:** When asked to generate or update iOS icons, confirm the desired background color before implementation.
+@docs/standards/ios-icons.md

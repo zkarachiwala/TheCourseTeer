@@ -214,6 +214,8 @@ __marimo__/
 .claude/
 !.claude/hooks/
 !.claude/hooks/*.py
+!.claude/skills/
+!.claude/skills/*.md
 .gemini/
 .playwright-mcp/
 .mcp.json
