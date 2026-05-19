@@ -353,10 +353,17 @@ class UniversalEngine(BaseScraper):
             if atar_cfg.get("json_regex") and campuses and code_map:
                 atar_map = self._extract_json_map(clean_html, atar_cfg)
                 if atar_map:
-                    inv_code_map = {v: k for k, v in code_map.items()}
+                    uuid_to_codes: dict[str, list[str]] = {}
+                    for code, uuid in code_map.items():
+                        uuid_to_codes.setdefault(uuid, []).append(code)
                     for c in campuses:
-                        campus_code = inv_code_map.get(c.campus_id, "")
-                        campus_data = atar_map.get(campus_code.upper()) or atar_map.get(campus_code)
+                        campus_data = None
+                        for code in uuid_to_codes.get(c.campus_id, []):
+                            campus_data = (
+                                atar_map.get(code.upper()) or atar_map.get(code)
+                            )
+                            if campus_data:
+                                break
                         if campus_data:
                             rank_val = campus_data.get("minSelectionRankOffered")
                             guaranteed_val = campus_data.get("aspireMinimumATAR")
