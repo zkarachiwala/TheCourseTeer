@@ -111,3 +111,62 @@ async def test_latrobe_duration_extraction(pool):
 
     # Fixture is Bachelor of Arts — 3 years
     assert course_data.duration_years == 3.0
+
+
+@pytest.mark.asyncio
+async def test_latrobe_atar_multi_alias_campus(pool):
+    """
+    REGRESSION: Campus with multiple alias codes (e.g. Online has both "on"
+    and "ot") must still resolve ATAR. Dict inversion previously lost one alias.
+    """
+    ON_UUID = "fa65309e-488e-4278-bc13-5e720e8a8b3d"
+    engine = UniversalEngine(pool)
+    html = (
+        '<html><script>window.courseData = {'
+        '"advertisedTitle": "Bachelor of Business",'
+        '"campuses": ["ON"],'
+        '"duration": "3",'
+        '"allAtars": {"2027": {"ON": {"minSelectionRankOffered": "66.9",'
+        '"aspireMinimumATAR": ""}}}, "ugRse": null'
+        '};</script></html>'
+    )
+
+    extraction_map = {
+        "name": {"regex": r'"advertisedTitle"\s*:\s*"([^"]+)"'},
+        "duration": {"regex": r'"duration"\s*:\s*"([0-9.]+)"'},
+        "location": {
+            "regex": r'"campuses"\s*:\s*(\[[^\]]+\])',
+            "mapping": {"ON": ON_UUID},
+        },
+        "atar": {
+            "json_regex": r'"allAtars"\s*:\s*(\{.*?\})\s*,\s*"ugRse',
+            "json_path": "latest_key",
+        },
+    }
+
+    # code_map has both "on" and "ot" pointing to the same Online UUID.
+    # Without the fix, dict inversion kept only "ot", so atar_map.get("OT")
+    # returned None and the ATAR was lost.
+    code_map = {
+        "on": ON_UUID,
+        "ot": ON_UUID,
+    }
+
+    config = SiteConfig(
+        id="f5b3d349-0214-480b-89bc-7b70298e722b",
+        university_id="f5b3d349-0214-480b-89bc-7b70298e722b",
+        base_url="https://www.latrobe.edu.au",
+        extraction_map=extraction_map,
+        is_active=True,
+    )
+
+    course_data = await engine.scrape_page(
+        html, config, "https://test.edu", code_map=code_map
+    )
+
+    assert course_data is not None
+    on_campus = next(
+        (c for c in course_data.campuses if c.campus_id == ON_UUID), None
+    )
+    assert on_campus is not None, "Online campus not found"
+    assert on_campus.atar_lowest_selection_rank == 66.9
