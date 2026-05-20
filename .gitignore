@@ -243,3 +243,4 @@ conductor/
 !scraper/tests/gold_standards/fixtures/*
 scraper/check_*.py
 scraper/debug_*.py
+.aider*
