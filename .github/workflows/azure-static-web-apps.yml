@@ -15,6 +15,10 @@ on:
       - 'web/**'
   workflow_dispatch:
 
+permissions:
+  contents: read
+  pull-requests: write
+
 jobs:
   # Deploy to production only on push to main (owner only — secrets unavailable on forks)
   deploy_job:

@@ -10,6 +10,9 @@ on:
     paths:
       - "scraper/**"
 
+permissions:
+  contents: read
+
 jobs:
   test:
     if: github.repository_owner == 'zkarachiwala'
