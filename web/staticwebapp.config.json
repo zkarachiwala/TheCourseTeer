@@ -1,10 +1,4 @@
 {
-  "auth": {
-    "identityProviders": {
-      "azureActiveDirectory": {},
-      "github": {}
-    }
-  },
   "routes": [
     {
       "route": "/login/github",
